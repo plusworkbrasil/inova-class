@@ -2,41 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Inova Class School System Design - Educational Theme */
 
 @layer base {
   :root {
+    /* Educational Primary - Professional Blue */
+    --primary: 214 84% 56%;
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 214 84% 70%;
+    --primary-dark: 214 84% 45%;
+
+    /* Educational Secondary - Academic Green */
+    --secondary: 142 76% 36%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-light: 142 76% 50%;
+
+    /* Educational Accent - Warm Orange for highlights */
+    --accent: 32 95% 44%;
+    --accent-foreground: 0 0% 98%;
+    --accent-light: 32 95% 55%;
+
+    /* Success - Academic Achievement Green */
+    --success: 120 60% 50%;
+    --success-foreground: 0 0% 98%;
+
+    /* Warning - Academic Alert Yellow */
+    --warning: 48 100% 67%;
+    --warning-foreground: 222.2 84% 4.9%;
+
+    /* Destructive - Academic Alert Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Neutral Colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 214 84% 56%;
 
-    --radius: 0.5rem;
+    /* Gradients for dashboards and headers */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-light)));
+    --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--secondary-light)));
+    --gradient-dashboard: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+
+    /* Shadows */
+    --shadow-primary: 0 10px 30px -10px hsl(var(--primary) / 0.3);
+    --shadow-card: 0 4px 12px -2px hsl(var(--foreground) / 0.1);
+    --shadow-elevated: 0 8px 25px -5px hsl(var(--foreground) / 0.15);
+
+    /* Transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease-out;
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 

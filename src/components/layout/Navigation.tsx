@@ -1,0 +1,145 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  LayoutDashboard, 
+  Users, 
+  GraduationCap, 
+  BookOpen, 
+  ClipboardCheck, 
+  FileText, 
+  Settings,
+  LogOut,
+  Menu,
+  X
+} from 'lucide-react';
+import { UserRole } from '@/types/user';
+
+interface NavigationProps {
+  userRole: UserRole;
+  userName: string;
+  userAvatar?: string;
+}
+
+const menuItems = {
+  admin: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Users, label: 'Usuários', path: '/users' },
+    { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+    { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+    { icon: FileText, label: 'Relatórios', path: '/reports' },
+    { icon: Settings, label: 'Configurações', path: '/settings' },
+  ],
+  coordinator: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+    { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+    { icon: FileText, label: 'Relatórios', path: '/reports' },
+  ],
+  secretary: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+    { icon: FileText, label: 'Declarações', path: '/declarations' },
+    { icon: BookOpen, label: 'Notas', path: '/grades' },
+  ],
+  tutor: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+    { icon: FileText, label: 'Declarações', path: '/declarations' },
+  ],
+  teacher: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
+    { icon: BookOpen, label: 'Notas', path: '/grades' },
+    { icon: FileText, label: 'Declarações', path: '/declarations' },
+  ],
+  student: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: BookOpen, label: 'Minhas Notas', path: '/my-grades' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/my-attendance' },
+    { icon: FileText, label: 'Declarações', path: '/declarations' },
+  ],
+};
+
+const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const currentMenuItems = menuItems[userRole] || [];
+
+  const toggleMenu = () => setIsOpen(!isOpen);
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden fixed top-4 left-4 z-50"
+        onClick={toggleMenu}
+      >
+        {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+      </Button>
+
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:translate-x-0`}>
+        {/* Header */}
+        <div className="flex items-center justify-center p-6 bg-gradient-to-r from-primary to-secondary">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-primary-foreground">Inova Class</h1>
+            <p className="text-sm text-primary-foreground/80">Sistema Acadêmico</p>
+          </div>
+        </div>
+
+        {/* User Info */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center space-x-3">
+            <Avatar>
+              <AvatarImage src={userAvatar} />
+              <AvatarFallback>{userName.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+              <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Menu */}
+        <nav className="p-4 space-y-2">
+          {currentMenuItems.map((item, index) => (
+            <Button
+              key={index}
+              variant="ghost"
+              className="w-full justify-start"
+              onClick={() => setIsOpen(false)}
+            >
+              <item.icon className="mr-3 h-4 w-4" />
+              {item.label}
+            </Button>
+          ))}
+        </nav>
+
+        {/* Logout Button */}
+        <div className="absolute bottom-4 left-4 right-4">
+          <Button variant="outline" className="w-full">
+            <LogOut className="mr-2 h-4 w-4" />
+            Sair
+          </Button>
+        </div>
+      </div>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
+  );
+};
+
+export default Navigation;

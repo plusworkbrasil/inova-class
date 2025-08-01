@@ -1,13 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import Layout from '@/components/layout/Layout';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import { UserRole } from '@/types/user';
 
 const Index = () => {
+  // Para demonstração, simulando um usuário administrador
+  // Em um app real, isso viria da autenticação
+  const [currentUser] = useState({
+    role: 'admin' as UserRole,
+    name: 'Administrador Geral',
+    email: 'admin@inovaclass.edu.br',
+    avatar: undefined
+  });
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <Layout 
+      userRole={currentUser.role}
+      userName={currentUser.name}
+      userAvatar={currentUser.avatar}
+    >
+      <AdminDashboard />
+    </Layout>
   );
 };
 

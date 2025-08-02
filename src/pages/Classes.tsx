@@ -6,55 +6,113 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Plus, Edit, Trash2, Users, BookOpen } from 'lucide-react';
+import { ClassForm } from '@/components/forms/ClassForm';
+import { useToast } from '@/hooks/use-toast';
+
+const mockClassesData = [
+  { 
+    id: 1, 
+    name: '1º Ano A', 
+    period: 'Manhã', 
+    students: 28, 
+    coordinator: 'Maria Santos',
+    subjects: 8,
+    status: 'ativo' 
+  },
+  { 
+    id: 2, 
+    name: '2º Ano B', 
+    period: 'Tarde', 
+    students: 32, 
+    coordinator: 'João Silva',
+    subjects: 9,
+    status: 'ativo' 
+  },
+  { 
+    id: 3, 
+    name: '3º Ano A', 
+    period: 'Manhã', 
+    students: 25, 
+    coordinator: 'Ana Costa',
+    subjects: 10,
+    status: 'ativo' 
+  },
+  { 
+    id: 4, 
+    name: '1º Ano C', 
+    period: 'Noite', 
+    students: 20, 
+    coordinator: 'Pedro Oliveira',
+    subjects: 8,
+    status: 'inativo' 
+  },
+];
 
 const Classes = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<any>(null);
+  const [classes, setClasses] = useState(mockClassesData);
+  const { toast } = useToast();
 
-  const mockClasses = [
-    { 
-      id: 1, 
-      name: '1º Ano A', 
-      period: 'Manhã', 
-      students: 28, 
-      coordinator: 'Maria Santos',
-      subjects: 8,
-      status: 'ativo' 
-    },
-    { 
-      id: 2, 
-      name: '2º Ano B', 
-      period: 'Tarde', 
-      students: 32, 
-      coordinator: 'João Silva',
-      subjects: 9,
-      status: 'ativo' 
-    },
-    { 
-      id: 3, 
-      name: '3º Ano A', 
-      period: 'Manhã', 
-      students: 25, 
-      coordinator: 'Ana Costa',
-      subjects: 10,
-      status: 'ativo' 
-    },
-    { 
-      id: 4, 
-      name: '1º Ano C', 
-      period: 'Noite', 
-      students: 20, 
-      coordinator: 'Pedro Oliveira',
-      subjects: 8,
-      status: 'inativo' 
-    },
-  ];
+  const handleCreateClass = (data: any) => {
+    const newClass = {
+      id: classes.length + 1,
+      name: data.name,
+      period: data.period,
+      students: 0,
+      coordinator: data.coordinator,
+      subjects: 0,
+      status: data.status,
+      grade: data.grade,
+      year: data.year,
+    };
+    setClasses([...classes, newClass]);
+    toast({
+      title: "Turma criada com sucesso!",
+      description: `A turma ${data.name} foi criada.`,
+    });
+  };
+
+  const handleEditClass = (classData: any) => {
+    const updatedClasses = classes.map(c => 
+      c.id === editingClass.id 
+        ? { ...c, ...classData }
+        : c
+    );
+    setClasses(updatedClasses);
+    setEditingClass(null);
+    toast({
+      title: "Turma atualizada com sucesso!",
+      description: `A turma ${classData.name} foi atualizada.`,
+    });
+  };
+
+  const handleDeleteClass = (classId: number) => {
+    setClasses(classes.filter(c => c.id !== classId));
+    toast({
+      title: "Turma excluída",
+      description: "A turma foi removida do sistema.",
+      variant: "destructive",
+    });
+  };
+
+  const openEditForm = (classItem: any) => {
+    setEditingClass(classItem);
+    setIsFormOpen(true);
+  };
+
+  const openCreateForm = () => {
+    setEditingClass(null);
+    setIsFormOpen(true);
+  };
 
   return (
     <Layout userRole="admin" userName="Admin" userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Turmas</h1>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={openCreateForm}>
             <Plus size={16} />
             Nova Turma
           </Button>
@@ -148,7 +206,7 @@ const Classes = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockClasses.map((classItem) => (
+                {classes.map((classItem) => (
                   <TableRow key={classItem.id}>
                     <TableCell className="font-medium">{classItem.name}</TableCell>
                     <TableCell>{classItem.period}</TableCell>
@@ -172,10 +230,18 @@ const Classes = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openEditForm(classItem)}
+                        >
                           <Edit size={14} />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteClass(classItem.id)}
+                        >
                           <Trash2 size={14} />
                         </Button>
                       </div>
@@ -186,6 +252,14 @@ const Classes = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        <ClassForm
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          onSubmit={editingClass ? handleEditClass : handleCreateClass}
+          initialData={editingClass}
+          mode={editingClass ? 'edit' : 'create'}
+        />
       </div>
     </Layout>
   );

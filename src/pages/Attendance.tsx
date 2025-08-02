@@ -7,48 +7,89 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, UserX, Calendar, AlertTriangle } from 'lucide-react';
+import { AttendanceForm } from '@/components/forms/AttendanceForm';
+import { useToast } from '@/hooks/use-toast';
+
+const mockAttendanceData = [
+  { 
+    id: 1, 
+    studentName: 'João Silva', 
+    class: '1º Ano A',
+    date: '2024-08-01',
+    subject: 'Matemática',
+    status: 'presente',
+    absences: 2
+  },
+  { 
+    id: 2, 
+    studentName: 'Maria Santos', 
+    class: '1º Ano A',
+    date: '2024-08-01',
+    subject: 'Matemática',
+    status: 'falta',
+    absences: 5
+  },
+  { 
+    id: 3, 
+    studentName: 'Pedro Oliveira', 
+    class: '2º Ano B',
+    date: '2024-08-01',
+    subject: 'Português',
+    status: 'presente',
+    absences: 1
+  },
+  { 
+    id: 4, 
+    studentName: 'Ana Costa', 
+    class: '2º Ano B',
+    date: '2024-08-01',
+    subject: 'Português',
+    status: 'falta',
+    absences: 4
+  },
+];
 
 const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
+  const [attendanceRecords, setAttendanceRecords] = useState(mockAttendanceData);
+  const { toast } = useToast();
 
-  const mockAttendance = [
-    { 
-      id: 1, 
-      studentName: 'João Silva', 
-      class: '1º Ano A',
-      date: '2024-08-01',
-      subject: 'Matemática',
-      status: 'presente',
-      absences: 2
-    },
-    { 
-      id: 2, 
-      studentName: 'Maria Santos', 
-      class: '1º Ano A',
-      date: '2024-08-01',
-      subject: 'Matemática',
-      status: 'falta',
-      absences: 5
-    },
-    { 
-      id: 3, 
-      studentName: 'Pedro Oliveira', 
-      class: '2º Ano B',
-      date: '2024-08-01',
-      subject: 'Português',
-      status: 'presente',
-      absences: 1
-    },
-    { 
-      id: 4, 
-      studentName: 'Ana Costa', 
-      class: '2º Ano B',
-      date: '2024-08-01',
-      subject: 'Português',
-      status: 'falta',
-      absences: 4
-    },
+  const handleAttendanceSubmit = (data: any) => {
+    // Simular criação de registros de frequência
+    const newRecords = data.attendance.map((student: any, index: number) => ({
+      id: attendanceRecords.length + index + 1,
+      studentName: student.studentName,
+      class: mockClasses.find(c => c.id === data.classId)?.name || '',
+      date: data.date,
+      subject: mockSubjects.find(s => s.id === data.subjectId)?.name || '',
+      status: student.isPresent ? 'presente' : 'falta',
+      absences: Math.floor(Math.random() * 6), // Simulação
+    }));
+
+    setAttendanceRecords([...newRecords, ...attendanceRecords]);
+    
+    toast({
+      title: "Chamada registrada com sucesso!",
+      description: `Frequência registrada para ${data.attendance.length} alunos.`,
+    });
+  };
+
+  const mockClasses = [
+    { id: '1a', name: '1º Ano A' },
+    { id: '1b', name: '1º Ano B' },
+    { id: '2a', name: '2º Ano A' },
+    { id: '2b', name: '2º Ano B' },
+    { id: '3a', name: '3º Ano A' },
+  ];
+
+  const mockSubjects = [
+    { id: 'mat', name: 'Matemática' },
+    { id: 'por', name: 'Português' },
+    { id: 'his', name: 'História' },
+    { id: 'geo', name: 'Geografia' },
+    { id: 'cie', name: 'Ciências' },
   ];
 
   const getStatusBadge = (status: string) => {
@@ -72,7 +113,10 @@ const Attendance = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Controle de Frequência</h1>
-          <Button className="flex items-center gap-2">
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => setIsAttendanceFormOpen(true)}
+          >
             <Plus size={16} />
             Registrar Chamada
           </Button>
@@ -177,7 +221,7 @@ const Attendance = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockAttendance.map((record) => (
+                {attendanceRecords.map((record) => (
                   <TableRow key={record.id}>
                     <TableCell className="font-medium">{record.studentName}</TableCell>
                     <TableCell>{record.class}</TableCell>
@@ -198,6 +242,12 @@ const Attendance = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        <AttendanceForm
+          open={isAttendanceFormOpen}
+          onOpenChange={setIsAttendanceFormOpen}
+          onSubmit={handleAttendanceSubmit}
+        />
       </div>
     </Layout>
   );

@@ -8,16 +8,60 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
+import { UserForm } from '@/components/forms/UserForm';
+import { useToast } from '@/hooks/use-toast';
+
+const mockUsersData = [
+  { id: 1, name: 'João Silva', email: 'joao@email.com', role: 'teacher' as UserRole, status: 'ativo' },
+  { id: 2, name: 'Maria Santos', email: 'maria@email.com', role: 'coordinator' as UserRole, status: 'ativo' },
+  { id: 3, name: 'Pedro Oliveira', email: 'pedro@email.com', role: 'secretary' as UserRole, status: 'inativo' },
+  { id: 4, name: 'Ana Costa', email: 'ana@email.com', role: 'tutor' as UserRole, status: 'ativo' },
+];
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState(mockUsersData);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const { toast } = useToast();
 
-  const mockUsers = [
-    { id: 1, name: 'João Silva', email: 'joao@email.com', role: 'teacher' as UserRole, status: 'ativo' },
-    { id: 2, name: 'Maria Santos', email: 'maria@email.com', role: 'coordinator' as UserRole, status: 'ativo' },
-    { id: 3, name: 'Pedro Oliveira', email: 'pedro@email.com', role: 'secretary' as UserRole, status: 'inativo' },
-    { id: 4, name: 'Ana Costa', email: 'ana@email.com', role: 'tutor' as UserRole, status: 'ativo' },
-  ];
+  const handleCreateUser = (data: any) => {
+    const newUser = {
+      id: users.length + 1,
+      name: data.name,
+      email: data.email,
+      role: data.role as UserRole,
+      phone: data.phone,
+      status: data.status,
+    };
+    setUsers([...users, newUser]);
+    toast({
+      title: "Usuário criado com sucesso!",
+      description: `O usuário ${data.name} foi criado.`,
+    });
+  };
+
+  const handleEditUser = (userData: any) => {
+    const updatedUsers = users.map(u => 
+      u.id === editingUser.id 
+        ? { ...u, ...userData }
+        : u
+    );
+    setUsers(updatedUsers);
+    setEditingUser(null);
+    toast({
+      title: "Usuário atualizado com sucesso!",
+      description: `O usuário ${userData.name} foi atualizado.`,
+    });
+  };
+
+  const handleDeleteUser = (userId: number) => {
+    setUsers(users.filter(u => u.id !== userId));
+    toast({
+      title: "Usuário excluído",
+      description: "O usuário foi removido do sistema.",
+      variant: "destructive",
+    });
+  };
 
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
@@ -38,10 +82,7 @@ const Users = () => {
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
           <div className="flex gap-2">
             <StudentForm onSubmit={(data) => console.log('Novo aluno:', data)} />
-            <Button variant="outline" className="flex items-center gap-2">
-              <Plus size={16} />
-              Novo Usuário
-            </Button>
+            <UserForm onSubmit={handleCreateUser} />
           </div>
         </div>
 
@@ -81,7 +122,7 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockUsers.map((user) => (
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
@@ -100,10 +141,21 @@ const Users = () => {
                         <Button variant="outline" size="sm">
                           <Eye size={14} />
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit size={14} />
-                        </Button>
-                        <Button variant="outline" size="sm">
+                        <UserForm 
+                          onSubmit={handleEditUser}
+                          initialData={user}
+                          mode="edit"
+                          trigger={
+                            <Button variant="outline" size="sm">
+                              <Edit size={14} />
+                            </Button>
+                          }
+                        />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteUser(user.id)}
+                        >
                           <Trash2 size={14} />
                         </Button>
                       </div>

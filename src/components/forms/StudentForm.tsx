@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Plus } from 'lucide-react';
 
@@ -18,7 +19,14 @@ const studentSchema = z.object({
   phone: z.string().min(10, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido'),
   parentName: z.string().min(2, 'Nome dos pais é obrigatório'),
-  address: z.string().min(5, 'Endereço é obrigatório'),
+  escolaridade: z.string().min(1, 'Escolaridade é obrigatória'),
+  cep: z.string().regex(/^\d{5}-\d{3}$/, 'CEP deve ter o formato 00000-000'),
+  street: z.string().min(1, 'Logradouro é obrigatório'),
+  number: z.string().min(1, 'Número é obrigatório'),
+  complement: z.string().optional(),
+  neighborhood: z.string().min(1, 'Bairro é obrigatório'),
+  city: z.string().min(1, 'Cidade é obrigatória'),
+  state: z.string().length(2, 'Estado deve ter 2 caracteres'),
 });
 
 type StudentFormData = z.infer<typeof studentSchema>;
@@ -31,6 +39,7 @@ interface StudentFormProps {
 export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
   const [open, setOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
   
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -40,7 +49,14 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       phone: '',
       email: '',
       parentName: '',
-      address: '',
+      escolaridade: '',
+      cep: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
     },
   });
 
@@ -71,6 +87,47 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       .replace(/(\d{4})(\d)/, '$1-$2')
       .replace(/(\d{4})-(\d)(\d{4})/, '$1$2-$3')
       .replace(/(-\d{4})\d+?$/, '$1');
+  };
+
+  const formatCEP = (value: string) => {
+    return value
+      .replace(/\D/g, '')
+      .replace(/(\d{5})(\d)/, '$1-$2')
+      .replace(/(-\d{3})\d+?$/, '$1');
+  };
+
+  const fetchAddressByCep = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length !== 8) return;
+
+    setIsLoadingCep(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        console.error('CEP não encontrado');
+        return;
+      }
+
+      form.setValue('street', data.logradouro || '');
+      form.setValue('neighborhood', data.bairro || '');
+      form.setValue('city', data.localidade || '');
+      form.setValue('state', data.uf || '');
+    } catch (error) {
+      console.error('Erro ao buscar CEP:', error);
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
+
+  const handleCepChange = (value: string) => {
+    const formattedCep = formatCEP(value);
+    form.setValue('cep', formattedCep);
+    
+    if (formattedCep.length === 9) {
+      fetchAddressByCep(formattedCep);
+    }
   };
 
   const handleSubmit = (data: StudentFormData) => {
@@ -197,6 +254,40 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
               />
             </div>
 
+            {/* Escolaridade */}
+            <FormField
+              control={form.control}
+              name="escolaridade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Escolaridade *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a escolaridade" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="educacao-infantil">Educação Infantil</SelectItem>
+                      <SelectItem value="1-ano">1º Ano</SelectItem>
+                      <SelectItem value="2-ano">2º Ano</SelectItem>
+                      <SelectItem value="3-ano">3º Ano</SelectItem>
+                      <SelectItem value="4-ano">4º Ano</SelectItem>
+                      <SelectItem value="5-ano">5º Ano</SelectItem>
+                      <SelectItem value="6-ano">6º Ano</SelectItem>
+                      <SelectItem value="7-ano">7º Ano</SelectItem>
+                      <SelectItem value="8-ano">8º Ano</SelectItem>
+                      <SelectItem value="9-ano">9º Ano</SelectItem>
+                      <SelectItem value="1-ensino-medio">1º Ano - Ensino Médio</SelectItem>
+                      <SelectItem value="2-ensino-medio">2º Ano - Ensino Médio</SelectItem>
+                      <SelectItem value="3-ensino-medio">3º Ano - Ensino Médio</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Dados dos Responsáveis */}
             <FormField
               control={form.control}
@@ -213,23 +304,120 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
             />
 
             {/* Endereço */}
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Endereço Completo *</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Rua, número, bairro, cidade, CEP..."
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Endereço</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="cep"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="00000-000"
+                          {...field}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                          maxLength={9}
+                          disabled={isLoadingCep}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      {isLoadingCep && <p className="text-sm text-muted-foreground">Buscando endereço...</p>}
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-2">
+                      <FormLabel>Logradouro *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua, Avenida, etc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bloco, Apto, etc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bairro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Cidade" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="UF" {...field} maxLength={2} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
               <Button

@@ -20,7 +20,14 @@ export interface Student extends User {
   fullName: string;
   photo?: string;
   parentName: string;
-  address: string;
+  escolaridade: string;
+  cep: string;
+  street: string;
+  number: string;
+  complement?: string;
+  neighborhood: string;
+  city: string;
+  state: string;
   guardianName?: string;
   guardianPhone?: string;
 }

@@ -15,6 +15,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Grades from "./pages/Grades";
 import Declarations from "./pages/Declarations";
+import Communications from "./pages/Communications";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/grades" element={<Grades />} />
           <Route path="/declarations" element={<Declarations />} />
+          <Route path="/communications" element={<Communications />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

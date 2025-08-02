@@ -180,6 +180,7 @@ const Dashboard = () => {
                   <Badge variant="secondary">• Turmas</Badge>
                   <Badge variant="secondary">• Disciplinas</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
+                  <Badge variant="secondary">• Comunicação</Badge>
                   <Badge variant="secondary">• Relatórios</Badge>
                   <Badge variant="secondary">• Configurações</Badge>
                 </>
@@ -214,6 +215,7 @@ const Dashboard = () => {
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Declarações</Badge>
                   <Badge variant="secondary">• Notas</Badge>
+                  <Badge variant="secondary">• Comunicação</Badge>
                 </>
               )}
               {userRole === 'tutor' && (

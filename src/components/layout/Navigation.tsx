@@ -30,6 +30,7 @@ const menuItems = {
     { icon: GraduationCap, label: 'Turmas', path: '/classes' },
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+    { icon: FileText, label: 'Comunicação', path: '/communications' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ],
@@ -45,6 +46,7 @@ const menuItems = {
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
+    { icon: FileText, label: 'Comunicação', path: '/communications' },
   ],
   tutor: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },

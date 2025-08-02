@@ -43,8 +43,8 @@ const menuItems = {
   secretary: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
-    { icon: FileText, label: 'Declarações', path: '/declarations' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
+    { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],
   tutor: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -59,8 +59,8 @@ const menuItems = {
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: BookOpen, label: 'Minhas Notas', path: '/my-grades' },
-    { icon: ClipboardCheck, label: 'Frequência', path: '/my-attendance' },
+    { icon: BookOpen, label: 'Minhas Notas', path: '/grades' },
+    { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],
 };

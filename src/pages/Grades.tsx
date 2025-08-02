@@ -1,0 +1,311 @@
+import { useState } from 'react';
+import Layout from '@/components/layout/Layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { GradeForm } from '@/components/forms/GradeForm';
+import { useToast } from '@/hooks/use-toast';
+
+const mockGradesData = [
+  {
+    id: 1,
+    studentName: 'João Silva',
+    studentId: '2024001',
+    class: '1º Ano A',
+    subject: 'Matemática',
+    grade: 8.5,
+    maxGrade: 10,
+    type: 'Prova',
+    date: '2024-01-15',
+    teacher: 'Prof. Carlos'
+  },
+  {
+    id: 2,
+    studentName: 'Maria Santos',
+    studentId: '2024002',
+    class: '1º Ano A',
+    subject: 'Matemática',
+    grade: 7.2,
+    maxGrade: 10,
+    type: 'Trabalho',
+    date: '2024-01-14',
+    teacher: 'Prof. Carlos'
+  },
+  {
+    id: 3,
+    studentName: 'Pedro Oliveira',
+    studentId: '2024003',
+    class: '2º Ano B',
+    subject: 'Português',
+    grade: 9.0,
+    maxGrade: 10,
+    type: 'Prova',
+    date: '2024-01-13',
+    teacher: 'Prof. Ana'
+  },
+  {
+    id: 4,
+    studentName: 'Ana Costa',
+    studentId: '2024004',
+    class: '2º Ano B',
+    subject: 'História',
+    grade: 6.8,
+    maxGrade: 10,
+    type: 'Seminário',
+    date: '2024-01-12',
+    teacher: 'Prof. Maria'
+  },
+];
+
+const Grades = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
+  const [editingGrade, setEditingGrade] = useState<any>(null);
+  const [grades, setGrades] = useState(mockGradesData);
+  const { toast } = useToast();
+
+  const handleCreateGrade = (data: any) => {
+    const newGrade = {
+      id: grades.length + 1,
+      studentName: data.studentName,
+      studentId: data.studentId,
+      class: data.class,
+      subject: data.subject,
+      grade: data.grade,
+      maxGrade: data.maxGrade,
+      type: data.type,
+      date: data.date,
+      teacher: data.teacher,
+    };
+    setGrades([newGrade, ...grades]);
+    toast({
+      title: "Nota lançada com sucesso!",
+      description: `Nota ${data.grade} registrada para ${data.studentName}.`,
+    });
+  };
+
+  const handleEditGrade = (gradeData: any) => {
+    const updatedGrades = grades.map(g => 
+      g.id === editingGrade.id 
+        ? { ...g, ...gradeData }
+        : g
+    );
+    setGrades(updatedGrades);
+    setEditingGrade(null);
+    toast({
+      title: "Nota atualizada com sucesso!",
+      description: `Nota de ${gradeData.studentName} foi atualizada.`,
+    });
+  };
+
+  const openEditForm = (grade: any) => {
+    setEditingGrade(grade);
+    setIsGradeFormOpen(true);
+  };
+
+  const openCreateForm = () => {
+    setEditingGrade(null);
+    setIsGradeFormOpen(true);
+  };
+
+  const getGradeBadgeVariant = (grade: number, maxGrade: number) => {
+    const percentage = (grade / maxGrade) * 100;
+    if (percentage >= 80) return 'default';
+    if (percentage >= 60) return 'secondary';
+    return 'destructive';
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'prova': return 'bg-blue-100 text-blue-800';
+      case 'trabalho': return 'bg-green-100 text-green-800';
+      case 'seminário': return 'bg-purple-100 text-purple-800';
+      case 'projeto': return 'bg-orange-100 text-orange-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Calcular estatísticas
+  const totalGrades = grades.length;
+  const averageGrade = grades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades;
+  const failingGrades = grades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
+  const subjectsCount = new Set(grades.map(grade => grade.subject)).size;
+
+  return (
+    <Layout userRole="admin" userName="Admin" userAvatar="">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Notas</h1>
+          <Button className="flex items-center gap-2" onClick={openCreateForm}>
+            <Plus size={16} />
+            Lançar Nota
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Notas</p>
+                  <p className="text-3xl font-bold text-primary">{totalGrades}</p>
+                </div>
+                <BookOpen className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Média Geral</p>
+                  <p className="text-3xl font-bold text-success">{averageGrade.toFixed(1)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-success" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Disciplinas</p>
+                  <p className="text-3xl font-bold text-info">{subjectsCount}</p>
+                </div>
+                <BookOpen className="h-8 w-8 text-info" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Notas Baixas</p>
+                  <p className="text-3xl font-bold text-warning">{failingGrades}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-warning" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtros</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar aluno..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Selecionar turma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1a">1º Ano A</SelectItem>
+                  <SelectItem value="1b">1º Ano B</SelectItem>
+                  <SelectItem value="2a">2º Ano A</SelectItem>
+                  <SelectItem value="2b">2º Ano B</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Selecionar disciplina" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="matematica">Matemática</SelectItem>
+                  <SelectItem value="portugues">Português</SelectItem>
+                  <SelectItem value="historia">História</SelectItem>
+                  <SelectItem value="geografia">Geografia</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline">Filtrar</Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Registro de Notas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Matrícula</TableHead>
+                  <TableHead>Turma</TableHead>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead>Nota</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Professor</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {grades.map((grade) => (
+                  <TableRow key={grade.id}>
+                    <TableCell className="font-medium">{grade.studentName}</TableCell>
+                    <TableCell>{grade.studentId}</TableCell>
+                    <TableCell>{grade.class}</TableCell>
+                    <TableCell>{grade.subject}</TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(grade.type)}`}>
+                        {grade.type}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getGradeBadgeVariant(grade.grade, grade.maxGrade)}>
+                        {grade.grade}/{grade.maxGrade}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{grade.teacher}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openEditForm(grade)}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        
+        <GradeForm
+          open={isGradeFormOpen}
+          onOpenChange={setIsGradeFormOpen}
+          onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
+          initialData={editingGrade}
+          mode={editingGrade ? 'edit' : 'create'}
+        />
+      </div>
+    </Layout>
+  );
+};
+
+export default Grades;

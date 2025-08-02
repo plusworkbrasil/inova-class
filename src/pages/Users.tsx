@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import { UserRole } from '@/types/user';
+import { StudentForm } from '@/components/forms/StudentForm';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,10 +36,13 @@ const Users = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
-          <Button className="flex items-center gap-2">
-            <Plus size={16} />
-            Novo Usuário
-          </Button>
+          <div className="flex gap-2">
+            <StudentForm onSubmit={(data) => console.log('Novo aluno:', data)} />
+            <Button variant="outline" className="flex items-center gap-2">
+              <Plus size={16} />
+              Novo Usuário
+            </Button>
+          </div>
         </div>
 
         <Card>

@@ -16,6 +16,11 @@ export interface Student extends User {
   studentId: string;
   classId: string;
   enrollmentDate: Date;
+  cpf: string;
+  fullName: string;
+  photo?: string;
+  parentName: string;
+  address: string;
   guardianName?: string;
   guardianPhone?: string;
 }

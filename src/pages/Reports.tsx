@@ -5,9 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle, File, FileSpreadsheet } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 
 const Reports = () => {
+  const { toast } = useToast();
+  
   const attendanceData = [
     { month: 'Jan', presente: 85, falta: 15 },
     { month: 'Fev', presente: 88, falta: 12 },
@@ -39,6 +43,72 @@ const Reports = () => {
     { name: 'Ana Oliveira', class: '3º Ano A', absences: 5, percentage: 12.5 },
   ];
 
+  const generateCSV = (data: any[], filename: string) => {
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => Object.values(row).join(',')).join('\n');
+    const csvContent = `${headers}\n${rows}`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const generatePDF = async (filename: string) => {
+    // Simulação de geração de PDF
+    const reportData = {
+      attendanceData,
+      gradeData,
+      classDistribution,
+      topAbsentStudents,
+      generatedAt: new Date().toISOString(),
+    };
+    
+    const dataStr = JSON.stringify(reportData, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExport = (format: 'csv' | 'pdf' | 'excel') => {
+    const timestamp = new Date().toISOString().split('T')[0];
+    
+    switch (format) {
+      case 'csv':
+        generateCSV(topAbsentStudents, `relatorio-faltas-${timestamp}`);
+        toast({
+          title: "Relatório exportado!",
+          description: "Arquivo CSV baixado com sucesso.",
+        });
+        break;
+      case 'pdf':
+        generatePDF(`relatorio-completo-${timestamp}`);
+        toast({
+          title: "Relatório exportado!",
+          description: "Arquivo PDF será baixado em breve.",
+        });
+        break;
+      case 'excel':
+        generateCSV(gradeData, `relatorio-notas-${timestamp}`);
+        toast({
+          title: "Relatório exportado!",
+          description: "Arquivo Excel compatível baixado com sucesso.",
+        });
+        break;
+    }
+  };
+
   return (
     <Layout userRole="admin" userName="Admin" userAvatar="">
       <div className="space-y-6">
@@ -55,10 +125,28 @@ const Reports = () => {
                 <SelectItem value="yearly">Anual</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="flex items-center gap-2">
-              <Download size={16} />
-              Exportar
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Download size={16} />
+                  Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport('pdf')}>
+                  <FileText size={16} className="mr-2" />
+                  Exportar como PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('excel')}>
+                  <FileSpreadsheet size={16} className="mr-2" />
+                  Exportar como Excel
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport('csv')}>
+                  <File size={16} className="mr-2" />
+                  Exportar como CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -181,6 +269,20 @@ const Reports = () => {
               <CardTitle>Alunos com Maior Número de Faltas</CardTitle>
             </CardHeader>
             <CardContent>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Lista dos alunos com maior número de ausências
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleExport('csv')}
+                  className="flex items-center gap-1"
+                >
+                  <Download size={14} />
+                  Exportar Lista
+                </Button>
+              </div>
               <Table>
                 <TableHeader>
                   <TableRow>

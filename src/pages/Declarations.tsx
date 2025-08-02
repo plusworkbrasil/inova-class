@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/user';
 
 const mockDeclarationsData = [
   {
@@ -62,6 +63,8 @@ const mockDeclarationsData = [
 ];
 
 const Declarations = () => {
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -69,6 +72,16 @@ const Declarations = () => {
   const [editingDeclaration, setEditingDeclaration] = useState<any>(null);
   const [declarations, setDeclarations] = useState(mockDeclarationsData);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
 
   const handleCreateDeclaration = (data: any) => {
     const newDeclaration = {
@@ -156,20 +169,32 @@ const Declarations = () => {
     }
   };
 
+  // Filtrar dados para alunos - apenas suas próprias declarações
+  const getFilteredDeclarations = () => {
+    if (userRole === 'student') {
+      return declarations.filter(declaration => declaration.studentName === userName);
+    }
+    return declarations;
+  };
+
+  const filteredDeclarations = getFilteredDeclarations();
+
   // Calcular estatísticas
-  const totalDeclarations = declarations.length;
-  const pendingDeclarations = declarations.filter(d => d.status === 'pending').length;
-  const approvedDeclarations = declarations.filter(d => d.status === 'approved').length;
-  const processingDeclarations = declarations.filter(d => d.status === 'processing').length;
+  const totalDeclarations = filteredDeclarations.length;
+  const pendingDeclarations = filteredDeclarations.filter(d => d.status === 'pending').length;
+  const approvedDeclarations = filteredDeclarations.filter(d => d.status === 'approved').length;
+  const processingDeclarations = filteredDeclarations.filter(d => d.status === 'processing').length;
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Declarações</h1>
+          <h1 className="text-3xl font-bold text-foreground">
+            {userRole === 'student' ? 'Minhas Declarações' : 'Gerenciamento de Declarações'}
+          </h1>
           <Button className="flex items-center gap-2" onClick={openCreateForm}>
             <Plus size={16} />
-            Nova Solicitação
+            {userRole === 'student' ? 'Solicitar Declaração' : 'Nova Solicitação'}
           </Button>
         </div>
 
@@ -178,7 +203,9 @@ const Declarations = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total de Declarações</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Minhas Declarações' : 'Total de Declarações'}
+                  </p>
                   <p className="text-3xl font-bold text-primary">{totalDeclarations}</p>
                 </div>
                 <FileText className="h-8 w-8 text-primary" />
@@ -223,58 +250,62 @@ const Declarations = () => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar aluno..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {userRole !== 'student' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar aluno..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="processing">Processando</SelectItem>
+                    <SelectItem value="approved">Aprovada</SelectItem>
+                    <SelectItem value="rejected">Rejeitada</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Tipo de declaração" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="matricula">Declaração de Matrícula</SelectItem>
+                    <SelectItem value="frequencia">Declaração de Frequência</SelectItem>
+                    <SelectItem value="historico">Histórico Escolar</SelectItem>
+                    <SelectItem value="conclusao">Declaração de Conclusão</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline">Filtrar</Button>
               </div>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                  <SelectItem value="processing">Processando</SelectItem>
-                  <SelectItem value="approved">Aprovada</SelectItem>
-                  <SelectItem value="rejected">Rejeitada</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Tipo de declaração" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="matricula">Declaração de Matrícula</SelectItem>
-                  <SelectItem value="frequencia">Declaração de Frequência</SelectItem>
-                  <SelectItem value="historico">Histórico Escolar</SelectItem>
-                  <SelectItem value="conclusao">Declaração de Conclusão</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline">Filtrar</Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Solicitações de Declarações</CardTitle>
+            <CardTitle>
+              {userRole === 'student' ? 'Minhas Solicitações' : 'Solicitações de Declarações'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Aluno</TableHead>
-                  <TableHead>Matrícula</TableHead>
+                  {userRole !== 'student' && <TableHead>Aluno</TableHead>}
+                  {userRole !== 'student' && <TableHead>Matrícula</TableHead>}
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data Solicitação</TableHead>
@@ -284,10 +315,10 @@ const Declarations = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {declarations.map((declaration) => (
+                {filteredDeclarations.map((declaration) => (
                   <TableRow key={declaration.id}>
-                    <TableCell className="font-medium">{declaration.studentName}</TableCell>
-                    <TableCell>{declaration.studentId}</TableCell>
+                    {userRole !== 'student' && <TableCell className="font-medium">{declaration.studentName}</TableCell>}
+                    {userRole !== 'student' && <TableCell>{declaration.studentId}</TableCell>}
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(declaration.type)}`}>
                         {declaration.type}
@@ -301,14 +332,16 @@ const Declarations = () => {
                     <TableCell>{declaration.requestedBy}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditForm(declaration)}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                        {declaration.status === 'pending' && (
+                        {userRole !== 'student' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditForm(declaration)}
+                          >
+                            <Edit size={14} />
+                          </Button>
+                        )}
+                        {declaration.status === 'pending' && userRole !== 'student' && (
                           <>
                             <Button 
                               variant="outline" 

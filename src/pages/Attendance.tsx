@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, UserX, Calendar, AlertTriangle } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/user';
 
 const mockAttendanceData = [
   { 
@@ -50,11 +51,23 @@ const mockAttendanceData = [
 ];
 
 const Attendance = () => {
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState(mockAttendanceData);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
 
   const handleAttendanceSubmit = (data: any) => {
     // Simular criação de registros de frequência
@@ -108,18 +121,32 @@ const Attendance = () => {
     return <Badge variant="outline">{absences}</Badge>;
   };
 
+  // Filtrar dados para alunos - apenas suas próprias informações
+  const getFilteredData = () => {
+    if (userRole === 'student') {
+      return attendanceRecords.filter(record => record.studentName === userName);
+    }
+    return attendanceRecords;
+  };
+
+  const filteredRecords = getFilteredData();
+
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Controle de Frequência</h1>
-          <Button 
-            className="flex items-center gap-2"
-            onClick={() => setIsAttendanceFormOpen(true)}
-          >
-            <Plus size={16} />
-            Registrar Chamada
-          </Button>
+          <h1 className="text-3xl font-bold text-foreground">
+            {userRole === 'student' ? 'Minha Frequência' : 'Controle de Frequência'}
+          </h1>
+          {userRole !== 'student' && (
+            <Button 
+              className="flex items-center gap-2"
+              onClick={() => setIsAttendanceFormOpen(true)}
+            >
+              <Plus size={16} />
+              Registrar Chamada
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -127,8 +154,15 @@ const Attendance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Presentes Hoje</p>
-                  <p className="text-3xl font-bold text-success">85</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Minhas Presenças' : 'Presentes Hoje'}
+                  </p>
+                  <p className="text-3xl font-bold text-success">
+                    {userRole === 'student' 
+                      ? filteredRecords.filter(r => r.status === 'presente').length 
+                      : '85'
+                    }
+                  </p>
                 </div>
                 <UserX className="h-8 w-8 text-success" />
               </div>
@@ -139,8 +173,15 @@ const Attendance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Faltas Hoje</p>
-                  <p className="text-3xl font-bold text-destructive">15</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Minhas Faltas' : 'Faltas Hoje'}
+                  </p>
+                  <p className="text-3xl font-bold text-destructive">
+                    {userRole === 'student' 
+                      ? filteredRecords.filter(r => r.status === 'falta').length 
+                      : '15'
+                    }
+                  </p>
                 </div>
                 <UserX className="h-8 w-8 text-destructive" />
               </div>
@@ -151,8 +192,15 @@ const Attendance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">% Frequência</p>
-                  <p className="text-3xl font-bold text-primary">85%</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Minha Frequência' : '% Frequência'}
+                  </p>
+                  <p className="text-3xl font-bold text-primary">
+                    {userRole === 'student' 
+                      ? `${Math.round((filteredRecords.filter(r => r.status === 'presente').length / Math.max(filteredRecords.length, 1)) * 100)}%`
+                      : '85%'
+                    }
+                  </p>
                 </div>
                 <Calendar className="h-8 w-8 text-primary" />
               </div>
@@ -163,8 +211,15 @@ const Attendance = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Alunos com +3 Faltas</p>
-                  <p className="text-3xl font-bold text-warning">8</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Total de Faltas' : 'Alunos com +3 Faltas'}
+                  </p>
+                  <p className="text-3xl font-bold text-warning">
+                    {userRole === 'student' 
+                      ? (filteredRecords[0]?.absences || 0)
+                      : '8'
+                    }
+                  </p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-warning" />
               </div>
@@ -172,70 +227,76 @@ const Attendance = () => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Filtros</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar aluno..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        {userRole !== 'student' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar aluno..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Selecionar turma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1a">1º Ano A</SelectItem>
+                    <SelectItem value="1b">1º Ano B</SelectItem>
+                    <SelectItem value="2a">2º Ano A</SelectItem>
+                    <SelectItem value="2b">2º Ano B</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline">Filtrar</Button>
               </div>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Selecionar turma" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1a">1º Ano A</SelectItem>
-                  <SelectItem value="1b">1º Ano B</SelectItem>
-                  <SelectItem value="2a">2º Ano A</SelectItem>
-                  <SelectItem value="2b">2º Ano B</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline">Filtrar</Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
-            <CardTitle>Registro de Frequência</CardTitle>
+            <CardTitle>
+              {userRole === 'student' ? 'Meu Histórico de Frequência' : 'Registro de Frequência'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Aluno</TableHead>
+                  {userRole !== 'student' && <TableHead>Aluno</TableHead>}
                   <TableHead>Turma</TableHead>
                   <TableHead>Data</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Total de Faltas</TableHead>
-                  <TableHead>Ações</TableHead>
+                  {userRole !== 'student' && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {attendanceRecords.map((record) => (
+                {filteredRecords.map((record) => (
                   <TableRow key={record.id}>
-                    <TableCell className="font-medium">{record.studentName}</TableCell>
+                    {userRole !== 'student' && <TableCell className="font-medium">{record.studentName}</TableCell>}
                     <TableCell>{record.class}</TableCell>
                     <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{record.subject}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                     <TableCell>{getAbsencesBadge(record.absences)}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Edit size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
+                    {userRole !== 'student' && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Edit size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -243,11 +304,13 @@ const Attendance = () => {
           </CardContent>
         </Card>
         
-        <AttendanceForm
-          open={isAttendanceFormOpen}
-          onOpenChange={setIsAttendanceFormOpen}
-          onSubmit={handleAttendanceSubmit}
-        />
+        {userRole !== 'student' && (
+          <AttendanceForm
+            open={isAttendanceFormOpen}
+            onOpenChange={setIsAttendanceFormOpen}
+            onSubmit={handleAttendanceSubmit}
+          />
+        )}
       </div>
     </Layout>
   );

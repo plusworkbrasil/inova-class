@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Plus, Edit, Trash2, BookOpen, Clock, User } from 'lucide-react';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
+import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 
 const mockSubjectsData = [
   { 
@@ -52,6 +53,8 @@ const Subjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
+  const [deletingSubject, setDeletingSubject] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [subjects, setSubjects] = useState(mockSubjectsData);
   const { toast } = useToast();
 
@@ -94,6 +97,11 @@ const Subjects = () => {
       description: "A disciplina foi removida do sistema.",
       variant: "destructive",
     });
+  };
+
+  const openDeleteDialog = (subject: any) => {
+    setDeletingSubject(subject);
+    setIsDeleteDialogOpen(true);
   };
 
   const openEditForm = (subject: any) => {
@@ -242,7 +250,7 @@ const Subjects = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDeleteSubject(subject.id)}
+                          onClick={() => openDeleteDialog(subject)}
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -261,6 +269,15 @@ const Subjects = () => {
           onSubmit={editingSubject ? handleEditSubject : handleCreateSubject}
           initialData={editingSubject}
           mode={editingSubject ? 'edit' : 'create'}
+        />
+        
+        <DeleteConfirmation
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onConfirm={() => handleDeleteSubject(deletingSubject?.id)}
+          title="Excluir Disciplina"
+          description="Esta ação não pode ser desfeita. A disciplina será permanentemente removida do sistema."
+          itemName={deletingSubject?.name}
         />
       </div>
     </Layout>

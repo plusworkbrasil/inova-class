@@ -10,6 +10,7 @@ import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { useToast } from '@/hooks/use-toast';
+import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 
 const mockUsersData = [
   { id: 1, name: 'João Silva', email: 'joao@email.com', role: 'teacher' as UserRole, status: 'ativo' },
@@ -22,6 +23,8 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState(mockUsersData);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const handleCreateUser = (data: any) => {
@@ -61,6 +64,11 @@ const Users = () => {
       description: "O usuário foi removido do sistema.",
       variant: "destructive",
     });
+  };
+
+  const openDeleteDialog = (user: any) => {
+    setDeletingUser(user);
+    setIsDeleteDialogOpen(true);
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
@@ -154,7 +162,7 @@ const Users = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => openDeleteDialog(user)}
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -166,6 +174,15 @@ const Users = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        <DeleteConfirmation
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onConfirm={() => handleDeleteUser(deletingUser?.id)}
+          title="Excluir Usuário"
+          description="Esta ação não pode ser desfeita. O usuário será permanentemente removido do sistema."
+          itemName={deletingUser?.name}
+        />
       </div>
     </Layout>
   );

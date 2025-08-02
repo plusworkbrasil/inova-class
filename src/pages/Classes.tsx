@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Search, Plus, Edit, Trash2, Users, BookOpen } from 'lucide-react';
 import { ClassForm } from '@/components/forms/ClassForm';
 import { useToast } from '@/hooks/use-toast';
+import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 
 const mockClassesData = [
   { 
@@ -52,6 +53,8 @@ const Classes = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
+  const [deletingClass, setDeletingClass] = useState<any>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [classes, setClasses] = useState(mockClassesData);
   const { toast } = useToast();
 
@@ -95,6 +98,11 @@ const Classes = () => {
       description: "A turma foi removida do sistema.",
       variant: "destructive",
     });
+  };
+
+  const openDeleteDialog = (classItem: any) => {
+    setDeletingClass(classItem);
+    setIsDeleteDialogOpen(true);
   };
 
   const openEditForm = (classItem: any) => {
@@ -240,7 +248,7 @@ const Classes = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDeleteClass(classItem.id)}
+                          onClick={() => openDeleteDialog(classItem)}
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -259,6 +267,15 @@ const Classes = () => {
           onSubmit={editingClass ? handleEditClass : handleCreateClass}
           initialData={editingClass}
           mode={editingClass ? 'edit' : 'create'}
+        />
+        
+        <DeleteConfirmation
+          open={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onConfirm={() => handleDeleteClass(deletingClass?.id)}
+          title="Excluir Turma"
+          description="Esta ação não pode ser desfeita. A turma será permanentemente removida do sistema."
+          itemName={deletingClass?.name}
         />
       </div>
     </Layout>

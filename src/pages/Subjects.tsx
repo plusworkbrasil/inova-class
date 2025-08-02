@@ -6,55 +6,112 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Plus, Edit, Trash2, BookOpen, Clock, User } from 'lucide-react';
+import { SubjectForm } from '@/components/forms/SubjectForm';
+import { useToast } from '@/hooks/use-toast';
+
+const mockSubjectsData = [
+  { 
+    id: 1, 
+    name: 'Matemática', 
+    code: 'MAT001',
+    teacher: 'Prof. João Silva',
+    workload: 80,
+    classes: ['1º Ano A', '1º Ano B'],
+    status: 'ativo' 
+  },
+  { 
+    id: 2, 
+    name: 'Português', 
+    code: 'POR001',
+    teacher: 'Prof. Maria Santos',
+    workload: 80,
+    classes: ['1º Ano A', '2º Ano A'],
+    status: 'ativo' 
+  },
+  { 
+    id: 3, 
+    name: 'História', 
+    code: 'HIS001',
+    teacher: 'Prof. Ana Costa',
+    workload: 60,
+    classes: ['2º Ano B', '3º Ano A'],
+    status: 'ativo' 
+  },
+  { 
+    id: 4, 
+    name: 'Física', 
+    code: 'FIS001',
+    teacher: 'Prof. Pedro Oliveira',
+    workload: 60,
+    classes: ['3º Ano A'],
+    status: 'inativo' 
+  },
+];
 
 const Subjects = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<any>(null);
+  const [subjects, setSubjects] = useState(mockSubjectsData);
+  const { toast } = useToast();
 
-  const mockSubjects = [
-    { 
-      id: 1, 
-      name: 'Matemática', 
-      code: 'MAT001',
-      teacher: 'Prof. João Silva',
-      workload: 80,
-      classes: ['1º Ano A', '1º Ano B'],
-      status: 'ativo' 
-    },
-    { 
-      id: 2, 
-      name: 'Português', 
-      code: 'POR001',
-      teacher: 'Prof. Maria Santos',
-      workload: 80,
-      classes: ['1º Ano A', '2º Ano A'],
-      status: 'ativo' 
-    },
-    { 
-      id: 3, 
-      name: 'História', 
-      code: 'HIS001',
-      teacher: 'Prof. Ana Costa',
-      workload: 60,
-      classes: ['2º Ano B', '3º Ano A'],
-      status: 'ativo' 
-    },
-    { 
-      id: 4, 
-      name: 'Física', 
-      code: 'FIS001',
-      teacher: 'Prof. Pedro Oliveira',
-      workload: 60,
-      classes: ['3º Ano A'],
-      status: 'inativo' 
-    },
-  ];
+  const handleCreateSubject = (data: any) => {
+    const newSubject = {
+      id: subjects.length + 1,
+      name: data.name,
+      code: data.code,
+      teacher: data.teacher,
+      workload: data.workload,
+      classes: data.classes,
+      status: data.status,
+      description: data.description,
+    };
+    setSubjects([...subjects, newSubject]);
+    toast({
+      title: "Disciplina criada com sucesso!",
+      description: `A disciplina ${data.name} foi criada.`,
+    });
+  };
+
+  const handleEditSubject = (subjectData: any) => {
+    const updatedSubjects = subjects.map(s => 
+      s.id === editingSubject.id 
+        ? { ...s, ...subjectData }
+        : s
+    );
+    setSubjects(updatedSubjects);
+    setEditingSubject(null);
+    toast({
+      title: "Disciplina atualizada com sucesso!",
+      description: `A disciplina ${subjectData.name} foi atualizada.`,
+    });
+  };
+
+  const handleDeleteSubject = (subjectId: number) => {
+    setSubjects(subjects.filter(s => s.id !== subjectId));
+    toast({
+      title: "Disciplina excluída",
+      description: "A disciplina foi removida do sistema.",
+      variant: "destructive",
+    });
+  };
+
+  const openEditForm = (subject: any) => {
+    setEditingSubject(subject);
+    setIsFormOpen(true);
+  };
+
+  const openCreateForm = () => {
+    setEditingSubject(null);
+    setIsFormOpen(true);
+  };
 
   return (
     <Layout userRole="admin" userName="Admin" userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Disciplinas</h1>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={openCreateForm}>
             <Plus size={16} />
             Nova Disciplina
           </Button>
@@ -148,7 +205,7 @@ const Subjects = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockSubjects.map((subject) => (
+                {subjects.map((subject) => (
                   <TableRow key={subject.id}>
                     <TableCell className="font-medium">{subject.name}</TableCell>
                     <TableCell>{subject.code}</TableCell>
@@ -175,10 +232,18 @@ const Subjects = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openEditForm(subject)}
+                        >
                           <Edit size={14} />
                         </Button>
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleDeleteSubject(subject.id)}
+                        >
                           <Trash2 size={14} />
                         </Button>
                       </div>
@@ -189,6 +254,14 @@ const Subjects = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        <SubjectForm
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          onSubmit={editingSubject ? handleEditSubject : handleCreateSubject}
+          initialData={editingSubject}
+          mode={editingSubject ? 'edit' : 'create'}
+        />
       </div>
     </Layout>
   );

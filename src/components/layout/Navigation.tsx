@@ -59,7 +59,6 @@ const menuItems = {
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-    { icon: BookOpen, label: 'Minhas Notas', path: '/grades' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],

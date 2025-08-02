@@ -9,20 +9,70 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Settings as SettingsIcon, User, School, Bell, Shield, Save } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Settings = () => {
+  const { toast } = useToast();
+  
+  // Estados para configurações gerais
+  const [generalSettings, setGeneralSettings] = useState({
+    systemName: 'Inova Class',
+    description: 'Sistema acadêmico para gestão escolar completa',
+    timezone: 'america-saopaulo',
+    language: 'pt-br',
+  });
+
+  // Estados para configurações da escola
+  const [schoolSettings, setSchoolSettings] = useState({
+    schoolName: 'Escola Estadual Exemplo',
+    cnpj: '12.345.678/0001-90',
+    address: 'Rua das Flores, 123 - Centro',
+    phone: '(11) 1234-5678',
+    email: 'contato@escola.edu.br',
+    website: 'www.escola.edu.br',
+    schoolYear: '2024',
+    maxAbsences: '25',
+    minGrade: '6.0',
+    maxGrade: '10.0',
+  });
+
+  // Estados para configurações de usuários
+  const [userSettings, setUserSettings] = useState({
+    allowAutoRegister: false,
+    requireEmailVerification: true,
+    strongPasswordPolicy: true,
+    sessionTimeout: '60',
+  });
+
+  // Estados para notificações
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
     sms: true,
   });
 
+  // Estados para configurações de segurança
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactorAuth: false,
+    auditLog: true,
+    maxLoginAttempts: '5',
+    lockoutTime: '15',
+  });
+
+  const handleSaveSettings = () => {
+    // Aqui você salvaria as configurações no backend
+    toast({
+      title: "Configurações salvas com sucesso!",
+      description: "Todas as alterações foram aplicadas.",
+    });
+  };
+
   return (
     <Layout userRole="admin" userName="Admin" userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Configurações</h1>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={handleSaveSettings}>
             <Save size={16} />
             Salvar Alterações
           </Button>
@@ -61,7 +111,11 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="systemName">Nome do Sistema</Label>
-                    <Input id="systemName" defaultValue="Inova Class" />
+                    <Input 
+                      id="systemName" 
+                      value={generalSettings.systemName}
+                      onChange={(e) => setGeneralSettings(prev => ({ ...prev, systemName: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="version">Versão</Label>
@@ -72,14 +126,18 @@ const Settings = () => {
                   <Label htmlFor="description">Descrição do Sistema</Label>
                   <Textarea 
                     id="description" 
-                    defaultValue="Sistema acadêmico para gestão escolar completa"
+                    value={generalSettings.description}
+                    onChange={(e) => setGeneralSettings(prev => ({ ...prev, description: e.target.value }))}
                     rows={3}
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Fuso Horário</Label>
-                    <Select defaultValue="america-saopaulo">
+                    <Select 
+                      value={generalSettings.timezone}
+                      onValueChange={(value) => setGeneralSettings(prev => ({ ...prev, timezone: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -92,7 +150,10 @@ const Settings = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="language">Idioma</Label>
-                    <Select defaultValue="pt-br">
+                    <Select 
+                      value={generalSettings.language}
+                      onValueChange={(value) => setGeneralSettings(prev => ({ ...prev, language: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -117,29 +178,53 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="schoolName">Nome da Escola</Label>
-                    <Input id="schoolName" defaultValue="Escola Estadual Exemplo" />
+                    <Input 
+                      id="schoolName" 
+                      value={schoolSettings.schoolName}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, schoolName: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cnpj">CNPJ</Label>
-                    <Input id="cnpj" defaultValue="12.345.678/0001-90" />
+                    <Input 
+                      id="cnpj" 
+                      value={schoolSettings.cnpj}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, cnpj: e.target.value }))}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="address">Endereço</Label>
-                  <Input id="address" defaultValue="Rua das Flores, 123 - Centro" />
+                  <Input 
+                    id="address" 
+                    value={schoolSettings.address}
+                    onChange={(e) => setSchoolSettings(prev => ({ ...prev, address: e.target.value }))}
+                  />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
-                    <Input id="phone" defaultValue="(11) 1234-5678" />
+                    <Input 
+                      id="phone" 
+                      value={schoolSettings.phone}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, phone: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" defaultValue="contato@escola.edu.br" />
+                    <Input 
+                      id="email" 
+                      value={schoolSettings.email}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, email: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="website">Website</Label>
-                    <Input id="website" defaultValue="www.escola.edu.br" />
+                    <Input 
+                      id="website" 
+                      value={schoolSettings.website}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, website: e.target.value }))}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -153,21 +238,42 @@ const Settings = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="schoolYear">Ano Letivo</Label>
-                    <Input id="schoolYear" defaultValue="2024" />
+                    <Input 
+                      id="schoolYear" 
+                      value={schoolSettings.schoolYear}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, schoolYear: e.target.value }))}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maxAbsences">Máximo de Faltas (%)</Label>
-                    <Input id="maxAbsences" defaultValue="25" type="number" />
+                    <Input 
+                      id="maxAbsences" 
+                      value={schoolSettings.maxAbsences}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, maxAbsences: e.target.value }))}
+                      type="number" 
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="minGrade">Nota Mínima para Aprovação</Label>
-                    <Input id="minGrade" defaultValue="6.0" type="number" step="0.1" />
+                    <Input 
+                      id="minGrade" 
+                      value={schoolSettings.minGrade}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, minGrade: e.target.value }))}
+                      type="number" 
+                      step="0.1" 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maxGrade">Nota Máxima</Label>
-                    <Input id="maxGrade" defaultValue="10.0" type="number" step="0.1" />
+                    <Input 
+                      id="maxGrade" 
+                      value={schoolSettings.maxGrade}
+                      onChange={(e) => setSchoolSettings(prev => ({ ...prev, maxGrade: e.target.value }))}
+                      type="number" 
+                      step="0.1" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -187,7 +293,12 @@ const Settings = () => {
                       Usuários podem se registrar automaticamente
                     </p>
                   </div>
-                  <Switch defaultChecked={false} />
+                  <Switch 
+                    checked={userSettings.allowAutoRegister}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, allowAutoRegister: checked }))
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -196,7 +307,12 @@ const Settings = () => {
                       Exigir verificação de email para novos usuários
                     </p>
                   </div>
-                  <Switch defaultChecked={true} />
+                  <Switch 
+                    checked={userSettings.requireEmailVerification}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, requireEmailVerification: checked }))
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -205,11 +321,21 @@ const Settings = () => {
                       Exigir senhas com pelo menos 8 caracteres
                     </p>
                   </div>
-                  <Switch defaultChecked={true} />
+                  <Switch 
+                    checked={userSettings.strongPasswordPolicy}
+                    onCheckedChange={(checked) => 
+                      setUserSettings(prev => ({ ...prev, strongPasswordPolicy: checked }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="sessionTimeout">Timeout de Sessão (minutos)</Label>
-                  <Input id="sessionTimeout" defaultValue="60" type="number" />
+                  <Input 
+                    id="sessionTimeout" 
+                    value={userSettings.sessionTimeout}
+                    onChange={(e) => setUserSettings(prev => ({ ...prev, sessionTimeout: e.target.value }))}
+                    type="number" 
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -280,7 +406,12 @@ const Settings = () => {
                       Ativar 2FA para administradores
                     </p>
                   </div>
-                  <Switch defaultChecked={false} />
+                  <Switch 
+                    checked={securitySettings.twoFactorAuth}
+                    onCheckedChange={(checked) => 
+                      setSecuritySettings(prev => ({ ...prev, twoFactorAuth: checked }))
+                    }
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
@@ -289,15 +420,30 @@ const Settings = () => {
                       Registrar todas as ações do sistema
                     </p>
                   </div>
-                  <Switch defaultChecked={true} />
+                  <Switch 
+                    checked={securitySettings.auditLog}
+                    onCheckedChange={(checked) => 
+                      setSecuritySettings(prev => ({ ...prev, auditLog: checked }))
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maxLoginAttempts">Máximo de Tentativas de Login</Label>
-                  <Input id="maxLoginAttempts" defaultValue="5" type="number" />
+                  <Input 
+                    id="maxLoginAttempts" 
+                    value={securitySettings.maxLoginAttempts}
+                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, maxLoginAttempts: e.target.value }))}
+                    type="number" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lockoutTime">Tempo de Bloqueio (minutos)</Label>
-                  <Input id="lockoutTime" defaultValue="15" type="number" />
+                  <Input 
+                    id="lockoutTime" 
+                    value={securitySettings.lockoutTime}
+                    onChange={(e) => setSecuritySettings(prev => ({ ...prev, lockoutTime: e.target.value }))}
+                    type="number" 
+                  />
                 </div>
               </CardContent>
             </Card>

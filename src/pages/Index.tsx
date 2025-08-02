@@ -1,26 +1,29 @@
-import { useState } from 'react';
-import Layout from '@/components/layout/Layout';
-import AdminDashboard from '@/components/dashboard/AdminDashboard';
-import { UserRole } from '@/types/user';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
-  // Para demonstração, simulando um usuário administrador
-  // Em um app real, isso viria da autenticação
-  const [currentUser] = useState({
-    role: 'admin' as UserRole,
-    name: 'Administrador Geral',
-    email: 'admin@inovaclass.edu.br',
-    avatar: undefined
-  });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Verificar se já existe um usuário logado
+    const savedRole = localStorage.getItem('userRole');
+    
+    if (savedRole) {
+      // Se já existe usuário logado, ir para o dashboard
+      navigate('/dashboard');
+    } else {
+      // Se não, ir para seleção de usuário
+      navigate('/user-selection');
+    }
+  }, [navigate]);
 
   return (
-    <Layout 
-      userRole={currentUser.role}
-      userName={currentUser.name}
-      userAvatar={currentUser.avatar}
-    >
-      <AdminDashboard />
-    </Layout>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-4 text-muted-foreground">Carregando...</p>
+      </div>
+    </div>
   );
 };
 

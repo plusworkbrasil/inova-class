@@ -1,4 +1,6 @@
+
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
@@ -23,7 +25,7 @@ interface NavigationProps {
 
 const menuItems = {
   admin: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: Users, label: 'Usuários', path: '/users' },
     { icon: GraduationCap, label: 'Turmas', path: '/classes' },
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
@@ -32,31 +34,31 @@ const menuItems = {
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ],
   coordinator: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: GraduationCap, label: 'Turmas', path: '/classes' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
   ],
   secretary: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
   ],
   tutor: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],
   teacher: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],
   student: [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: BookOpen, label: 'Minhas Notas', path: '/my-grades' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/my-attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
@@ -65,9 +67,20 @@ const menuItems = {
 
 const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const currentMenuItems = menuItems[userRole] || [];
 
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    setIsOpen(false);
+  };
+
+  const isActivePath = (path: string) => {
+    return location.pathname === path;
+  };
 
   return (
     <>
@@ -112,9 +125,9 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
           {currentMenuItems.map((item, index) => (
             <Button
               key={index}
-              variant="ghost"
+              variant={isActivePath(item.path) ? "default" : "ghost"}
               className="w-full justify-start"
-              onClick={() => setIsOpen(false)}
+              onClick={() => handleNavigation(item.path)}
             >
               <item.icon className="mr-3 h-4 w-4" />
               {item.label}

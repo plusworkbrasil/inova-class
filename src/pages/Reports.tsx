@@ -60,25 +60,131 @@ const Reports = () => {
   };
 
   const generatePDF = async (filename: string) => {
-    // Simulação de geração de PDF
-    const reportData = {
-      attendanceData,
-      gradeData,
-      classDistribution,
-      topAbsentStudents,
-      generatedAt: new Date().toISOString(),
-    };
+    // Gerar conteúdo HTML estruturado para impressão/PDF
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Escolar</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+        .section { margin-bottom: 30px; }
+        .section h2 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat-card { text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
+        .generated-at { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Relatório Acadêmico</h1>
+        <p>Sistema Escolar - Inova Class</p>
+        <p>Data de Geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+    </div>
+
+    <div class="section">
+        <h2>Resumo Estatístico</h2>
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Frequência Média</h3>
+                <p><strong>87%</strong></p>
+            </div>
+            <div class="stat-card">
+                <h3>Média Geral</h3>
+                <p><strong>7.8</strong></p>
+            </div>
+            <div class="stat-card">
+                <h3>Alunos em Risco</h3>
+                <p><strong>12</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Frequência Mensal</h2>
+        <table>
+            <thead>
+                <tr><th>Mês</th><th>Presentes (%)</th><th>Faltas (%)</th></tr>
+            </thead>
+            <tbody>
+                ${attendanceData.map(item => `
+                    <tr>
+                        <td>${item.month}</td>
+                        <td>${item.presente}%</td>
+                        <td>${item.falta}%</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Médias por Disciplina</h2>
+        <table>
+            <thead>
+                <tr><th>Disciplina</th><th>Média</th></tr>
+            </thead>
+            <tbody>
+                ${gradeData.map(item => `
+                    <tr>
+                        <td>${item.subject}</td>
+                        <td>${item.average}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>Alunos com Maior Número de Faltas</h2>
+        <table>
+            <thead>
+                <tr><th>Aluno</th><th>Turma</th><th>Faltas</th><th>Percentual</th></tr>
+            </thead>
+            <tbody>
+                ${topAbsentStudents.map(student => `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.class}</td>
+                        <td>${student.absences}</td>
+                        <td>${student.percentage}%</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="generated-at">
+        <p>Relatório gerado automaticamente pelo sistema em ${new Date().toLocaleString('pt-BR')}</p>
+        <p>Sistema desenvolvido por: PlusWork.com.br</p>
+    </div>
+</body>
+</html>`;
     
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.json`);
+    link.setAttribute('download', `${filename}.html`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Abrir em nova janela para impressão como PDF
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(htmlContent);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
   };
 
   const handleExport = (format: 'csv' | 'pdf' | 'excel') => {
@@ -96,7 +202,7 @@ const Reports = () => {
         generatePDF(`relatorio-completo-${timestamp}`);
         toast({
           title: "Relatório exportado!",
-          description: "Arquivo PDF será baixado em breve.",
+          description: "Arquivo HTML baixado e janela de impressão aberta para gerar PDF.",
         });
         break;
       case 'excel':

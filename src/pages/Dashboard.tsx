@@ -43,7 +43,6 @@ const Dashboard = () => {
             { title: 'Minhas Notas', value: '8.5', description: 'Média geral' },
             { title: 'Frequência', value: '95%', description: 'Presença nas aulas' },
             { title: 'Faltas', value: '3', description: 'Total no período' },
-            { title: 'Próxima Avaliação', value: 'Amanhã', description: 'Matemática' },
           ]
         };
       case 'teacher':
@@ -196,7 +195,6 @@ const Dashboard = () => {
               {userRole === 'student' && (
                 <>
                   <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Minhas Notas</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Declarações</Badge>
                 </>

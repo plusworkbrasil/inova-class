@@ -71,6 +71,17 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
   };
 
   const handleSubmit = (data: BatchGradeFormValues) => {
+    // Verificar se pelo menos um aluno tem nota
+    const hasGrades = Object.values(studentGrades).some(grade => grade > 0);
+    
+    if (!hasGrades) {
+      form.setError('students', { 
+        type: 'manual', 
+        message: 'Informe pelo menos uma nota para salvar' 
+      });
+      return;
+    }
+
     // Converter para o formato esperado pelo onSubmit
     const gradesData = students.map(student => ({
       studentName: student.name,
@@ -210,6 +221,15 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
                 <CardTitle>Notas dos Alunos</CardTitle>
               </CardHeader>
               <CardContent>
+                <FormField
+                  control={form.control}
+                  name="students"
+                  render={() => (
+                    <FormItem>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <Table>
                   <TableHeader>
                     <TableRow>

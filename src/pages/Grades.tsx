@@ -78,6 +78,8 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
       const savedRole = localStorage.getItem('userRole') as UserRole;
       const savedName = localStorage.getItem('userName');
       
+      console.log('Grades page - savedRole:', savedRole, 'savedName:', savedName);
+      
       if (savedRole && savedName) {
         setUserRole(savedRole);
         setUserName(savedName);
@@ -87,8 +89,11 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
     }
   }, [propUserRole]);
 
+  console.log('Grades page - current userRole:', userRole);
+
   // Se for instrutor, usar a página específica do instrutor
   if (userRole === 'teacher') {
+    console.log('Redirecting to TeacherGrades component');
     return <TeacherGrades />;
   }
   

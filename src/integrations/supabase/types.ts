@@ -14,16 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      declarations: {
+        Row: {
+          created_at: string
+          delivery_date: string | null
+          description: string | null
+          file_path: string | null
+          id: string
+          observations: string | null
+          processed_at: string | null
+          processed_by: string | null
+          purpose: string | null
+          requested_at: string
+          status: string
+          student_id: string
+          subject_id: string | null
+          title: string
+          type: string
+          updated_at: string
+          urgency: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          observations?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          requested_at?: string
+          status?: string
+          student_id: string
+          subject_id?: string | null
+          title: string
+          type: string
+          updated_at?: string
+          urgency?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_date?: string | null
+          description?: string | null
+          file_path?: string | null
+          id?: string
+          observations?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          purpose?: string | null
+          requested_at?: string
+          status?: string
+          student_id?: string
+          subject_id?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          urgency?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "declarations_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "declarations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          instructor_subjects: string[] | null
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          instructor_subjects?: string[] | null
+          name: string
+          role?: Database["public"]["Enums"]["app_role"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          instructor_subjects?: string[] | null
+          name?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      is_instructor_of_subject: {
+        Args: { user_id: string; subject: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "secretary" | "instructor" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +264,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "secretary", "instructor", "student"],
+    },
   },
 } as const

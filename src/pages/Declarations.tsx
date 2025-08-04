@@ -16,6 +16,8 @@ const mockDeclarationsData = [
     id: 1,
     studentName: 'João Silva',
     studentId: '2024001',
+    class: '1º Ano A',
+    subject: 'Matemática',
     type: 'Declaração de Matrícula',
     status: 'approved',
     requestDate: '2024-01-15',
@@ -28,6 +30,8 @@ const mockDeclarationsData = [
     id: 2,
     studentName: 'Maria Santos',
     studentId: '2024002',
+    class: '2º Ano B',
+    subject: 'Física',
     type: 'Declaração de Frequência',
     status: 'pending',
     requestDate: '2024-01-14',
@@ -40,6 +44,8 @@ const mockDeclarationsData = [
     id: 3,
     studentName: 'Pedro Oliveira',
     studentId: '2024003',
+    class: '3º Ano C',
+    subject: 'História',
     type: 'Histórico Escolar',
     status: 'processing',
     requestDate: '2024-01-13',
@@ -52,6 +58,8 @@ const mockDeclarationsData = [
     id: 4,
     studentName: 'Ana Costa',
     studentId: '2024004',
+    class: '1º Ano A',
+    subject: 'Matemática',
     type: 'Declaração de Conclusão',
     status: 'rejected',
     requestDate: '2024-01-12',
@@ -65,6 +73,10 @@ const mockDeclarationsData = [
 const Declarations = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
+  
+  // Mock das disciplinas do professor
+  const teacherSubjects = userRole === 'teacher' ? ['Matemática', 'Física'] : [];
+  const teacherClasses = userRole === 'teacher' ? ['1º Ano A', '2º Ano B'] : [];
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -88,6 +100,8 @@ const Declarations = () => {
       id: declarations.length + 1,
       studentName: data.studentName,
       studentId: data.studentId,
+      class: data.class || '1º Ano A',
+      subject: data.subject || 'Matemática',
       type: data.type,
       status: 'pending',
       requestDate: new Date().toISOString().split('T')[0],
@@ -169,10 +183,15 @@ const Declarations = () => {
     }
   };
 
-  // Filtrar dados para alunos - apenas suas próprias declarações
+  // Filtrar dados baseado no papel do usuário
   const getFilteredDeclarations = () => {
     if (userRole === 'student') {
       return declarations.filter(declaration => declaration.studentName === userName);
+    } else if (userRole === 'teacher') {
+      return declarations.filter(declaration => 
+        teacherSubjects.includes(declaration.subject) && 
+        teacherClasses.includes(declaration.class)
+      );
     }
     return declarations;
   };
@@ -190,12 +209,16 @@ const Declarations = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">
-            {userRole === 'student' ? 'Minhas Declarações' : 'Gerenciamento de Declarações'}
+            {userRole === 'student' ? 'Minhas Declarações' : 
+             userRole === 'teacher' ? 'Declarações das Minhas Disciplinas' : 
+             'Gerenciamento de Declarações'}
           </h1>
-          <Button className="flex items-center gap-2" onClick={openCreateForm}>
-            <Plus size={16} />
-            {userRole === 'student' ? 'Solicitar Declaração' : 'Nova Solicitação'}
-          </Button>
+          {userRole !== 'teacher' && (
+            <Button className="flex items-center gap-2" onClick={openCreateForm}>
+              <Plus size={16} />
+              {userRole === 'student' ? 'Solicitar Declaração' : 'Nova Solicitação'}
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -250,7 +273,7 @@ const Declarations = () => {
           </Card>
         </div>
 
-        {userRole !== 'student' && (
+        {userRole !== 'student' && userRole !== 'teacher' && (
           <Card>
             <CardHeader>
               <CardTitle>Filtros</CardTitle>
@@ -303,9 +326,15 @@ const Declarations = () => {
           <CardContent>
             <Table>
               <TableHeader>
-                <TableRow>
+               <TableRow>
                   {userRole !== 'student' && <TableHead>Aluno</TableHead>}
                   {userRole !== 'student' && <TableHead>Matrícula</TableHead>}
+                  {userRole === 'teacher' && (
+                    <>
+                      <TableHead>Turma</TableHead>
+                      <TableHead>Disciplina</TableHead>
+                    </>
+                  )}
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data Solicitação</TableHead>
@@ -316,10 +345,16 @@ const Declarations = () => {
               </TableHeader>
               <TableBody>
                 {filteredDeclarations.map((declaration) => (
-                  <TableRow key={declaration.id}>
-                    {userRole !== 'student' && <TableCell className="font-medium">{declaration.studentName}</TableCell>}
-                    {userRole !== 'student' && <TableCell>{declaration.studentId}</TableCell>}
-                    <TableCell>
+                   <TableRow key={declaration.id}>
+                     {userRole !== 'student' && <TableCell className="font-medium">{declaration.studentName}</TableCell>}
+                     {userRole !== 'student' && <TableCell>{declaration.studentId}</TableCell>}
+                     {userRole === 'teacher' && (
+                       <>
+                         <TableCell>{declaration.class}</TableCell>
+                         <TableCell>{declaration.subject}</TableCell>
+                       </>
+                     )}
+                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(declaration.type)}`}>
                         {declaration.type}
                       </span>
@@ -331,17 +366,17 @@ const Declarations = () => {
                     </TableCell>
                     <TableCell>{declaration.requestedBy}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        {userRole !== 'student' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openEditForm(declaration)}
-                          >
-                            <Edit size={14} />
-                          </Button>
-                        )}
-                        {declaration.status === 'pending' && userRole !== 'student' && (
+                       <div className="flex gap-2">
+                         {userRole !== 'student' && userRole !== 'teacher' && (
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => openEditForm(declaration)}
+                           >
+                             <Edit size={14} />
+                           </Button>
+                         )}
+                         {declaration.status === 'pending' && userRole !== 'student' && userRole !== 'teacher' && (
                           <>
                             <Button 
                               variant="outline" 
@@ -379,18 +414,20 @@ const Declarations = () => {
           </CardContent>
         </Card>
         
-        <DeclarationForm
-          open={isDeclarationFormOpen}
-          onOpenChange={setIsDeclarationFormOpen}
-          onSubmit={editingDeclaration ? handleEditDeclaration : handleCreateDeclaration}
-          initialData={editingDeclaration}
-          mode={editingDeclaration ? 'edit' : 'create'}
-          userRole={userRole}
-          currentUser={{
-            name: userName || '',
-            studentId: '2024001' // Seria obtido dos dados do usuário logado
-          }}
-        />
+        {userRole !== 'teacher' && (
+          <DeclarationForm
+            open={isDeclarationFormOpen}
+            onOpenChange={setIsDeclarationFormOpen}
+            onSubmit={editingDeclaration ? handleEditDeclaration : handleCreateDeclaration}
+            initialData={editingDeclaration}
+            mode={editingDeclaration ? 'edit' : 'create'}
+            userRole={userRole}
+            currentUser={{
+              name: userName || '',
+              studentId: '2024001' // Seria obtido dos dados do usuário logado
+            }}
+          />
+        )}
       </div>
     </Layout>
   );

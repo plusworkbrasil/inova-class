@@ -30,6 +30,8 @@ interface GradeFormProps {
   onSubmit: (data: GradeFormValues) => void;
   initialData?: Partial<GradeFormValues>;
   mode: 'create' | 'edit';
+  userRole?: string;
+  currentUser?: any;
 }
 
 export const GradeForm: React.FC<GradeFormProps> = ({
@@ -37,7 +39,9 @@ export const GradeForm: React.FC<GradeFormProps> = ({
   onOpenChange,
   onSubmit,
   initialData,
-  mode
+  mode,
+  userRole,
+  currentUser
 }) => {
   const form = useForm<GradeFormValues>({
     resolver: zodResolver(gradeFormSchema),
@@ -50,7 +54,7 @@ export const GradeForm: React.FC<GradeFormProps> = ({
       grade: initialData?.grade || 0,
       maxGrade: initialData?.maxGrade || 10,
       date: initialData?.date || new Date().toISOString().split('T')[0],
-      teacher: initialData?.teacher || '',
+      teacher: initialData?.teacher || (userRole === 'teacher' ? currentUser?.name || '' : ''),
       observations: initialData?.observations || '',
     },
   });
@@ -69,16 +73,20 @@ export const GradeForm: React.FC<GradeFormProps> = ({
     { id: '2024005', name: 'Carlos Souza', class: '3º Ano A' },
   ];
 
-  const mockSubjects = [
-    'Matemática',
-    'Português', 
-    'História',
-    'Geografia',
-    'Ciências',
-    'Inglês',
-    'Educação Física',
-    'Artes'
-  ];
+  // Disciplinas que o professor ministra (mock baseado no usuário)
+  const teacherSubjects = userRole === 'teacher' && currentUser?.subjects ? 
+    currentUser.subjects : [
+      'Matemática',
+      'Português', 
+      'História',
+      'Geografia',
+      'Ciências',
+      'Inglês',
+      'Educação Física',
+      'Artes'
+    ];
+
+  const mockSubjects = teacherSubjects;
 
   const assessmentTypes = [
     'Prova',
@@ -86,8 +94,7 @@ export const GradeForm: React.FC<GradeFormProps> = ({
     'Seminário',
     'Projeto',
     'Atividade',
-    'Participação',
-    'Recuperação'
+    'Participação'
   ];
 
   const mockTeachers = [
@@ -286,26 +293,37 @@ export const GradeForm: React.FC<GradeFormProps> = ({
                 )}
               />
 
-              <FormField
+               <FormField
                 control={form.control}
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Professor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    {userRole === 'teacher' ? (
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o professor" />
-                        </SelectTrigger>
+                        <Input 
+                          placeholder="Professor" 
+                          {...field} 
+                          disabled 
+                          value={currentUser?.name || field.value}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {mockTeachers.map((teacher) => (
-                          <SelectItem key={teacher} value={teacher}>
-                            {teacher}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    ) : (
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o professor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {mockTeachers.map((teacher) => (
+                            <SelectItem key={teacher} value={teacher}>
+                              {teacher}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -57,7 +57,6 @@ const menuItems = {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
-    { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },

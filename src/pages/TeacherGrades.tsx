@@ -9,12 +9,34 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
-import TeacherGrades from './TeacherGrades';
 
-interface GradesProps {
-  userRole?: string;
-  currentUser?: any;
-}
+// Mock do professor atual
+const currentTeacher = {
+  id: 'teacher001',
+  name: 'Prof. Carlos Silva',
+  subjects: ['Matemática', 'Física'],
+  classes: ['1º Ano A', '2º Ano B', '3º Ano A']
+};
+
+// Mock de dados das turmas e alunos do professor
+const mockClassStudents = {
+  '1º Ano A': [
+    { id: '2024001', name: 'João Silva' },
+    { id: '2024002', name: 'Maria Santos' },
+    { id: '2024003', name: 'Pedro Oliveira' },
+    { id: '2024004', name: 'Ana Costa' },
+  ],
+  '2º Ano B': [
+    { id: '2024005', name: 'Carlos Souza' },
+    { id: '2024006', name: 'Lucia Ferreira' },
+    { id: '2024007', name: 'Rafael Lima' },
+  ],
+  '3º Ano A': [
+    { id: '2024008', name: 'Fernanda Silva' },
+    { id: '2024009', name: 'Gabriel Santos' },
+    { id: '2024010', name: 'Isabella Costa' },
+  ]
+};
 
 const mockGradesData = [
   {
@@ -27,7 +49,7 @@ const mockGradesData = [
     maxGrade: 10,
     type: 'Prova',
     date: '2024-01-15',
-    teacher: 'Prof. Carlos'
+    teacher: 'Prof. Carlos Silva'
   },
   {
     id: 2,
@@ -39,45 +61,20 @@ const mockGradesData = [
     maxGrade: 10,
     type: 'Trabalho',
     date: '2024-01-14',
-    teacher: 'Prof. Carlos'
-  },
-  {
-    id: 3,
-    studentName: 'Pedro Oliveira',
-    studentId: '2024003',
-    class: '2º Ano B',
-    subject: 'Português',
-    grade: 9.0,
-    maxGrade: 10,
-    type: 'Prova',
-    date: '2024-01-13',
-    teacher: 'Prof. Ana'
-  },
-  {
-    id: 4,
-    studentName: 'Ana Costa',
-    studentId: '2024004',
-    class: '2º Ano B',
-    subject: 'História',
-    grade: 6.8,
-    maxGrade: 10,
-    type: 'Seminário',
-    date: '2024-01-12',
-    teacher: 'Prof. Maria'
+    teacher: 'Prof. Carlos Silva'
   },
 ];
 
-const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
-  // Se for professor, usar a página específica do professor
-  if (userRole === 'teacher') {
-    return <TeacherGrades />;
-  }
+const TeacherGrades = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
   const [grades, setGrades] = useState(mockGradesData);
+  const [batchGradeMode, setBatchGradeMode] = useState(false);
+  const [selectedClassForBatch, setSelectedClassForBatch] = useState('');
+  const [selectedSubjectForBatch, setSelectedSubjectForBatch] = useState('');
   const { toast } = useToast();
 
   const handleCreateGrade = (data: any) => {
@@ -91,7 +88,7 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
       maxGrade: data.maxGrade,
       type: data.type,
       date: data.date,
-      teacher: data.teacher,
+      teacher: currentTeacher.name,
     };
     setGrades([newGrade, ...grades]);
     toast({
@@ -121,6 +118,12 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
 
   const openCreateForm = () => {
     setEditingGrade(null);
+    setBatchGradeMode(false);
+    setIsGradeFormOpen(true);
+  };
+
+  const openBatchGradeForm = () => {
+    setBatchGradeMode(true);
     setIsGradeFormOpen(true);
   };
 
@@ -141,21 +144,34 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
     }
   };
 
+  // Filtrar notas apenas das disciplinas do professor
+  const teacherGrades = grades.filter(grade => 
+    currentTeacher.subjects.includes(grade.subject) &&
+    currentTeacher.classes.includes(grade.class)
+  );
+
   // Calcular estatísticas
-  const totalGrades = grades.length;
-  const averageGrade = grades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades;
-  const failingGrades = grades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
-  const subjectsCount = new Set(grades.map(grade => grade.subject)).size;
+  const totalGrades = teacherGrades.length;
+  const averageGrade = teacherGrades.length > 0 ? 
+    teacherGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
+  const failingGrades = teacherGrades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
+  const subjectsCount = currentTeacher.subjects.length;
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole="teacher" userName={currentTeacher.name} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Notas</h1>
-          <Button className="flex items-center gap-2" onClick={openCreateForm}>
-            <Plus size={16} />
-            Lançar Nota
-          </Button>
+          <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={openBatchGradeForm}>
+              <Users size={16} className="mr-2" />
+              Lançar Turma
+            </Button>
+            <Button onClick={openCreateForm}>
+              <Plus size={16} className="mr-2" />
+              Lançar Nota Individual
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -187,7 +203,7 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Disciplinas</p>
+                  <p className="text-sm font-medium text-muted-foreground">Minhas Disciplinas</p>
                   <p className="text-3xl font-bold text-info">{subjectsCount}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-info" />
@@ -210,6 +226,32 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
 
         <Card>
           <CardHeader>
+            <CardTitle>Minhas Disciplinas e Turmas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-medium mb-2">Disciplinas:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {currentTeacher.subjects.map(subject => (
+                    <Badge key={subject} variant="secondary">{subject}</Badge>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Turmas:</h4>
+                <div className="flex flex-wrap gap-2">
+                  {currentTeacher.classes.map(className => (
+                    <Badge key={className} variant="outline">{className}</Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Filtros</CardTitle>
           </CardHeader>
           <CardContent>
@@ -228,10 +270,11 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1a">1º Ano A</SelectItem>
-                  <SelectItem value="1b">1º Ano B</SelectItem>
-                  <SelectItem value="2a">2º Ano A</SelectItem>
-                  <SelectItem value="2b">2º Ano B</SelectItem>
+                  {currentTeacher.classes.map((className) => (
+                    <SelectItem key={className} value={className}>
+                      {className}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
@@ -239,13 +282,13 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
                   <SelectValue placeholder="Selecionar disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="matematica">Matemática</SelectItem>
-                  <SelectItem value="portugues">Português</SelectItem>
-                  <SelectItem value="historia">História</SelectItem>
-                  <SelectItem value="geografia">Geografia</SelectItem>
+                  {currentTeacher.subjects.map((subject) => (
+                    <SelectItem key={subject} value={subject}>
+                      {subject}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
-              <Button variant="outline">Filtrar</Button>
             </div>
           </CardContent>
         </Card>
@@ -265,12 +308,11 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Nota</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead>Professor</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {grades.map((grade) => (
+                {teacherGrades.map((grade) => (
                   <TableRow key={grade.id}>
                     <TableCell className="font-medium">{grade.studentName}</TableCell>
                     <TableCell>{grade.studentId}</TableCell>
@@ -287,17 +329,14 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
                       </Badge>
                     </TableCell>
                     <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{grade.teacher}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditForm(grade)}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openEditForm(grade)}
+                      >
+                        <Edit size={14} />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -312,12 +351,12 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
           onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
           initialData={editingGrade}
           mode={editingGrade ? 'edit' : 'create'}
-          userRole={userRole}
-          currentUser={currentUser}
+          userRole="teacher"
+          currentUser={currentTeacher}
         />
       </div>
     </Layout>
   );
 };
 
-export default Grades;
+export default TeacherGrades;

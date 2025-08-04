@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
+import { BatchGradeForm } from '@/components/forms/BatchGradeForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 
@@ -122,6 +123,30 @@ const TeacherGrades = () => {
     toast({
       title: "Nota atualizada com sucesso!",
       description: `Nota de ${gradeData.studentName} foi atualizada.`,
+    });
+  };
+
+  const handleBatchGradesSubmit = (gradesData: any[]) => {
+    const newGrades = gradesData.map((data, index) => ({
+      id: grades.length + index + 1,
+      studentName: data.studentName,
+      studentId: data.studentId,
+      class: data.class,
+      subject: data.subject,
+      grade: data.grade,
+      maxGrade: data.maxGrade,
+      type: data.type,
+      date: data.date,
+      teacher: data.teacher,
+    }));
+    
+    setGrades([...newGrades, ...grades]);
+    setBatchGradeMode(false);
+    setSelectedClassForBatch('');
+    setSelectedSubjectForBatch('');
+    toast({
+      title: "Notas lançadas com sucesso!",
+      description: `${gradesData.length} notas foram registradas.`,
     });
   };
 
@@ -397,15 +422,34 @@ const TeacherGrades = () => {
           </CardContent>
         </Card>
         
-        <GradeForm
-          open={isGradeFormOpen}
-          onOpenChange={setIsGradeFormOpen}
-          onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
-          initialData={editingGrade}
-          mode={editingGrade ? 'edit' : 'create'}
-          userRole="teacher"
-          currentUser={currentInstructor}
-        />
+        {batchGradeMode ? (
+          <BatchGradeForm
+            open={isGradeFormOpen}
+            onOpenChange={(open) => {
+              setIsGradeFormOpen(open);
+              if (!open) {
+                setBatchGradeMode(false);
+                setSelectedClassForBatch('');
+                setSelectedSubjectForBatch('');
+              }
+            }}
+            onSubmit={handleBatchGradesSubmit}
+            selectedClass={selectedClassForBatch}
+            selectedSubject={selectedSubjectForBatch}
+            currentUser={currentInstructor}
+            students={mockClassStudents[selectedClassForBatch as keyof typeof mockClassStudents] || []}
+          />
+        ) : (
+          <GradeForm
+            open={isGradeFormOpen}
+            onOpenChange={setIsGradeFormOpen}
+            onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
+            initialData={editingGrade}
+            mode={editingGrade ? 'edit' : 'create'}
+            userRole="teacher"
+            currentUser={currentInstructor}
+          />
+        )}
       </div>
     </Layout>
   );

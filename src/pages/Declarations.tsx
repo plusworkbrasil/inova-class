@@ -74,7 +74,7 @@ const Declarations = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
   
-  // Mock das disciplinas do professor
+  // Mock das disciplinas do instrutor
   const teacherSubjects = userRole === 'teacher' ? ['Matemática', 'Física'] : [];
   const teacherClasses = userRole === 'teacher' ? ['1º Ano A', '2º Ano B'] : [];
   const [searchTerm, setSearchTerm] = useState('');

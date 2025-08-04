@@ -166,7 +166,7 @@ const Subjects = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Professores</p>
+                  <p className="text-sm font-medium text-muted-foreground">Instrutores</p>
                   <p className="text-3xl font-bold text-warning">4</p>
                 </div>
                 <User className="h-8 w-8 text-warning" />
@@ -205,7 +205,7 @@ const Subjects = () => {
                 <TableRow>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Código</TableHead>
-                  <TableHead>Professor</TableHead>
+                  <TableHead>Instrutor</TableHead>
                   <TableHead>Carga Horária</TableHead>
                   <TableHead>Turmas</TableHead>
                   <TableHead>Status</TableHead>

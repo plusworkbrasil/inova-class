@@ -18,7 +18,7 @@ const gradeFormSchema = z.object({
   grade: z.number().min(0, 'Nota deve ser maior ou igual a 0').max(10, 'Nota não pode exceder 10'),
   maxGrade: z.number().min(1, 'Nota máxima deve ser maior que 0'),
   date: z.string().min(1, 'Data é obrigatória'),
-  teacher: z.string().min(1, 'Professor é obrigatório'),
+  teacher: z.string().min(1, 'Instrutor é obrigatório'),
   observations: z.string().optional(),
 });
 
@@ -73,7 +73,7 @@ export const GradeForm: React.FC<GradeFormProps> = ({
     { id: '2024005', name: 'Carlos Souza', class: '3º Ano A' },
   ];
 
-  // Disciplinas que o professor ministra (mock baseado no usuário)
+  // Disciplinas que o instrutor ministra (mock baseado no usuário)
   const teacherSubjects = userRole === 'teacher' && currentUser?.subjects ? 
     currentUser.subjects : [
       'Matemática',
@@ -97,12 +97,12 @@ export const GradeForm: React.FC<GradeFormProps> = ({
     'Participação'
   ];
 
-  const mockTeachers = [
-    'Prof. Carlos Silva',
-    'Prof. Ana Costa',
-    'Prof. Maria Oliveira',
-    'Prof. João Santos',
-    'Prof. Lucia Ferreira'
+  const mockInstructors = [
+    'Inst. Carlos Silva',
+    'Inst. Ana Costa',
+    'Inst. Maria Oliveira',
+    'Inst. João Santos',
+    'Inst. Lucia Ferreira'
   ];
 
   return (
@@ -298,11 +298,11 @@ export const GradeForm: React.FC<GradeFormProps> = ({
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Professor</FormLabel>
+                    <FormLabel>Instrutor</FormLabel>
                     {userRole === 'teacher' ? (
                       <FormControl>
                         <Input 
-                          placeholder="Professor" 
+                          placeholder="Instrutor" 
                           {...field} 
                           disabled 
                           value={currentUser?.name || field.value}
@@ -312,13 +312,13 @@ export const GradeForm: React.FC<GradeFormProps> = ({
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o professor" />
+                            <SelectValue placeholder="Selecione o instrutor" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {mockTeachers.map((teacher) => (
-                            <SelectItem key={teacher} value={teacher}>
-                              {teacher}
+                          {mockInstructors.map((instructor) => (
+                            <SelectItem key={instructor} value={instructor}>
+                              {instructor}
                             </SelectItem>
                           ))}
                         </SelectContent>

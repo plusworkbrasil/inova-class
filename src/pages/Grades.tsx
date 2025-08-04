@@ -68,7 +68,7 @@ const mockGradesData = [
 ];
 
 const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
-  // Se for professor, usar a página específica do professor
+  // Se for instrutor, usar a página específica do instrutor
   if (userRole === 'teacher') {
     return <TeacherGrades />;
   }
@@ -265,7 +265,7 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
                   <TableHead>Tipo</TableHead>
                   <TableHead>Nota</TableHead>
                   <TableHead>Data</TableHead>
-                  <TableHead>Professor</TableHead>
+                  <TableHead>Instrutor</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>

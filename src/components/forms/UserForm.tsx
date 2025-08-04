@@ -251,7 +251,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                       <SelectItem value="coordinator">Coordenador</SelectItem>
                       <SelectItem value="secretary">Secretário</SelectItem>
                       <SelectItem value="tutor">Tutor</SelectItem>
-                      <SelectItem value="teacher">Professor</SelectItem>
+                      <SelectItem value="teacher">Instrutor</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

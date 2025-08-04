@@ -10,15 +10,15 @@ import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from '
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock do professor atual
-const currentTeacher = {
+// Mock do instrutor atual
+const currentInstructor = {
   id: 'teacher001',
-  name: 'Prof. Carlos Silva',
+  name: 'Inst. Carlos Silva',
   subjects: ['Matemática', 'Física'],
   classes: ['1º Ano A', '2º Ano B', '3º Ano A']
 };
 
-// Mock de dados das turmas e alunos do professor
+// Mock de dados das turmas e alunos do instrutor
 const mockClassStudents = {
   '1º Ano A': [
     { id: '2024001', name: 'João Silva' },
@@ -49,7 +49,7 @@ const mockGradesData = [
     maxGrade: 10,
     type: 'Prova',
     date: '2024-01-15',
-    teacher: 'Prof. Carlos Silva'
+    teacher: 'Inst. Carlos Silva'
   },
   {
     id: 2,
@@ -61,7 +61,7 @@ const mockGradesData = [
     maxGrade: 10,
     type: 'Trabalho',
     date: '2024-01-14',
-    teacher: 'Prof. Carlos Silva'
+    teacher: 'Inst. Carlos Silva'
   },
 ];
 
@@ -88,7 +88,7 @@ const TeacherGrades = () => {
       maxGrade: data.maxGrade,
       type: data.type,
       date: data.date,
-      teacher: currentTeacher.name,
+      teacher: currentInstructor.name,
     };
     setGrades([newGrade, ...grades]);
     toast({
@@ -144,10 +144,10 @@ const TeacherGrades = () => {
     }
   };
 
-  // Filtrar notas apenas das disciplinas do professor
+  // Filtrar notas apenas das disciplinas do instrutor
   const teacherGrades = grades.filter(grade => 
-    currentTeacher.subjects.includes(grade.subject) &&
-    currentTeacher.classes.includes(grade.class)
+    currentInstructor.subjects.includes(grade.subject) &&
+    currentInstructor.classes.includes(grade.class)
   );
 
   // Calcular estatísticas
@@ -155,10 +155,10 @@ const TeacherGrades = () => {
   const averageGrade = teacherGrades.length > 0 ? 
     teacherGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
   const failingGrades = teacherGrades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
-  const subjectsCount = currentTeacher.subjects.length;
+  const subjectsCount = currentInstructor.subjects.length;
 
   return (
-    <Layout userRole="teacher" userName={currentTeacher.name} userAvatar="">
+    <Layout userRole="teacher" userName={currentInstructor.name} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>
@@ -233,7 +233,7 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Disciplinas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {currentTeacher.subjects.map(subject => (
+                  {currentInstructor.subjects.map(subject => (
                     <Badge key={subject} variant="secondary">{subject}</Badge>
                   ))}
                 </div>
@@ -241,7 +241,7 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Turmas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {currentTeacher.classes.map(className => (
+                  {currentInstructor.classes.map(className => (
                     <Badge key={className} variant="outline">{className}</Badge>
                   ))}
                 </div>
@@ -270,7 +270,7 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentTeacher.classes.map((className) => (
+                  {currentInstructor.classes.map((className) => (
                     <SelectItem key={className} value={className}>
                       {className}
                     </SelectItem>
@@ -282,7 +282,7 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentTeacher.subjects.map((subject) => (
+                  {currentInstructor.subjects.map((subject) => (
                     <SelectItem key={subject} value={subject}>
                       {subject}
                     </SelectItem>
@@ -352,7 +352,7 @@ const TeacherGrades = () => {
           initialData={editingGrade}
           mode={editingGrade ? 'edit' : 'create'}
           userRole="teacher"
-          currentUser={currentTeacher}
+          currentUser={currentInstructor}
         />
       </div>
     </Layout>

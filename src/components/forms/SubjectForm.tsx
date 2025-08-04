@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label';
 const subjectFormSchema = z.object({
   name: z.string().min(1, 'Nome da disciplina é obrigatório'),
   code: z.string().min(1, 'Código é obrigatório'),
-  teacher: z.string().min(1, 'Professor é obrigatório'),
+  teacher: z.string().min(1, 'Instrutor é obrigatório'),
   workload: z.number().min(1, 'Carga horária deve ser maior que 0'),
   description: z.string().optional(),
   classes: z.array(z.string()).min(1, 'Selecione pelo menos uma turma'),
@@ -131,11 +131,11 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
                 name="teacher"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Professor</FormLabel>
+                    <FormLabel>Instrutor</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o professor" />
+                          <SelectValue placeholder="Selecione o instrutor" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

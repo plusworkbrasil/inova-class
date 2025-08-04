@@ -20,7 +20,7 @@ const UserSelection = () => {
       permissions: ['Gerenciar usuários', 'Configurar sistema', 'Acessar todos os relatórios', 'Gerenciar turmas e disciplinas']
     },
     teacher: {
-      name: 'Professor João Silva',
+      name: 'Instrutor João Silva',
       description: 'Acesso a notas e chamadas',
       icon: GraduationCap,
       color: 'bg-blue-500',
@@ -96,7 +96,7 @@ const UserSelection = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">👑 Administrador</SelectItem>
-                  <SelectItem value="teacher">👨‍🏫 Professor</SelectItem>
+                  <SelectItem value="teacher">👨‍🏫 Instrutor</SelectItem>
                   <SelectItem value="student">🎓 Aluno</SelectItem>
                   <SelectItem value="coordinator">👩‍💼 Coordenador</SelectItem>
                   <SelectItem value="secretary">📋 Secretário</SelectItem>

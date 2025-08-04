@@ -47,7 +47,7 @@ const Dashboard = () => {
         };
       case 'teacher':
         return {
-          title: 'Dashboard do Professor',
+          title: 'Dashboard do Instrutor',
           description: 'Gerencie suas turmas e atividades',
           cards: [
             { title: 'Turmas', value: '4', description: 'Turmas ativas' },
@@ -62,7 +62,7 @@ const Dashboard = () => {
           description: 'Visão geral da coordenação acadêmica',
           cards: [
             { title: 'Turmas Gerenciadas', value: '8', description: 'Turmas sob coordenação' },
-            { title: 'Professores', value: '25', description: 'Corpo docente' },
+            { title: 'Instrutores', value: '25', description: 'Corpo docente' },
             { title: 'Relatórios', value: '12', description: 'Relatórios mensais' },
             { title: 'Reuniões', value: '3', description: 'Agendadas esta semana' },
           ]

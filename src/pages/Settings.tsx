@@ -70,7 +70,7 @@ const Settings = () => {
       action: 'CRIAR',
       entity: 'Usuário',
       entityName: 'João Silva',
-      details: 'Criou novo usuário com perfil Professor',
+      details: 'Criou novo usuário com perfil Instrutor',
       ip: '192.168.1.100'
     },
     {

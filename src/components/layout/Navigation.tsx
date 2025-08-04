@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  UserX
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
 
@@ -39,6 +40,7 @@ const menuItems = {
     { icon: GraduationCap, label: 'Turmas', path: '/classes' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+    { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
   ],
   secretary: [
@@ -46,6 +48,7 @@ const menuItems = {
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
+    { icon: UserX, label: 'Evasões', path: '/evasions' },
     { icon: FileText, label: 'Comunicação', path: '/communications' },
   ],
   tutor: [

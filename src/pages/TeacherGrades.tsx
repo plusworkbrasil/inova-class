@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/user';
 
 // Mock do instrutor atual
 const currentInstructor = {
@@ -66,6 +67,8 @@ const mockGradesData = [
 ];
 
 const TeacherGrades = () => {
+  const [userRole, setUserRole] = useState<UserRole>('teacher');
+  const [userName, setUserName] = useState('Instrutor');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -76,6 +79,17 @@ const TeacherGrades = () => {
   const [selectedClassForBatch, setSelectedClassForBatch] = useState('');
   const [selectedSubjectForBatch, setSelectedSubjectForBatch] = useState('');
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
 
   const handleCreateGrade = (data: any) => {
     const newGrade = {
@@ -158,7 +172,7 @@ const TeacherGrades = () => {
   const subjectsCount = currentInstructor.subjects.length;
 
   return (
-    <Layout userRole="teacher" userName={currentInstructor.name} userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>
@@ -223,6 +237,44 @@ const TeacherGrades = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Lançamento Rápido de Notas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {currentInstructor.subjects.map(subject => (
+                <div key={subject} className="space-y-3">
+                  <h4 className="font-semibold text-lg text-primary">{subject}</h4>
+                  <div className="space-y-2">
+                    {currentInstructor.classes.map(className => (
+                      <div key={`${subject}-${className}`} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                        <div>
+                          <p className="font-medium">{className}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {mockClassStudents[className as keyof typeof mockClassStudents]?.length || 0} alunos
+                          </p>
+                        </div>
+                        <Button 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedClassForBatch(className);
+                            setSelectedSubjectForBatch(subject);
+                            setBatchGradeMode(true);
+                            setIsGradeFormOpen(true);
+                          }}
+                        >
+                          Lançar Notas
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

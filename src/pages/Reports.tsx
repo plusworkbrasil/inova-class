@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,23 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle, File, FileSpreadsheet } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { UserRole } from '@/types/user';
 
 const Reports = () => {
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
   
   const attendanceData = [
     { month: 'Jan', presente: 85, falta: 15 },
@@ -225,7 +240,7 @@ const Reports = () => {
   };
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>

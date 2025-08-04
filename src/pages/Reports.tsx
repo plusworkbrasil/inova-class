@@ -43,6 +43,15 @@ const Reports = () => {
     { name: 'Ana Oliveira', class: '3º Ano A', absences: 5, percentage: 12.5 },
   ];
 
+  const evasionData = [
+    { name: 'Dificuldades financeiras', value: 35, color: '#ff6b6b' },
+    { name: 'Problemas familiares', value: 20, color: '#4ecdc4' },
+    { name: 'Mudança de cidade/estado', value: 15, color: '#45b7d1' },
+    { name: 'Falta de interesse no curso', value: 12, color: '#96ceb4' },
+    { name: 'Problemas de saúde', value: 8, color: '#feca57' },
+    { name: 'Outros', value: 10, color: '#fd9644' },
+  ];
+
   const generateCSV = (data: any[], filename: string) => {
     const headers = Object.keys(data[0]).join(',');
     const rows = data.map(row => Object.values(row).join(',')).join('\n');
@@ -343,7 +352,7 @@ const Reports = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Distribuição de Alunos por Turma</CardTitle>
@@ -365,6 +374,32 @@ const Reports = () => {
                     ))}
                   </Pie>
                   <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Tipos de Evasão</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={evasionData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}%`}
+                  >
+                    {evasionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value}%`, 'Percentual']} />
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>

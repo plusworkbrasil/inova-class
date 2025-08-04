@@ -106,7 +106,7 @@ const Settings = () => {
     {
       id: 5,
       timestamp: new Date('2024-01-14T14:10:00'),
-      user: 'Secretário Pedro',
+      user: 'Secretaria Pedro',
       action: 'EDITAR',
       entity: 'Usuário',
       entityName: 'Ana Costa',

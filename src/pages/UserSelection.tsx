@@ -41,7 +41,7 @@ const UserSelection = () => {
       permissions: ['Gerenciar turmas', 'Ver frequência', 'Acessar relatórios', 'Gerenciar disciplinas']
     },
     secretary: {
-      name: 'Secretário Pedro Oliveira',
+      name: 'Secretaria Pedro Oliveira',
       description: 'Gerenciar matrículas e declarações',
       icon: BookOpen,
       color: 'bg-orange-500',
@@ -99,7 +99,7 @@ const UserSelection = () => {
                   <SelectItem value="teacher">👨‍🏫 Instrutor</SelectItem>
                   <SelectItem value="student">🎓 Aluno</SelectItem>
                   <SelectItem value="coordinator">👩‍💼 Coordenador</SelectItem>
-                  <SelectItem value="secretary">📋 Secretário</SelectItem>
+                  <SelectItem value="secretary">📋 Secretaria</SelectItem>
                   <SelectItem value="tutor">👨‍🎓 Tutor</SelectItem>
                 </SelectContent>
               </Select>

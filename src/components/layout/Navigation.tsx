@@ -42,7 +42,6 @@ const menuItems = {
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
     { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
-    { icon: Settings, label: 'Configurações', path: '/settings' },
   ],
   secretary: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },

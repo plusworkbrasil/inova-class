@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Search, Plus, Edit, Trash2, BookOpen, Clock, User } from 'lucide-react'
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
+import { UserRole } from '@/types/user';
 
 const mockSubjectsData = [
   { 
@@ -50,6 +51,8 @@ const mockSubjectsData = [
 ];
 
 const Subjects = () => {
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
@@ -57,6 +60,17 @@ const Subjects = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [subjects, setSubjects] = useState(mockSubjectsData);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
 
   const handleCreateSubject = (data: any) => {
     const newSubject = {
@@ -115,7 +129,7 @@ const Subjects = () => {
   };
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Disciplinas</h1>

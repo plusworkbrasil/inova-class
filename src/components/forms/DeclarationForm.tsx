@@ -30,6 +30,7 @@ interface DeclarationFormProps {
   mode: 'create' | 'edit';
   userRole?: string;
   currentUser?: {
+    id: string;
     name: string;
     studentId: string;
   };

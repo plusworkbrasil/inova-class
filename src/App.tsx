@@ -18,6 +18,7 @@ import TeacherGrades from "./pages/TeacherGrades";
 import Declarations from "./pages/Declarations";
 import Evasions from "./pages/Evasions";
 import Communications from "./pages/Communications";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/user-selection" element={<UserSelection />} />
           <Route path="/users" element={<Users />} />

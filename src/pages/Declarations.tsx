@@ -10,6 +10,8 @@ import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle } f
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
 
 const mockDeclarationsData = [
   {
@@ -71,81 +73,215 @@ const mockDeclarationsData = [
 ];
 
 const Declarations = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
-  
-  // Mock das disciplinas do instrutor
-  const teacherSubjects = userRole === 'teacher' ? ['Matemática', 'Física'] : [];
-  const teacherClasses = userRole === 'teacher' ? ['1º Ano A', '2º Ano B'] : [];
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [userRole, setUserRole] = useState<UserRole>('student');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedType, setSelectedType] = useState('');
   const [isDeclarationFormOpen, setIsDeclarationFormOpen] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<any>(null);
-  const [declarations, setDeclarations] = useState(mockDeclarationsData);
+  const [declarations, setDeclarations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleCreateDeclaration = (data: any) => {
-    const newDeclaration = {
-      id: declarations.length + 1,
-      studentName: data.studentName,
-      studentId: data.studentId,
-      class: data.class || '1º Ano A',
-      subject: data.subject || 'Matemática',
-      type: data.type,
-      status: 'pending',
-      requestDate: new Date().toISOString().split('T')[0],
-      deliveryDate: null,
-      requestedBy: data.requestedBy,
-      purpose: data.purpose,
-      observations: data.observations,
-    };
-    setDeclarations([newDeclaration, ...declarations]);
-    toast({
-      title: "Declaração solicitada com sucesso!",
-      description: `Solicitação de ${data.type} registrada para ${data.studentName}.`,
-    });
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchDeclarations();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      setProfile(data);
+      setUserRole(data.role);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao carregar perfil do usuário.",
+      });
+    }
   };
 
-  const handleEditDeclaration = (declarationData: any) => {
-    const updatedDeclarations = declarations.map(d => 
-      d.id === editingDeclaration.id 
-        ? { ...d, ...declarationData }
-        : d
-    );
-    setDeclarations(updatedDeclarations);
-    setEditingDeclaration(null);
-    toast({
-      title: "Declaração atualizada com sucesso!",
-      description: `Declaração de ${declarationData.studentName} foi atualizada.`,
-    });
+  const fetchDeclarations = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('declarations')
+        .select(`
+          *,
+          student:profiles!declarations_student_id_fkey(name, email, student_id),
+          processed_by_profile:profiles!declarations_processed_by_fkey(name)
+        `);
+      
+      // Filter based on user role
+      if (userRole === 'student') {
+        query = query.eq('student_id', user.id);
+      } else if (userRole === 'instructor') {
+        // Instructors can only see medical certificates from their subjects
+        query = query
+          .eq('type', 'medical_certificate')
+          .contains('subject_id', profile?.instructor_subjects || []);
+      }
+      // Admins and secretaries can see all declarations
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      setDeclarations(data || []);
+    } catch (error) {
+      console.error('Error fetching declarations:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao carregar declarações.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleStatusChange = (declarationId: number, newStatus: string) => {
-    const updatedDeclarations = declarations.map(d => 
-      d.id === declarationId 
-        ? { 
-            ...d, 
-            status: newStatus, 
-            deliveryDate: newStatus === 'approved' ? new Date().toISOString().split('T')[0] : null 
-          }
-        : d
-    );
-    setDeclarations(updatedDeclarations);
-    toast({
-      title: "Status atualizado!",
-      description: `Declaração ${newStatus === 'approved' ? 'aprovada' : newStatus === 'rejected' ? 'rejeitada' : 'em processamento'}.`,
-    });
+  const handleCreateDeclaration = async (data: any) => {
+    if (!user || !profile) return;
+    
+    try {
+      const declarationData = {
+        student_id: userRole === 'student' ? user.id : data.studentId,
+        type: data.type === 'Declaração de Matrícula' ? 'enrollment_certificate' : 'medical_certificate',
+        title: data.type,
+        description: data.observations,
+        purpose: data.purpose,
+        urgency: data.urgency,
+        subject_id: data.subjectId,
+        status: 'pending'
+      };
+
+      const { error } = await supabase
+        .from('declarations')
+        .insert([declarationData]);
+
+      if (error) throw error;
+
+      await fetchDeclarations();
+      
+      toast({
+        title: "Declaração solicitada com sucesso!",
+        description: `Solicitação de ${data.type} registrada.`,
+      });
+    } catch (error) {
+      console.error('Error creating declaration:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao criar declaração.",
+      });
+    }
+  };
+
+  const handleEditDeclaration = async (declarationData: any) => {
+    if (!editingDeclaration) return;
+    
+    try {
+      const { error } = await supabase
+        .from('declarations')
+        .update({
+          title: declarationData.type,
+          description: declarationData.observations,
+          purpose: declarationData.purpose,
+          urgency: declarationData.urgency,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingDeclaration.id);
+
+      if (error) throw error;
+
+      await fetchDeclarations();
+      setEditingDeclaration(null);
+      
+      toast({
+        title: "Declaração atualizada com sucesso!",
+        description: "Declaração foi atualizada.",
+      });
+    } catch (error) {
+      console.error('Error updating declaration:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar declaração.",
+      });
+    }
+  };
+
+  const handleStatusChange = async (declarationId: string, newStatus: string) => {
+    if (!user) return;
+    
+    try {
+      const updateData: any = {
+        status: newStatus,
+        processed_by: user.id,
+        processed_at: new Date().toISOString()
+      };
+      
+      if (newStatus === 'approved') {
+        updateData.delivery_date = new Date().toISOString().split('T')[0];
+      }
+
+      const { error } = await supabase
+        .from('declarations')
+        .update(updateData)
+        .eq('id', declarationId);
+
+      if (error) throw error;
+
+      await fetchDeclarations();
+      
+      toast({
+        title: "Status atualizado!",
+        description: `Declaração ${newStatus === 'approved' ? 'aprovada' : newStatus === 'rejected' ? 'rejeitada' : 'em processamento'}.`,
+      });
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar status.",
+      });
+    }
   };
 
   const openEditForm = (declaration: any) => {
@@ -183,20 +319,19 @@ const Declarations = () => {
     }
   };
 
-  // Filtrar dados baseado no papel do usuário
-  const getFilteredDeclarations = () => {
-    if (userRole === 'student') {
-      return declarations.filter(declaration => declaration.studentName === userName);
-    } else if (userRole === 'teacher') {
-      return declarations.filter(declaration => 
-        teacherSubjects.includes(declaration.subject) && 
-        teacherClasses.includes(declaration.class)
-      );
+  // Filter declarations based on search and filters
+  const filteredDeclarations = declarations.filter(declaration => {
+    if (searchTerm && !declaration.student?.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
     }
-    return declarations;
-  };
-
-  const filteredDeclarations = getFilteredDeclarations();
+    if (selectedStatus && declaration.status !== selectedStatus) {
+      return false;
+    }
+    if (selectedType && declaration.type !== selectedType) {
+      return false;
+    }
+    return true;
+  });
 
   // Calcular estatísticas
   const totalDeclarations = filteredDeclarations.length;
@@ -205,15 +340,15 @@ const Declarations = () => {
   const processingDeclarations = filteredDeclarations.filter(d => d.status === 'processing').length;
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout userRole={userRole} userName={profile?.name || user?.email || ''} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">
             {userRole === 'student' ? 'Minhas Declarações' : 
-             userRole === 'teacher' ? 'Declarações das Minhas Disciplinas' : 
+             userRole === 'instructor' ? 'Declarações das Minhas Disciplinas' : 
              'Gerenciamento de Declarações'}
           </h1>
-          {userRole !== 'teacher' && (
+          {userRole !== 'instructor' && (
             <Button className="flex items-center gap-2" onClick={openCreateForm}>
               <Plus size={16} />
               {userRole === 'student' ? 'Solicitar Declaração' : 'Nova Solicitação'}
@@ -273,7 +408,7 @@ const Declarations = () => {
           </Card>
         </div>
 
-        {userRole !== 'student' && userRole !== 'teacher' && (
+        {(userRole === 'admin' || userRole === 'secretary') && (
           <Card>
             <CardHeader>
               <CardTitle>Filtros</CardTitle>
@@ -329,12 +464,12 @@ const Declarations = () => {
                <TableRow>
                   {userRole !== 'student' && <TableHead>Aluno</TableHead>}
                   {userRole !== 'student' && <TableHead>Matrícula</TableHead>}
-                  {userRole === 'teacher' && (
-                    <>
-                      <TableHead>Turma</TableHead>
-                      <TableHead>Disciplina</TableHead>
-                    </>
-                  )}
+                      {userRole === 'instructor' && (
+                        <>
+                          <TableHead>Turma</TableHead>
+                          <TableHead>Disciplina</TableHead>
+                        </>
+                      )}
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Data Solicitação</TableHead>
@@ -344,30 +479,43 @@ const Declarations = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDeclarations.map((declaration) => (
-                   <TableRow key={declaration.id}>
-                     {userRole !== 'student' && <TableCell className="font-medium">{declaration.studentName}</TableCell>}
-                     {userRole !== 'student' && <TableCell>{declaration.studentId}</TableCell>}
-                     {userRole === 'teacher' && (
-                       <>
-                         <TableCell>{declaration.class}</TableCell>
-                         <TableCell>{declaration.subject}</TableCell>
-                       </>
-                     )}
-                     <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(declaration.type)}`}>
-                        {declaration.type}
-                      </span>
-                    </TableCell>
-                    <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                    <TableCell>{new Date(declaration.requestDate).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>
-                      {declaration.deliveryDate ? new Date(declaration.deliveryDate).toLocaleDateString('pt-BR') : '-'}
-                    </TableCell>
-                    <TableCell>{declaration.requestedBy}</TableCell>
+                 {loading ? (
+                   <TableRow>
+                     <TableCell colSpan={8} className="text-center py-8">
+                       Carregando declarações...
+                     </TableCell>
+                   </TableRow>
+                 ) : filteredDeclarations.length === 0 ? (
+                   <TableRow>
+                     <TableCell colSpan={8} className="text-center py-8">
+                       Nenhuma declaração encontrada.
+                     </TableCell>
+                   </TableRow>
+                 ) : (
+                   filteredDeclarations.map((declaration) => (
+                     <TableRow key={declaration.id}>
+                       {userRole !== 'student' && <TableCell className="font-medium">{declaration.student?.name}</TableCell>}
+                       {userRole !== 'student' && <TableCell>{declaration.student?.student_id}</TableCell>}
+                       {userRole === 'instructor' && (
+                         <>
+                           <TableCell>-</TableCell>
+                           <TableCell>{declaration.subject_id}</TableCell>
+                         </>
+                       )}
+                       <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(declaration.title)}`}>
+                          {declaration.title}
+                        </span>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                      <TableCell>{new Date(declaration.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        {declaration.delivery_date ? new Date(declaration.delivery_date).toLocaleDateString('pt-BR') : '-'}
+                      </TableCell>
+                      <TableCell>Aluno</TableCell>
                     <TableCell>
                        <div className="flex gap-2">
-                         {userRole !== 'student' && userRole !== 'teacher' && (
+                         {(userRole === 'admin' || userRole === 'secretary') && (
                            <Button 
                              variant="outline" 
                              size="sm"
@@ -376,7 +524,7 @@ const Declarations = () => {
                              <Edit size={14} />
                            </Button>
                          )}
-                         {declaration.status === 'pending' && userRole !== 'student' && userRole !== 'teacher' && (
+                         {declaration.status === 'pending' && (userRole === 'admin' || userRole === 'secretary') && (
                           <>
                             <Button 
                               variant="outline" 
@@ -407,14 +555,15 @@ const Declarations = () => {
                         )}
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
+                     </TableRow>
+                   ))
+                 )}
+               </TableBody>
             </Table>
           </CardContent>
         </Card>
         
-        {userRole !== 'teacher' && (
+        {userRole !== 'instructor' && user && (
           <DeclarationForm
             open={isDeclarationFormOpen}
             onOpenChange={setIsDeclarationFormOpen}
@@ -423,8 +572,9 @@ const Declarations = () => {
             mode={editingDeclaration ? 'edit' : 'create'}
             userRole={userRole}
             currentUser={{
-              name: userName || '',
-              studentId: '2024001' // Seria obtido dos dados do usuário logado
+              id: user.id,
+              name: profile?.name || user.email || '',
+              studentId: profile?.student_id || ''
             }}
           />
         )}

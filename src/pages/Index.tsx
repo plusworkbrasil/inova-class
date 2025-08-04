@@ -1,27 +1,79 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import type { User, Session } from '@supabase/supabase-js';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se já existe um usuário logado
-    const savedRole = localStorage.getItem('userRole');
-    
-    if (savedRole) {
-      // Se já existe usuário logado, ir para o dashboard
-      navigate('/dashboard');
-    } else {
-      // Se não, ir para seleção de usuário
-      navigate('/user-selection');
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (session?.user) {
+          navigate('/dashboard');
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (session?.user) {
+        navigate('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Carregando...</p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+      <div className="text-center space-y-8">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Sistema de Gestão Escolar
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Gerencie alunos, professores, declarações e muito mais de forma simples e eficiente.
+          </p>
+        </div>
+        
+        <div className="space-y-4">
+          <Button 
+            onClick={() => navigate('/auth')}
+            size="lg"
+            className="px-8 py-3 text-lg"
+          >
+            Entrar no Sistema
+          </Button>
+          
+          <div className="text-sm text-gray-500">
+            Faça login para acessar o painel administrativo
+          </div>
+        </div>
       </div>
     </div>
   );

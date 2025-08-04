@@ -385,6 +385,11 @@ const Declarations = () => {
           onSubmit={editingDeclaration ? handleEditDeclaration : handleCreateDeclaration}
           initialData={editingDeclaration}
           mode={editingDeclaration ? 'edit' : 'create'}
+          userRole={userRole}
+          currentUser={{
+            name: userName || '',
+            studentId: '2024001' // Seria obtido dos dados do usuário logado
+          }}
         />
       </div>
     </Layout>

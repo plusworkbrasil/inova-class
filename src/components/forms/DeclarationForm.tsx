@@ -28,6 +28,11 @@ interface DeclarationFormProps {
   onSubmit: (data: DeclarationFormValues) => void;
   initialData?: Partial<DeclarationFormValues>;
   mode: 'create' | 'edit';
+  userRole?: string;
+  currentUser?: {
+    name: string;
+    studentId: string;
+  };
 }
 
 export const DeclarationForm: React.FC<DeclarationFormProps> = ({
@@ -35,15 +40,19 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
   onOpenChange,
   onSubmit,
   initialData,
-  mode
+  mode,
+  userRole,
+  currentUser
 }) => {
+  const isStudent = userRole === 'student';
+
   const form = useForm<DeclarationFormValues>({
     resolver: zodResolver(declarationFormSchema),
     defaultValues: {
-      studentName: initialData?.studentName || '',
-      studentId: initialData?.studentId || '',
+      studentName: isStudent ? currentUser?.name || '' : initialData?.studentName || '',
+      studentId: isStudent ? currentUser?.studentId || '' : initialData?.studentId || '',
       type: initialData?.type || '',
-      requestedBy: initialData?.requestedBy || '',
+      requestedBy: isStudent ? 'Aluno' : initialData?.requestedBy || '',
       purpose: initialData?.purpose || '',
       observations: initialData?.observations || '',
       urgency: initialData?.urgency || 'normal',
@@ -118,61 +127,86 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Dados do Aluno */}
-            <Card>
-              <CardContent className="pt-6">
-                <h3 className="text-lg font-medium mb-4">Dados do Aluno</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="studentName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Aluno</FormLabel>
-                        <Select 
-                          onValueChange={(value) => {
-                            const student = mockStudents.find(s => s.name === value);
-                            if (student) {
-                              field.onChange(value);
-                              form.setValue('studentId', student.id);
-                            }
-                          }} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione o aluno" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {mockStudents.map((student) => (
-                              <SelectItem key={student.id} value={student.name}>
-                                {student.name} - {student.class}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* Dados do Aluno - Apenas para Admin/Secretária */}
+            {!isStudent && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Dados do Aluno</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="studentName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Aluno</FormLabel>
+                          <Select 
+                            onValueChange={(value) => {
+                              const student = mockStudents.find(s => s.name === value);
+                              if (student) {
+                                field.onChange(value);
+                                form.setValue('studentId', student.id);
+                              }
+                            }} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione o aluno" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {mockStudents.map((student) => (
+                                <SelectItem key={student.id} value={student.name}>
+                                  {student.name} - {student.class}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="studentId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Matrícula</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Matrícula do aluno" {...field} disabled />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <FormField
+                      control={form.control}
+                      name="studentId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Matrícula</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Matrícula do aluno" {...field} disabled />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Dados do Aluno - Para visualização quando é estudante */}
+            {isStudent && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Seus Dados</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Nome</label>
+                      <div className="p-2 bg-muted rounded-md text-sm">
+                        {currentUser?.name}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Matrícula</label>
+                      <div className="p-2 bg-muted rounded-md text-sm">
+                        {currentUser?.studentId}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Tipo de Declaração */}
             <Card>
@@ -221,29 +255,40 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
                 <h3 className="text-lg font-medium mb-4">Dados da Solicitação</h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="requestedBy"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Solicitante</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Quem está solicitando?" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Aluno">Aluno</SelectItem>
-                              <SelectItem value="Responsável">Responsável</SelectItem>
-                              <SelectItem value="Escola">Escola</SelectItem>
-                              <SelectItem value="Terceiro">Terceiro (procuração)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {!isStudent && (
+                      <FormField
+                        control={form.control}
+                        name="requestedBy"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Solicitante</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Quem está solicitando?" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Aluno">Aluno</SelectItem>
+                                <SelectItem value="Responsável">Responsável</SelectItem>
+                                <SelectItem value="Escola">Escola</SelectItem>
+                                <SelectItem value="Terceiro">Terceiro (procuração)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {isStudent && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Solicitante</label>
+                        <div className="p-2 bg-muted rounded-md text-sm">
+                          Aluno
+                        </div>
+                      </div>
+                    )}
 
                     <FormField
                       control={form.control}

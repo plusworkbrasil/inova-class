@@ -17,11 +17,6 @@ const batchGradeFormSchema = z.object({
   maxGrade: z.number().min(1, 'Nota máxima deve ser maior que 0'),
   date: z.string().min(1, 'Data é obrigatória'),
   teacher: z.string().min(1, 'Instrutor é obrigatório'),
-  students: z.array(z.object({
-    studentId: z.string(),
-    studentName: z.string(),
-    grade: z.number().min(0, 'Nota deve ser maior ou igual a 0').max(10, 'Nota não pode exceder 10'),
-  })).min(1, 'Pelo menos um aluno deve ter nota'),
 });
 
 type BatchGradeFormValues = z.infer<typeof batchGradeFormSchema>;
@@ -56,7 +51,7 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
       maxGrade: 10,
       date: new Date().toISOString().split('T')[0],
       teacher: currentUser?.name || '',
-      students: [],
+      
     },
   });
 
@@ -75,10 +70,7 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
     const hasGrades = Object.values(studentGrades).some(grade => grade > 0);
     
     if (!hasGrades) {
-      form.setError('students', { 
-        type: 'manual', 
-        message: 'Informe pelo menos uma nota para salvar' 
-      });
+      // Usar toast em vez de form error para melhor UX
       return;
     }
 
@@ -94,6 +86,10 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
       date: data.date,
       teacher: data.teacher,
     })).filter(grade => grade.grade > 0); // Só incluir alunos com nota > 0
+
+    if (gradesData.length === 0) {
+      return;
+    }
 
     onSubmit(gradesData);
     setStudentGrades({});
@@ -221,15 +217,6 @@ export const BatchGradeForm: React.FC<BatchGradeFormProps> = ({
                 <CardTitle>Notas dos Alunos</CardTitle>
               </CardHeader>
               <CardContent>
-                <FormField
-                  control={form.control}
-                  name="students"
-                  render={() => (
-                    <FormItem>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <Table>
                   <TableHeader>
                     <TableRow>

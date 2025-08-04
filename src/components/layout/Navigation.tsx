@@ -59,7 +59,7 @@ const menuItems = {
   teacher: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
-    { icon: BookOpen, label: 'Notas', path: '/grades' },
+    { icon: BookOpen, label: 'Notas', path: '/teacher-grades' },
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },

@@ -14,6 +14,7 @@ import Attendance from "./pages/Attendance";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Grades from "./pages/Grades";
+import TeacherGrades from "./pages/TeacherGrades";
 import Declarations from "./pages/Declarations";
 import Evasions from "./pages/Evasions";
 import Communications from "./pages/Communications";
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/subjects" element={<Subjects />} />
           <Route path="/attendance" element={<Attendance />} />
           <Route path="/grades" element={<Grades />} />
+          <Route path="/teacher-grades" element={<TeacherGrades />} />
           <Route path="/declarations" element={<Declarations />} />
           <Route path="/evasions" element={<Evasions />} />
           <Route path="/communications" element={<Communications />} />

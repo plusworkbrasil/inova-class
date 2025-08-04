@@ -85,15 +85,11 @@ const TeacherGrades = () => {
     const savedRole = localStorage.getItem('userRole') as UserRole;
     const savedName = localStorage.getItem('userName');
     
-    console.log('TeacherGrades - savedRole:', savedRole, 'savedName:', savedName);
-    
     if (savedRole && savedName) {
       setUserRole(savedRole);
       setUserName(savedName);
     }
   }, []);
-
-  console.log('TeacherGrades component is rendering, userRole:', userRole);
 
   const handleCreateGrade = (data: any) => {
     const newGrade = {

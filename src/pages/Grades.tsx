@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
-import TeacherGrades from './TeacherGrades';
+
 import { UserRole } from '@/types/user';
 
 interface GradesProps {
@@ -78,8 +78,6 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
       const savedRole = localStorage.getItem('userRole') as UserRole;
       const savedName = localStorage.getItem('userName');
       
-      console.log('Grades page - savedRole:', savedRole, 'savedName:', savedName);
-      
       if (savedRole && savedName) {
         setUserRole(savedRole);
         setUserName(savedName);
@@ -88,14 +86,6 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
       setUserRole(propUserRole as UserRole);
     }
   }, [propUserRole]);
-
-  console.log('Grades page - current userRole:', userRole);
-
-  // Se for instrutor, usar a página específica do instrutor
-  if (userRole === 'teacher') {
-    console.log('Redirecting to TeacherGrades component');
-    return <TeacherGrades />;
-  }
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from '
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
 import TeacherGrades from './TeacherGrades';
+import { UserRole } from '@/types/user';
 
 interface GradesProps {
   userRole?: string;
@@ -67,11 +68,30 @@ const mockGradesData = [
   },
 ];
 
-const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
+const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: GradesProps = {}) => {
+  const [userRole, setUserRole] = useState<UserRole>(propUserRole as UserRole || 'admin');
+  const [userName, setUserName] = useState('Admin');
+
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage se não foram passados via props
+    if (!propUserRole) {
+      const savedRole = localStorage.getItem('userRole') as UserRole;
+      const savedName = localStorage.getItem('userName');
+      
+      if (savedRole && savedName) {
+        setUserRole(savedRole);
+        setUserName(savedName);
+      }
+    } else {
+      setUserRole(propUserRole as UserRole);
+    }
+  }, [propUserRole]);
+
   // Se for instrutor, usar a página específica do instrutor
   if (userRole === 'teacher') {
     return <TeacherGrades />;
   }
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -148,7 +168,7 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
   const subjectsCount = new Set(grades.map(grade => grade.subject)).size;
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Notas</h1>
@@ -313,7 +333,7 @@ const Grades = ({ userRole = 'admin', currentUser }: GradesProps = {}) => {
           initialData={editingGrade}
           mode={editingGrade ? 'edit' : 'create'}
           userRole={userRole}
-          currentUser={currentUser}
+          currentUser={propCurrentUser || { name: userName, role: userRole }}
         />
       </div>
     </Layout>

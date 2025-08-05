@@ -18,6 +18,7 @@ import TeacherGrades from "./pages/TeacherGrades";
 import Declarations from "./pages/Declarations";
 import Evasions from "./pages/Evasions";
 import Communications from "./pages/Communications";
+import StudentDashboard from "./pages/StudentDashboard";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/evasions" element={<Evasions />} />
           <Route path="/communications" element={<Communications />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/student-dashboard/:studentId" element={<StudentDashboard />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

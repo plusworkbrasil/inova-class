@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle, File, FileSpreadsheet } from 'lucide-react';
+import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle, File, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
@@ -14,6 +15,7 @@ import { UserRole } from '@/types/user';
 const Reports = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -239,6 +241,14 @@ const Reports = () => {
     }
   };
 
+  const handleStudentClick = (studentName: string) => {
+    // Simular ID do aluno baseado no nome para navegação
+    const studentId = studentName.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/student-dashboard/${studentId}`, { 
+      state: { studentName, returnTo: '/reports' } 
+    });
+  };
+
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
@@ -448,17 +458,25 @@ const Reports = () => {
                     <TableHead>%</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {topAbsentStudents.map((student, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{student.name}</TableCell>
-                      <TableCell>{student.class}</TableCell>
-                      <TableCell>
-                        <Badge variant="destructive">{student.absences}</Badge>
-                      </TableCell>
-                      <TableCell>{student.percentage}%</TableCell>
-                    </TableRow>
-                  ))}
+                 <TableBody>
+                   {topAbsentStudents.map((student, index) => (
+                     <TableRow key={index}>
+                       <TableCell className="font-medium">
+                         <button
+                           onClick={() => handleStudentClick(student.name)}
+                           className="text-primary hover:text-primary/80 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+                         >
+                           {student.name}
+                           <ExternalLink size={12} />
+                         </button>
+                       </TableCell>
+                       <TableCell>{student.class}</TableCell>
+                       <TableCell>
+                         <Badge variant="destructive">{student.absences}</Badge>
+                       </TableCell>
+                       <TableCell>{student.percentage}%</TableCell>
+                     </TableRow>
+                   ))}
                 </TableBody>
               </Table>
             </CardContent>

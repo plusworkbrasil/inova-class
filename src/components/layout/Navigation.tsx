@@ -17,6 +17,8 @@ import {
   UserX
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface NavigationProps {
   userRole: UserRole;
@@ -72,6 +74,7 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const currentMenuItems = menuItems[userRole] || [];
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -79,6 +82,27 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
   const handleNavigation = (path: string) => {
     navigate(path);
     setIsOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logout realizado com sucesso!",
+        description: "Você foi desconectado do sistema.",
+      });
+      
+      navigate('/auth');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao sair",
+        description: "Ocorreu um erro ao tentar sair do sistema.",
+      });
+    }
   };
 
   const isActivePath = (path: string) => {
@@ -140,7 +164,7 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
 
         {/* Logout Button */}
         <div className="absolute bottom-4 left-4 right-4">
-          <Button variant="outline" className="w-full">
+          <Button variant="outline" className="w-full" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Sair
           </Button>

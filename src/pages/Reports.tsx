@@ -11,6 +11,7 @@ import { FileText, Download, Calendar, TrendingUp, Users, AlertTriangle, File, F
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import html2pdf from 'html2pdf.js';
 
 const Reports = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -86,130 +87,123 @@ const Reports = () => {
   };
 
   const generatePDF = async (filename: string) => {
-    // Gerar conteúdo HTML estruturado para impressão/PDF
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Relatório Escolar</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
-        .section { margin-bottom: 30px; }
-        .section h2 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
-        .stat-card { text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 5px; }
-        .generated-at { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>Relatório Acadêmico</h1>
-        <p>Sistema Escolar - Inova Class</p>
-        <p>Data de Geração: ${new Date().toLocaleDateString('pt-BR')}</p>
-    </div>
+    try {
+      // Criar um container temporário para o conteúdo do PDF
+      const element = document.createElement('div');
+      element.innerHTML = `
+        <div style="padding: 20px; font-family: Arial, sans-serif;">
+          <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px;">
+            <h1 style="color: #333; margin: 0;">Relatório Acadêmico</h1>
+            <p style="margin: 5px 0;">Sistema Escolar - Inova Class</p>
+            <p style="margin: 5px 0;">Data de Geração: ${new Date().toLocaleDateString('pt-BR')}</p>
+          </div>
 
-    <div class="section">
-        <h2>Resumo Estatístico</h2>
-        <div class="stats">
-            <div class="stat-card">
+          <div style="margin-bottom: 30px;">
+            <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Resumo Estatístico</h2>
+            <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+              <div style="text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
                 <h3>Frequência Média</h3>
                 <p><strong>87%</strong></p>
-            </div>
-            <div class="stat-card">
+              </div>
+              <div style="text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
                 <h3>Média Geral</h3>
                 <p><strong>7.8</strong></p>
-            </div>
-            <div class="stat-card">
+              </div>
+              <div style="text-align: center; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
                 <h3>Alunos em Risco</h3>
                 <p><strong>12</strong></p>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
 
-    <div class="section">
-        <h2>Frequência Mensal</h2>
-        <table>
-            <thead>
-                <tr><th>Mês</th><th>Presentes (%)</th><th>Faltas (%)</th></tr>
-            </thead>
-            <tbody>
+          <div style="margin-bottom: 30px;">
+            <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Frequência Mensal</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Mês</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Presentes (%)</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Faltas (%)</th>
+                </tr>
+              </thead>
+              <tbody>
                 ${attendanceData.map(item => `
-                    <tr>
-                        <td>${item.month}</td>
-                        <td>${item.presente}%</td>
-                        <td>${item.falta}%</td>
-                    </tr>
+                  <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.month}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.presente}%</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.falta}%</td>
+                  </tr>
                 `).join('')}
-            </tbody>
-        </table>
-    </div>
+              </tbody>
+            </table>
+          </div>
 
-    <div class="section">
-        <h2>Médias por Disciplina</h2>
-        <table>
-            <thead>
-                <tr><th>Disciplina</th><th>Média</th></tr>
-            </thead>
-            <tbody>
+          <div style="margin-bottom: 30px;">
+            <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Médias por Disciplina</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Disciplina</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Média</th>
+                </tr>
+              </thead>
+              <tbody>
                 ${gradeData.map(item => `
-                    <tr>
-                        <td>${item.subject}</td>
-                        <td>${item.average}</td>
-                    </tr>
+                  <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.subject}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.average}</td>
+                  </tr>
                 `).join('')}
-            </tbody>
-        </table>
-    </div>
+              </tbody>
+            </table>
+          </div>
 
-    <div class="section">
-        <h2>Alunos com Maior Número de Faltas</h2>
-        <table>
-            <thead>
-                <tr><th>Aluno</th><th>Turma</th><th>Faltas</th><th>Percentual</th></tr>
-            </thead>
-            <tbody>
+          <div style="margin-bottom: 30px;">
+            <h2 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 10px;">Alunos com Maior Número de Faltas</h2>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Aluno</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Turma</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Faltas</th>
+                  <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Percentual</th>
+                </tr>
+              </thead>
+              <tbody>
                 ${topAbsentStudents.map(student => `
-                    <tr>
-                        <td>${student.name}</td>
-                        <td>${student.class}</td>
-                        <td>${student.absences}</td>
-                        <td>${student.percentage}%</td>
-                    </tr>
+                  <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${student.name}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${student.class}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${student.absences}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${student.percentage}%</td>
+                  </tr>
                 `).join('')}
-            </tbody>
-        </table>
-    </div>
+              </tbody>
+            </table>
+          </div>
 
-    <div class="generated-at">
-        <p>Relatório gerado automaticamente pelo sistema em ${new Date().toLocaleString('pt-BR')}</p>
-        <p>Sistema desenvolvido por: PlusWork.com.br</p>
-    </div>
-</body>
-</html>`;
-    
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.html`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // Abrir em nova janela para impressão como PDF
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+          <div style="text-align: center; margin-top: 30px; font-size: 12px; color: #666;">
+            <p>Relatório gerado automaticamente pelo sistema em ${new Date().toLocaleString('pt-BR')}</p>
+            <p>Sistema desenvolvido por: PlusWork.com.br</p>
+          </div>
+        </div>
+      `;
+
+      // Configurações do html2pdf
+      const options = {
+        margin: 1,
+        filename: `${filename}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      // Gerar e baixar o PDF
+      await html2pdf().set(options).from(element).save();
+
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      throw error;
     }
   };
 
@@ -228,7 +222,7 @@ const Reports = () => {
         generatePDF(`relatorio-completo-${timestamp}`);
         toast({
           title: "Relatório exportado!",
-          description: "Arquivo HTML baixado e janela de impressão aberta para gerar PDF.",
+          description: "Arquivo PDF gerado e baixado com sucesso.",
         });
         break;
       case 'excel':

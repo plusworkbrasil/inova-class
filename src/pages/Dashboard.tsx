@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { UserRole } from '@/types/user';
 import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getRoleTranslation } from '@/lib/roleTranslations';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -133,11 +134,11 @@ const Dashboard = () => {
               </div>
               <div>
                 <p className="font-medium">Logado como: {userName}</p>
-                <Badge variant="outline" className="capitalize">{userRole}</Badge>
+                <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Você está acessando o sistema com perfil de <strong>{userRole}</strong>. 
+              Você está acessando o sistema com perfil de <strong>{getRoleTranslation(userRole)}</strong>. 
               Use o menu lateral para navegar pelas funcionalidades disponíveis para este tipo de usuário.
             </p>
           </CardContent>
@@ -170,7 +171,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Com seu perfil de <Badge variant="outline" className="capitalize">{userRole}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
+              Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {userRole === 'admin' && (

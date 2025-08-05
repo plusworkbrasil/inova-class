@@ -19,6 +19,7 @@ import {
 import { UserRole } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { getRoleTranslation } from '@/lib/roleTranslations';
 
 interface NavigationProps {
   userRole: UserRole;
@@ -142,7 +143,7 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-              <p className="text-xs text-muted-foreground capitalize">{userRole}</p>
+              <p className="text-xs text-muted-foreground">{getRoleTranslation(userRole)}</p>
             </div>
           </div>
         </div>

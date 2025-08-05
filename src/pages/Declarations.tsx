@@ -119,6 +119,30 @@ const Declarations = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
+    console.log('=== DEBUG DECLARATIONS ===');
+    console.log('Current user ID:', user.id);
+    console.log('Current user email:', user.email);
+    
+    // Check if we're using localStorage role simulation
+    const localStorageRole = localStorage.getItem('userRole') as UserRole;
+    const localStorageName = localStorage.getItem('userName');
+    
+    console.log('LocalStorage role:', localStorageRole);
+    console.log('LocalStorage name:', localStorageName);
+    
+    if (localStorageRole && localStorageName) {
+      // Use localStorage simulation instead of database
+      console.log('Using localStorage simulation');
+      setProfile({ 
+        id: user.id, 
+        name: localStorageName, 
+        email: user.email, 
+        role: localStorageRole 
+      });
+      setUserRole(localStorageRole);
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -126,7 +150,12 @@ const Declarations = () => {
         .eq('id', user.id)
         .single();
       
+      console.log('Profile query result:', { data, error });
+      
       if (error) throw error;
+      
+      console.log('Setting profile and userRole:', data);
+      console.log('User role will be set to:', data.role);
       
       setProfile(data);
       setUserRole(data.role);

@@ -19,6 +19,7 @@ import Declarations from "./pages/Declarations";
 import Evasions from "./pages/Evasions";
 import Communications from "./pages/Communications";
 import StudentDashboard from "./pages/StudentDashboard";
+import Equipment from "./pages/Equipment";
 import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
           <Route path="/declarations" element={<Declarations />} />
           <Route path="/evasions" element={<Evasions />} />
           <Route path="/communications" element={<Communications />} />
+          <Route path="/equipment" element={<Equipment />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/student-dashboard/:studentId" element={<StudentDashboard />} />
           <Route path="/settings" element={<Settings />} />

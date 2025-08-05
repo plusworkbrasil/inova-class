@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  UserX
+  UserX,
+  Monitor
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +64,12 @@ const menuItems = {
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/teacher-grades' },
+  ],
+  instructor: [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: ClipboardCheck, label: 'Chamada', path: '/attendance' },
+    { icon: BookOpen, label: 'Notas', path: '/teacher-grades' },
+    { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },

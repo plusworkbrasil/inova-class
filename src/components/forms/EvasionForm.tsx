@@ -67,7 +67,6 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
     'Insatisfação com o curso',
     'Problemas familiares',
     'Conseguiu emprego',
-    'Transferência para outra instituição',
     'Dificuldades acadêmicas',
     'Falta de tempo',
     'Outros motivos pessoais'

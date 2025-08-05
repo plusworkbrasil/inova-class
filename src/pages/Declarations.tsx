@@ -339,8 +339,20 @@ const Declarations = () => {
   const approvedDeclarations = filteredDeclarations.filter(d => d.status === 'approved').length;
   const processingDeclarations = filteredDeclarations.filter(d => d.status === 'processing').length;
 
+  if (loading || !profile) {
+    return (
+      <Layout userRole={userRole} userName={profile?.name || user?.email || ''} userAvatar="">
+        <div className="space-y-6">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <p>Carregando...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Layout userRole={userRole} userName={profile?.name || user?.email || ''} userAvatar="">
+    <Layout userRole={userRole} userName={profile.name} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">

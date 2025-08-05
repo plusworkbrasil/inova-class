@@ -76,7 +76,7 @@ const Declarations = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<any>(null);
-  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -107,9 +107,14 @@ const Declarations = () => {
   useEffect(() => {
     if (user) {
       fetchProfile();
-      fetchDeclarations();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user && userRole) {
+      fetchDeclarations();
+    }
+  }, [user, userRole]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -339,9 +344,9 @@ const Declarations = () => {
   const approvedDeclarations = filteredDeclarations.filter(d => d.status === 'approved').length;
   const processingDeclarations = filteredDeclarations.filter(d => d.status === 'processing').length;
 
-  if (loading || !profile) {
+  if (loading || !profile || !userRole) {
     return (
-      <Layout userRole={userRole} userName={profile?.name || user?.email || ''} userAvatar="">
+      <Layout userRole={userRole || 'student'} userName={profile?.name || user?.email || ''} userAvatar="">
         <div className="space-y-6">
           <div className="flex justify-center items-center min-h-[400px]">
             <p>Carregando...</p>

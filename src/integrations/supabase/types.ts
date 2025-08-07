@@ -14,6 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          date: string
+          id: string
+          is_present: boolean
+          justification: string | null
+          student_id: string
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          date: string
+          id?: string
+          is_present: boolean
+          justification?: string | null
+          student_id: string
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          is_present?: boolean
+          justification?: string | null
+          student_id?: string
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      classes: {
+        Row: {
+          created_at: string
+          grade: string
+          id: string
+          name: string
+          student_count: number | null
+          teacher_id: string | null
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          grade: string
+          id?: string
+          name: string
+          student_count?: number | null
+          teacher_id?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Update: {
+          created_at?: string
+          grade?: string
+          id?: string
+          name?: string
+          student_count?: number | null
+          teacher_id?: string | null
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communications: {
+        Row: {
+          attachments: string[] | null
+          author_id: string
+          content: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_published: boolean | null
+          priority: string
+          published_at: string | null
+          target_audience: string[]
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          attachments?: string[] | null
+          author_id: string
+          content: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          priority?: string
+          published_at?: string | null
+          target_audience: string[]
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          attachments?: string[] | null
+          author_id?: string
+          content?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_published?: boolean | null
+          priority?: string
+          published_at?: string | null
+          target_audience?: string[]
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communications_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       declarations: {
         Row: {
           created_at: string
@@ -89,38 +244,249 @@ export type Database = {
           },
         ]
       }
-      profiles: {
+      evasions: {
         Row: {
           created_at: string
-          email: string
+          date: string
           id: string
-          instructor_subjects: string[] | null
-          name: string
-          role: Database["public"]["Enums"]["app_role"]
-          student_id: string | null
+          observations: string | null
+          reason: string
+          reported_by: string
+          status: string
+          student_id: string
           updated_at: string
         }
         Insert: {
           created_at?: string
-          email: string
-          id: string
-          instructor_subjects?: string[] | null
-          name: string
-          role?: Database["public"]["Enums"]["app_role"]
-          student_id?: string | null
+          date: string
+          id?: string
+          observations?: string | null
+          reason: string
+          reported_by: string
+          status?: string
+          student_id: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          date?: string
+          id?: string
+          observations?: string | null
+          reason?: string
+          reported_by?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evasions_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evasions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grades: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          max_value: number
+          student_id: string
+          subject_id: string
+          teacher_id: string
+          type: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          max_value?: number
+          student_id: string
+          subject_id: string
+          teacher_id: string
+          type: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          max_value?: number
+          student_id?: string
+          subject_id?: string
+          teacher_id?: string
+          type?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grades_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grades_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          cep: string | null
+          city: string | null
+          class_id: string | null
+          complement: string | null
+          cpf: string | null
+          created_at: string
+          email: string
+          enrollment_date: string | null
+          escolaridade: string | null
+          full_name: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          id: string
+          instructor_subjects: string[] | null
+          name: string
+          neighborhood: string | null
+          number: string | null
+          parent_name: string | null
+          phone: string | null
+          photo: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          state: string | null
+          street: string | null
+          student_id: string | null
+          teacher_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar?: string | null
+          cep?: string | null
+          city?: string | null
+          class_id?: string | null
+          complement?: string | null
+          cpf?: string | null
+          created_at?: string
+          email: string
+          enrollment_date?: string | null
+          escolaridade?: string | null
+          full_name?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          id: string
+          instructor_subjects?: string[] | null
+          name: string
+          neighborhood?: string | null
+          number?: string | null
+          parent_name?: string | null
+          phone?: string | null
+          photo?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          state?: string | null
+          street?: string | null
+          student_id?: string | null
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar?: string | null
+          cep?: string | null
+          city?: string | null
+          class_id?: string | null
+          complement?: string | null
+          cpf?: string | null
+          created_at?: string
           email?: string
+          enrollment_date?: string | null
+          escolaridade?: string | null
+          full_name?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
           id?: string
           instructor_subjects?: string[] | null
           name?: string
+          neighborhood?: string | null
+          number?: string | null
+          parent_name?: string | null
+          phone?: string | null
+          photo?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          state?: string | null
+          street?: string | null
           student_id?: string | null
+          teacher_id?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      subjects: {
+        Row: {
+          class_id: string | null
+          created_at: string
+          id: string
+          name: string
+          teacher_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

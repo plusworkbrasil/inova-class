@@ -61,39 +61,25 @@ const Users = () => {
 
   const handleCreateUser = async (data: any) => {
     try {
-      // Criar usuário no Supabase Auth primeiro
-      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: 'senha123', // Senha temporária - deve ser alterada pelo usuário
-        email_confirm: true,
-        user_metadata: { name: data.name }
+      // Chamar a Edge Function para criar o usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`https://gaamkwzexqpzppgpkozy.supabase.co/functions/v1/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ userData: data }),
       });
 
-      if (authError) throw authError;
+      const result = await response.json();
 
-      // Inserir perfil na tabela profiles
-      const { data: newProfile, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authUser.user.id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          phone: data.phone,
-          cep: data.cep,
-          street: data.street,
-          number: data.number,
-          complement: data.complement,
-          neighborhood: data.neighborhood,
-          city: data.city,
-          state: data.state,
-        })
-        .select()
-        .single();
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao criar usuário');
+      }
 
-      if (profileError) throw profileError;
-
-      setUsers([newProfile, ...users]);
+      setUsers([result.profile, ...users]);
       toast({
         title: "Usuário criado com sucesso!",
         description: `O usuário ${data.name} foi criado com senha temporária: senha123`,

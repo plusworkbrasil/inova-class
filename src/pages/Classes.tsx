@@ -100,46 +100,122 @@ const Classes = () => {
     }
   };
 
-  const handleCreateClass = (data: any) => {
-    const newClass = {
-      id: classes.length + 1,
-      name: data.name,
-      period: data.period,
-      students: 0,
-      coordinator: data.coordinator,
-      subjects: 0,
-      status: data.status,
-      grade: data.grade,
-      year: data.year,
-    };
-    setClasses([...classes, newClass]);
-    toast({
-      title: "Turma criada com sucesso!",
-      description: `A turma ${data.name} foi criada.`,
-    });
+  const handleCreateClass = async (data: any) => {
+    try {
+      const { data: newClass, error } = await supabase
+        .from('classes')
+        .insert({
+          name: data.name,
+          grade: data.period, // Using period as grade since that's what the form collects
+          year: data.year,
+          // Note: coordinator field doesn't exist in DB schema, teacher_id should be used instead
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating class:', error);
+        toast({
+          title: "Erro ao criar turma",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setClasses([...classes, newClass]);
+      toast({
+        title: "Turma criada com sucesso!",
+        description: `A turma ${data.name} foi criada.`,
+      });
+    } catch (error) {
+      console.error('Error creating class:', error);
+      toast({
+        title: "Erro ao criar turma",
+        description: "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditClass = (classData: any) => {
-    const updatedClasses = classes.map(c => 
-      c.id === editingClass.id 
-        ? { ...c, ...classData }
-        : c
-    );
-    setClasses(updatedClasses);
-    setEditingClass(null);
-    toast({
-      title: "Turma atualizada com sucesso!",
-      description: `A turma ${classData.name} foi atualizada.`,
-    });
+  const handleEditClass = async (classData: any) => {
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .update({
+          name: classData.name,
+          grade: classData.period,
+          year: classData.year,
+        })
+        .eq('id', editingClass.id);
+
+      if (error) {
+        console.error('Error updating class:', error);
+        toast({
+          title: "Erro ao atualizar turma",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      const updatedClasses = classes.map(c => 
+        c.id === editingClass.id 
+          ? { ...c, ...classData }
+          : c
+      );
+      setClasses(updatedClasses);
+      setEditingClass(null);
+      toast({
+        title: "Turma atualizada com sucesso!",
+        description: `A turma ${classData.name} foi atualizada.`,
+      });
+    } catch (error) {
+      console.error('Error updating class:', error);
+      toast({
+        title: "Erro ao atualizar turma",
+        description: "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteClass = (classId: number) => {
-    setClasses(classes.filter(c => c.id !== classId));
-    toast({
-      title: "Turma excluída",
-      description: "A turma foi removida do sistema.",
-      variant: "destructive",
-    });
+  const handleDeleteClass = async (classId: string) => {
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .delete()
+        .eq('id', classId);
+
+      if (error) {
+        console.error('Error deleting class:', error);
+        toast({
+          title: "Erro ao excluir turma",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setClasses(classes.filter(c => c.id !== classId));
+      toast({
+        title: "Turma excluída",
+        description: "A turma foi removida do sistema.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      toast({
+        title: "Erro ao excluir turma",
+        description: "Ocorreu um erro inesperado.",
+        variant: "destructive",
+      });
+    }
+    setDeletingClass(null);
+    setIsDeleteDialogOpen(false);
   };
 
   const openDeleteDialog = (classItem: any) => {

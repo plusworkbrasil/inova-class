@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { useCommunications } from '@/hooks/useCommunications';
 
 const mockStudents = [
   { id: '1', name: 'João Silva', class: '1º Ano A', phone: '11999999999', email: 'joao@email.com' },
@@ -73,6 +74,7 @@ const Communications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { data: communications, loading, error, refetch } = useCommunications();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('userRole') as UserRole;
@@ -404,15 +406,15 @@ const Communications = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockCommunications.map((comm) => (
+                    {(communications || []).map((comm) => (
                       <TableRow key={comm.id}>
                         <TableCell className="font-medium">{comm.title}</TableCell>
                         <TableCell>{getTypeIcon(comm.type)}</TableCell>
-                        <TableCell>{comm.recipients}</TableCell>
-                        <TableCell>{new Date(comm.sentAt).toLocaleString('pt-BR')}</TableCell>
-                        <TableCell>{getStatusBadge(comm.status)}</TableCell>
-                        <TableCell>{comm.emailsSent}</TableCell>
-                        <TableCell>{comm.whatsappSent}</TableCell>
+                        <TableCell>{comm.target_audience?.join(', ') || 'N/A'}</TableCell>
+                        <TableCell>{new Date(comm.created_at).toLocaleString('pt-BR')}</TableCell>
+                        <TableCell>{getStatusBadge(comm.is_published ? 'sent' : 'draft')}</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>-</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

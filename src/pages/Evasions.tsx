@@ -10,6 +10,8 @@ import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart } from
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { useEvasions } from '@/hooks/useEvasions';
+import { supabase } from '@/integrations/supabase/client';
 
 const mockEvasionsData = [
   {
@@ -66,7 +68,7 @@ const Evasions = () => {
   const [selectedReason, setSelectedReason] = useState('');
   const [isEvasionFormOpen, setIsEvasionFormOpen] = useState(false);
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
-  const [evasions, setEvasions] = useState(mockEvasionsData);
+  const { data: evasions, loading, error, refetch } = useEvasions();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,37 +81,65 @@ const Evasions = () => {
     }
   }, []);
 
-  const handleCreateEvasion = (data: any) => {
-    const newEvasion = {
-      id: evasions.length + 1,
-      studentName: data.studentName,
-      studentId: data.studentId,
-      class: data.class,
-      evasionReason: data.evasionReason,
-      evasionDate: data.evasionDate,
-      registeredBy: userName,
-      registeredAt: new Date().toISOString().split('T')[0],
-      observations: data.observations || '',
-    };
-    setEvasions([newEvasion, ...evasions]);
-    toast({
-      title: "Evasão registrada com sucesso!",
-      description: `Evasão de ${data.studentName} foi registrada.`,
-    });
+  const handleCreateEvasion = async (data: any) => {
+    try {
+      const { error } = await supabase
+        .from('evasions')
+        .insert({
+          student_id: data.studentId,
+          date: data.evasionDate,
+          reason: data.evasionReason,
+          reported_by: userRole,
+          observations: data.observations,
+          status: 'active'
+        });
+
+      if (error) throw error;
+
+      await refetch();
+      toast({
+        title: "Evasão registrada com sucesso!",
+        description: `Evasão de ${data.studentName} foi registrada.`,
+      });
+    } catch (error) {
+      console.error('Erro ao criar evasão:', error);
+      toast({
+        title: "Erro ao registrar evasão",
+        description: "Não foi possível registrar a evasão.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditEvasion = (evasionData: any) => {
-    const updatedEvasions = evasions.map(e => 
-      e.id === editingEvasion.id 
-        ? { ...e, ...evasionData }
-        : e
-    );
-    setEvasions(updatedEvasions);
-    setEditingEvasion(null);
-    toast({
-      title: "Evasão atualizada com sucesso!",
-      description: `Registro de ${evasionData.studentName} foi atualizado.`,
-    });
+  const handleEditEvasion = async (evasionData: any) => {
+    if (!editingEvasion) return;
+    
+    try {
+      const { error } = await supabase
+        .from('evasions')
+        .update({
+          reason: evasionData.evasionReason,
+          observations: evasionData.observations,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingEvasion.id);
+
+      if (error) throw error;
+
+      await refetch();
+      setEditingEvasion(null);
+      toast({
+        title: "Evasão atualizada com sucesso!",
+        description: `Registro de ${evasionData.studentName} foi atualizado.`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar evasão:', error);
+      toast({
+        title: "Erro ao atualizar evasão",
+        description: "Não foi possível atualizar a evasão.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openEditForm = (evasion: any) => {
@@ -135,16 +165,16 @@ const Evasions = () => {
   };
 
   // Calcular estatísticas
-  const totalEvasions = evasions.length;
-  const thisMonthEvasions = evasions.filter(e => 
-    new Date(e.evasionDate).getMonth() === new Date().getMonth()
+  const totalEvasions = (evasions || []).length;
+  const thisMonthEvasions = (evasions || []).filter(e => 
+    new Date(e.date).getMonth() === new Date().getMonth()
   ).length;
-  const mainReason = evasions.reduce((acc, curr) => {
-    acc[curr.evasionReason] = (acc[curr.evasionReason] || 0) + 1;
+  const mainReason = (evasions || []).reduce((acc, curr) => {
+    acc[curr.reason] = (acc[curr.reason] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
-  const topReason = Object.entries(mainReason).sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
-  const classesAffected = new Set(evasions.map(e => e.class)).size;
+  const topReason = Object.entries(mainReason).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
+  const classesAffected = new Set((evasions || []).map(e => e.student?.class_id)).size;
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -273,18 +303,18 @@ const Evasions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {evasions.map((evasion) => (
+                {(evasions || []).map((evasion) => (
                   <TableRow key={evasion.id}>
-                    <TableCell className="font-medium">{evasion.studentName}</TableCell>
-                    <TableCell>{evasion.studentId}</TableCell>
-                    <TableCell>{evasion.class}</TableCell>
+                    <TableCell className="font-medium">{evasion.student?.name || 'N/A'}</TableCell>
+                    <TableCell>{evasion.student?.student_id || 'N/A'}</TableCell>
+                    <TableCell>N/A</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReasonColor(evasion.evasionReason)}`}>
-                        {evasion.evasionReason}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReasonColor(evasion.reason)}`}>
+                        {evasion.reason}
                       </span>
                     </TableCell>
-                    <TableCell>{new Date(evasion.evasionDate).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{evasion.registeredBy}</TableCell>
+                    <TableCell>{new Date(evasion.date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{evasion.reported_by_profile?.name || 'N/A'}</TableCell>
                     {userRole === 'secretary' && (
                       <TableCell>
                         <Button 

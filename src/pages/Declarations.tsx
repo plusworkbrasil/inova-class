@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { useDeclarations } from '@/hooks/useDeclarations';
 
 const mockDeclarationsData = [
   {

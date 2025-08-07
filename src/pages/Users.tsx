@@ -64,6 +64,7 @@ const Users = () => {
       const { data: newUser, error } = await supabase
         .from('profiles')
         .insert({
+          id: crypto.randomUUID(),
           name: data.name,
           email: data.email,
           role: data.role,

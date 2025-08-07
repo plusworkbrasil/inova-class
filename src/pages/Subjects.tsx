@@ -10,45 +10,7 @@ import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
-
-const mockSubjectsData = [
-  { 
-    id: 1, 
-    name: 'Matemática', 
-    code: 'MAT001',
-    teacher: 'Prof. João Silva',
-    workload: 80,
-    classes: ['1º Ano A', '1º Ano B'],
-    status: 'ativo' 
-  },
-  { 
-    id: 2, 
-    name: 'Português', 
-    code: 'POR001',
-    teacher: 'Prof. Maria Santos',
-    workload: 80,
-    classes: ['1º Ano A', '2º Ano A'],
-    status: 'ativo' 
-  },
-  { 
-    id: 3, 
-    name: 'História', 
-    code: 'HIS001',
-    teacher: 'Prof. Ana Costa',
-    workload: 60,
-    classes: ['2º Ano B', '3º Ano A'],
-    status: 'ativo' 
-  },
-  { 
-    id: 4, 
-    name: 'Física', 
-    code: 'FIS001',
-    teacher: 'Prof. Pedro Oliveira',
-    workload: 60,
-    classes: ['3º Ano A'],
-    status: 'inativo' 
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
 
 const Subjects = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -58,7 +20,8 @@ const Subjects = () => {
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [deletingSubject, setDeletingSubject] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [subjects, setSubjects] = useState(mockSubjectsData);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,47 +33,126 @@ const Subjects = () => {
       setUserRole(savedRole);
       setUserName(savedName);
     }
+    
+    fetchSubjects();
   }, []);
 
-  const handleCreateSubject = (data: any) => {
-    const newSubject = {
-      id: subjects.length + 1,
-      name: data.name,
-      code: data.code,
-      teacher: data.teacher,
-      workload: data.workload,
-      classes: data.classes,
-      status: data.status,
-      description: data.description,
-    };
-    setSubjects([...subjects, newSubject]);
-    toast({
-      title: "Disciplina criada com sucesso!",
-      description: `A disciplina ${data.name} foi criada.`,
-    });
+  const fetchSubjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('subjects')
+        .select(`
+          *,
+          teacher:profiles!subjects_teacher_id_fkey(name),
+          class:classes!subjects_class_id_fkey(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSubjects(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar disciplinas:', error);
+      toast({
+        title: "Erro ao carregar disciplinas",
+        description: "Não foi possível carregar as disciplinas.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditSubject = (subjectData: any) => {
-    const updatedSubjects = subjects.map(s => 
-      s.id === editingSubject.id 
-        ? { ...s, ...subjectData }
-        : s
-    );
-    setSubjects(updatedSubjects);
-    setEditingSubject(null);
-    toast({
-      title: "Disciplina atualizada com sucesso!",
-      description: `A disciplina ${subjectData.name} foi atualizada.`,
-    });
+  const handleCreateSubject = async (data: any) => {
+    try {
+      const { data: newSubject, error } = await supabase
+        .from('subjects')
+        .insert([{
+          name: data.name,
+          teacher_id: data.teacher_id,
+          class_id: data.class_id,
+        }])
+        .select(`
+          *,
+          teacher:profiles!subjects_teacher_id_fkey(name),
+          class:classes!subjects_class_id_fkey(name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setSubjects([newSubject, ...subjects]);
+      toast({
+        title: "Disciplina criada com sucesso!",
+        description: `A disciplina ${data.name} foi criada.`,
+      });
+    } catch (error) {
+      console.error('Erro ao criar disciplina:', error);
+      toast({
+        title: "Erro ao criar disciplina",
+        description: "Não foi possível criar a disciplina.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteSubject = (subjectId: number) => {
-    setSubjects(subjects.filter(s => s.id !== subjectId));
-    toast({
-      title: "Disciplina excluída",
-      description: "A disciplina foi removida do sistema.",
-      variant: "destructive",
-    });
+  const handleEditSubject = async (subjectData: any) => {
+    try {
+      const { data: updatedSubject, error } = await supabase
+        .from('subjects')
+        .update({
+          name: subjectData.name,
+          teacher_id: subjectData.teacher_id,
+          class_id: subjectData.class_id,
+        })
+        .eq('id', editingSubject.id)
+        .select(`
+          *,
+          teacher:profiles!subjects_teacher_id_fkey(name),
+          class:classes!subjects_class_id_fkey(name)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      setSubjects(subjects.map(s => s.id === editingSubject.id ? updatedSubject : s));
+      setEditingSubject(null);
+      toast({
+        title: "Disciplina atualizada com sucesso!",
+        description: `A disciplina ${subjectData.name} foi atualizada.`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar disciplina:', error);
+      toast({
+        title: "Erro ao atualizar disciplina",
+        description: "Não foi possível atualizar a disciplina.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSubject = async (subjectId: string) => {
+    try {
+      const { error } = await supabase
+        .from('subjects')
+        .delete()
+        .eq('id', subjectId);
+
+      if (error) throw error;
+
+      setSubjects(subjects.filter(s => s.id !== subjectId));
+      toast({
+        title: "Disciplina excluída",
+        description: "A disciplina foi removida do sistema.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir disciplina:', error);
+      toast({
+        title: "Erro ao excluir disciplina",
+        description: "Não foi possível excluir a disciplina.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openDeleteDialog = (subject: any) => {
@@ -127,6 +169,20 @@ const Subjects = () => {
     setEditingSubject(null);
     setIsFormOpen(true);
   };
+
+  const filteredSubjects = subjects.filter(subject =>
+    subject.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -145,7 +201,7 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Disciplinas</p>
-                  <p className="text-3xl font-bold text-primary">4</p>
+                  <p className="text-3xl font-bold text-primary">{subjects.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-primary" />
               </div>
@@ -157,7 +213,7 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Disciplinas Ativas</p>
-                  <p className="text-3xl font-bold text-success">3</p>
+                  <p className="text-3xl font-bold text-success">{subjects.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-success" />
               </div>
@@ -168,8 +224,8 @@ const Subjects = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Carga Horária Total</p>
-                  <p className="text-3xl font-bold text-info">280h</p>
+                  <p className="text-sm font-medium text-muted-foreground">Classes Cobertas</p>
+                  <p className="text-3xl font-bold text-info">{new Set(subjects.map(s => s.class_id)).size}</p>
                 </div>
                 <Clock className="h-8 w-8 text-info" />
               </div>
@@ -181,7 +237,7 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Instrutores</p>
-                  <p className="text-3xl font-bold text-warning">4</p>
+                  <p className="text-3xl font-bold text-warning">{new Set(subjects.map(s => s.teacher_id)).size}</p>
                 </div>
                 <User className="h-8 w-8 text-warning" />
               </div>
@@ -227,29 +283,25 @@ const Subjects = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subjects.map((subject) => (
+                {filteredSubjects.map((subject) => (
                   <TableRow key={subject.id}>
                     <TableCell className="font-medium">{subject.name}</TableCell>
-                    <TableCell>{subject.code}</TableCell>
-                    <TableCell>{subject.teacher}</TableCell>
+                    <TableCell>-</TableCell>
+                    <TableCell>{subject.teacher?.name || 'Não atribuído'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Clock size={14} />
-                        {subject.workload}h
+                        -
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {subject.classes.map((className, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {className}
-                          </Badge>
-                        ))}
-                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {subject.class?.name || 'Sem turma'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={subject.status === 'ativo' ? 'default' : 'secondary'}>
-                        {subject.status}
+                      <Badge variant="default">
+                        Ativo
                       </Badge>
                     </TableCell>
                     <TableCell>

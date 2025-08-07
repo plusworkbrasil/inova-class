@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,59 +11,153 @@ import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
-
-const mockUsersData = [
-  { id: 1, name: 'João Silva', email: 'joao@email.com', role: 'teacher' as UserRole, status: 'ativo' },
-  { id: 2, name: 'Maria Santos', email: 'maria@email.com', role: 'coordinator' as UserRole, status: 'ativo' },
-  { id: 3, name: 'Pedro Oliveira', email: 'pedro@email.com', role: 'secretary' as UserRole, status: 'inativo' },
-  { id: 4, name: 'Ana Costa', email: 'ana@email.com', role: 'tutor' as UserRole, status: 'ativo' },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { roleTranslations } from '@/lib/roleTranslations';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState(mockUsersData);
+  const [users, setUsers] = useState<any[]>([]);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const { toast } = useToast();
 
-  const handleCreateUser = (data: any) => {
-    const newUser = {
-      id: users.length + 1,
-      name: data.name,
-      email: data.email,
-      role: data.role as UserRole,
-      phone: data.phone,
-      status: data.status,
-    };
-    setUsers([...users, newUser]);
-    toast({
-      title: "Usuário criado com sucesso!",
-      description: `O usuário ${data.name} foi criado.`,
-    });
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+    
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar usuários:', error);
+      toast({
+        title: "Erro ao carregar usuários",
+        description: "Não foi possível carregar os usuários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditUser = (userData: any) => {
-    const updatedUsers = users.map(u => 
-      u.id === editingUser.id 
-        ? { ...u, ...userData }
-        : u
-    );
-    setUsers(updatedUsers);
-    setEditingUser(null);
-    toast({
-      title: "Usuário atualizado com sucesso!",
-      description: `O usuário ${userData.name} foi atualizado.`,
-    });
+  const handleCreateUser = async (data: any) => {
+    try {
+      const { data: newUser, error } = await supabase
+        .from('profiles')
+        .insert({
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          phone: data.phone,
+          cep: data.cep,
+          street: data.street,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setUsers([newUser, ...users]);
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: `O usuário ${data.name} foi criado.`,
+      });
+    } catch (error) {
+      console.error('Erro ao criar usuário:', error);
+      toast({
+        title: "Erro ao criar usuário",
+        description: "Não foi possível criar o usuário.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteUser = (userId: number) => {
-    setUsers(users.filter(u => u.id !== userId));
-    toast({
-      title: "Usuário excluído",
-      description: "O usuário foi removido do sistema.",
-      variant: "destructive",
-    });
+  const handleEditUser = async (userData: any) => {
+    try {
+      const { data: updatedUser, error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          phone: userData.phone,
+          cep: userData.cep,
+          street: userData.street,
+          number: userData.number,
+          complement: userData.complement,
+          neighborhood: userData.neighborhood,
+          city: userData.city,
+          state: userData.state,
+        })
+        .eq('id', editingUser.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === editingUser.id ? updatedUser : u));
+      setEditingUser(null);
+      toast({
+        title: "Usuário atualizado com sucesso!",
+        description: `O usuário ${userData.name} foi atualizado.`,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      toast({
+        title: "Erro ao atualizar usuário",
+        description: "Não foi possível atualizar o usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      setUsers(users.filter(u => u.id !== userId));
+      toast({
+        title: "Usuário excluído",
+        description: "O usuário foi removido do sistema.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Erro ao excluir usuário:', error);
+      toast({
+        title: "Erro ao excluir usuário",
+        description: "Não foi possível excluir o usuário.",
+        variant: "destructive",
+      });
+    }
   };
 
   const openDeleteDialog = (user: any) => {
@@ -83,8 +177,23 @@ const Users = () => {
     }
   };
 
+  const filteredUsers = users.filter(user =>
+    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
@@ -130,18 +239,18 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role}
+                        {roleTranslations[user.role] || user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.status === 'ativo' ? 'default' : 'secondary'}>
-                        {user.status}
+                      <Badge variant="default">
+                        Ativo
                       </Badge>
                     </TableCell>
                     <TableCell>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,7 +59,8 @@ const Classes = () => {
   const [editingClass, setEditingClass] = useState<any>(null);
   const [deletingClass, setDeletingClass] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [classes, setClasses] = useState(mockClassesData);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,7 +72,33 @@ const Classes = () => {
       setUserRole(savedRole);
       setUserName(savedName);
     }
+    
+    fetchClasses();
   }, []);
+
+  const fetchClasses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('classes')
+        .select(`
+          *,
+          teacher:profiles!classes_teacher_id_fkey(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setClasses(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar turmas:', error);
+      toast({
+        title: "Erro ao carregar turmas",
+        description: "Não foi possível carregar as turmas.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateClass = (data: any) => {
     const newClass = {

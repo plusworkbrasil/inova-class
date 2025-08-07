@@ -61,10 +61,21 @@ const Users = () => {
 
   const handleCreateUser = async (data: any) => {
     try {
-      const { data: newUser, error } = await supabase
+      // Criar usuário no Supabase Auth primeiro
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email: data.email,
+        password: 'senha123', // Senha temporária - deve ser alterada pelo usuário
+        email_confirm: true,
+        user_metadata: { name: data.name }
+      });
+
+      if (authError) throw authError;
+
+      // Inserir perfil na tabela profiles
+      const { data: newProfile, error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: crypto.randomUUID(),
+          id: authUser.user.id,
           name: data.name,
           email: data.email,
           role: data.role,
@@ -80,18 +91,18 @@ const Users = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      setUsers([newUser, ...users]);
+      setUsers([newProfile, ...users]);
       toast({
         title: "Usuário criado com sucesso!",
-        description: `O usuário ${data.name} foi criado.`,
+        description: `O usuário ${data.name} foi criado com senha temporária: senha123`,
       });
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
       toast({
         title: "Erro ao criar usuário",
-        description: "Não foi possível criar o usuário.",
+        description: error.message || "Não foi possível criar o usuário.",
         variant: "destructive",
       });
     }

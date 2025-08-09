@@ -7,6 +7,7 @@ import { UserRole } from '@/types/user';
 import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
+import StudentNotifications from '@/components/dashboard/StudentNotifications';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -207,6 +208,7 @@ const Dashboard = () => {
                   <Badge variant="secondary">• Turmas</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Disciplinas</Badge>
+                  <Badge variant="secondary">• Comunicação</Badge>
                   <Badge variant="secondary">• Relatórios</Badge>
                 </>
               )}
@@ -224,11 +226,17 @@ const Dashboard = () => {
                   <Badge variant="secondary">• Dashboard</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Declarações</Badge>
+                  <Badge variant="secondary">• Comunicação</Badge>
                 </>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Avisos para alunos */}
+        {userRole === 'student' && (
+          <StudentNotifications studentRole={userRole} />
+        )}
       </div>
     </Layout>
   );

@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useCommunications } from '@/hooks/useCommunications';
+import { supabase } from '@/integrations/supabase/client';
 
 const mockStudents = [
   { id: '1', name: 'João Silva', class: '1º Ano A', phone: '11999999999', email: 'joao@email.com' },
@@ -130,29 +131,37 @@ const Communications = () => {
       return;
     }
 
-    if (selectedStudents.length === 0 && selectedClasses.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Selecione pelo menos um destinatário.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      // Simular envio - aqui você integraria com Supabase Edge Functions
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
 
-      const recipients = selectedStudents.length + selectedClasses.reduce((total, classId) => {
-        const classData = mockClasses.find(c => c.id === classId);
-        return total + (classData?.students || 0);
-      }, 0);
+      // Definir público-alvo baseado no tipo de envio
+      const targetAudience = ['student']; // Avisos são direcionados aos alunos
+
+      const newCommunication = {
+        title: messageTitle,
+        content: messageContent,
+        type: 'announcement',
+        target_audience: targetAudience,
+        priority: 'normal',
+        author_id: user.id,
+        is_published: true,
+        published_at: new Date().toISOString(),
+      };
+
+      const { data, error } = await supabase
+        .from('communications')
+        .insert(newCommunication)
+        .select()
+        .single();
+
+      if (error) throw error;
 
       toast({
-        title: "Mensagem enviada com sucesso!",
-        description: `Informativo enviado para ${recipients} destinatários via ${sendType === 'both' ? 'email e WhatsApp' : sendType === 'email' ? 'email' : 'WhatsApp'}.`,
+        title: "Aviso criado com sucesso!",
+        description: "O aviso foi publicado e está visível para os alunos.",
       });
 
       // Limpar formulário
@@ -160,11 +169,12 @@ const Communications = () => {
       setMessageContent('');
       setSelectedStudents([]);
       setSelectedClasses([]);
+      refetch(); // Atualizar lista
 
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Erro ao enviar",
-        description: "Houve um problema ao enviar a mensagem. Tente novamente.",
+        title: "Erro ao criar aviso",
+        description: error.message || "Houve um problema ao criar o aviso. Tente novamente.",
         variant: "destructive",
       });
     } finally {

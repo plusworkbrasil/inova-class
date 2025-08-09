@@ -23,7 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useCommunications } from '@/hooks/useCommunications';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 
 const mockStudents = [
   { id: '1', name: 'João Silva', class: '1º Ano A', phone: '11999999999', email: 'joao@email.com' },
@@ -72,10 +72,11 @@ const Communications = () => {
   const [messageTitle, setMessageTitle] = useState('');
   const [messageContent, setMessageContent] = useState('');
   const [sendType, setSendType] = useState<'email' | 'whatsapp' | 'both'>('both');
+  const [priority, setPriority] = useState<'normal' | 'high'>('normal');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { data: communications, loading, error, refetch } = useCommunications();
+  const { data: communications, loading, error, createRecord, refetch } = useCommunications();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('userRole') as UserRole;
@@ -134,9 +135,6 @@ const Communications = () => {
     setIsLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
       // Definir público-alvo baseado no tipo de envio
       const targetAudience = ['student']; // Avisos são direcionados aos alunos
 
@@ -145,31 +143,19 @@ const Communications = () => {
         content: messageContent,
         type: 'announcement',
         target_audience: targetAudience,
-        priority: 'normal',
-        author_id: user.id,
+        priority: priority,
         is_published: true,
         published_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('communications')
-        .insert(newCommunication)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      toast({
-        title: "Aviso criado com sucesso!",
-        description: "O aviso foi publicado e está visível para os alunos.",
-      });
+      await createRecord(newCommunication);
 
       // Limpar formulário
       setMessageTitle('');
       setMessageContent('');
+      setPriority('normal');
       setSelectedStudents([]);
       setSelectedClasses([]);
-      refetch(); // Atualizar lista
 
     } catch (error: any) {
       toast({
@@ -319,6 +305,22 @@ const Communications = () => {
                         <SelectItem value="both">Email e WhatsApp</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium">Prioridade do Aviso</label>
+                    <Select value={priority} onValueChange={(value: any) => setPriority(value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="high">Urgente (Banner)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Avisos urgentes aparecerão como banner no topo da tela do aluno
+                    </p>
                   </div>
                   
                   <Button 

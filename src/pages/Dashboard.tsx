@@ -8,6 +8,7 @@ import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
+import StudentBanner from '@/components/dashboard/StudentBanner';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -112,6 +113,10 @@ const Dashboard = () => {
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
+        {/* Banner de avisos urgentes para alunos */}
+        {userRole === 'student' && (
+          <StudentBanner studentRole={userRole} />
+        )}
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-foreground">{content.title}</h1>

@@ -1,11 +1,5 @@
-import { useSupabaseData } from './useSupabaseData';
+import { useApiData } from './useApiData';
 
 export const useCommunications = () => {
-  return useSupabaseData(
-    'communications',
-    `
-      *,
-      author:profiles!communications_author_id_fkey(name)
-    `
-  );
+  return useApiData('communications');
 };

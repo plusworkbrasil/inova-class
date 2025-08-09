@@ -34,8 +34,8 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   }
 
   const displayRole = (profile?.role || userRole || 'student') as UserRole;
-  const displayName = profile?.name || userName || user?.user_metadata?.name || 'Usuário';
-  const displayAvatar = profile?.avatar || userAvatar || '';
+  const displayName = profile?.name || userName || user?.name || 'Usuário';
+  const displayAvatar = userAvatar || '';
 
   return (
     <div className="min-h-screen bg-background">

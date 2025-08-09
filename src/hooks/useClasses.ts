@@ -1,11 +1,5 @@
-import { useSupabaseData } from './useSupabaseData';
+import { useApiData } from './useApiData';
 
 export const useClasses = () => {
-  return useSupabaseData(
-    'classes',
-    `
-      *,
-      teacher:profiles!classes_teacher_id_fkey(name)
-    `
-  );
+  return useApiData('classes');
 };

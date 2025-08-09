@@ -26,13 +26,15 @@ const Dashboard = () => {
   }, []);
 
   const handleChangeUser = () => {
-    navigate('/user-selection');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userName');
+    navigate('/');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userName');
-    navigate('/user-selection');
+    navigate('/');
   };
 
   const getDashboardContent = () => {

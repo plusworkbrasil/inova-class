@@ -95,7 +95,9 @@ const StudentNotifications = ({ studentRole = 'student' }: StudentNotificationsP
                       {getPriorityIcon(notification.priority)}
                       <h4 className="font-semibold text-sm">{notification.title}</h4>
                     </div>
-                    {getPriorityBadge(notification.priority)}
+                    <div className="flex-shrink-0">
+                      {getPriorityBadge(notification.priority)}
+                    </div>
                   </div>
                   
                   <p className="text-sm text-muted-foreground leading-relaxed">

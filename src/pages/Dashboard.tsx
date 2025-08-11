@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
 import StudentBanner from '@/components/dashboard/StudentBanner';
+import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -205,6 +206,7 @@ const Dashboard = () => {
               {userRole === 'student' && (
                 <>
                   <Badge variant="secondary">• Dashboard</Badge>
+                  <Badge variant="secondary">• Meu Perfil</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Declarações</Badge>
                 </>
@@ -240,9 +242,9 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Avisos para alunos */}
+        {/* Módulo de Avisos Completo para Alunos */}
         {userRole === 'student' && (
-          <StudentNotifications studentRole={userRole} />
+          <StudentNotificationCenter studentRole={userRole} />
         )}
       </div>
     </Layout>

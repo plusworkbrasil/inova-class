@@ -42,15 +42,15 @@ const StudentNotificationCenter = ({ studentRole = 'student' }: StudentNotificat
     new Date(comm.published_at) <= new Date() &&
     (!comm.expires_at || new Date(comm.expires_at) > new Date()) &&
     comm.target_audience?.includes(studentRole) &&
-    !dismissedNotices.includes(comm.id)
+    !dismissedNotices.includes(Number(comm.id))
   ) || [];
 
   // Separar avisos por prioridade
   const urgentNotices = studentNotices.filter(notice => notice.priority === 'high');
   const regularNotices = studentNotices.filter(notice => notice.priority !== 'high');
 
-  const dismissNotice = (noticeId: number) => {
-    const newDismissed = [...dismissedNotices, noticeId];
+  const dismissNotice = (noticeId: string) => {
+    const newDismissed = [...dismissedNotices, Number(noticeId)];
     setDismissedNotices(newDismissed);
     localStorage.setItem('dismissed_notices', JSON.stringify(newDismissed));
   };

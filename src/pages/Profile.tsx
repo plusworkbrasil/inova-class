@@ -13,18 +13,12 @@ import { getRoleTranslation } from '@/lib/roleTranslations';
 import { UserRole } from '@/types/user';
 
 const Profile = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, profile, isAuthenticated } = useAuth();
   const { data: communications, loading: commLoading } = useCommunications();
-  const [userRole, setUserRole] = useState<UserRole>('student');
-  const [userName, setUserName] = useState('');
-
-  useEffect(() => {
-    const storedRole = localStorage.getItem('user_role') as UserRole;
-    const storedName = localStorage.getItem('user_name');
-    
-    if (storedRole) setUserRole(storedRole);
-    if (storedName) setUserName(storedName);
-  }, []);
+  
+  // Fallback para quando não temos profile ainda
+  const userRole = (profile?.role as UserRole) || 'student';
+  const userName = profile?.name || user?.email || 'Usuário';
 
   // Filtrar avisos da secretaria para alunos
   const secretaryNotices = communications?.filter(comm => 
@@ -32,18 +26,17 @@ const Profile = () => {
     comm.published_at &&
     new Date(comm.published_at) <= new Date() &&
     (!comm.expires_at || new Date(comm.expires_at) > new Date()) &&
-    comm.target_audience?.includes('student') &&
-    comm.created_by_role === 'secretary'
+    comm.target_audience?.includes('student')
   ) || [];
 
-  // Mock data para demonstração
+  // Mock data para demonstração (pode ser substituído por dados reais do profile)
   const studentData = {
-    id: '001',
-    name: userName || 'Aluno Exemplo',
+    id: profile?.student_id || '001',
+    name: userName,
     email: user?.email || 'aluno@exemplo.com',
     phone: '(11) 99999-9999',
     address: 'Rua das Flores, 123 - São Paulo, SP',
-    enrollment: '2024001',
+    enrollment: profile?.student_id || '2024001',
     course: 'Administração',
     semester: '3º Semestre',
     entryDate: '2023-02-15',

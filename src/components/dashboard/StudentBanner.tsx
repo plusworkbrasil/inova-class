@@ -21,11 +21,11 @@ const StudentBanner = ({ studentRole = 'student' }: StudentBannerProps) => {
     (!comm.expires_at || new Date(comm.expires_at) > new Date()) &&
     comm.target_audience?.includes(studentRole) &&
     comm.priority === 'high' &&
-    !dismissedNotices.includes(comm.id)
+    !dismissedNotices.includes(Number(comm.id))
   ) || [];
 
-  const dismissNotice = (noticeId: number) => {
-    setDismissedNotices(prev => [...prev, noticeId]);
+  const dismissNotice = (noticeId: string) => {
+    setDismissedNotices(prev => [...prev, Number(noticeId)]);
   };
 
   const getPriorityIcon = (priority: string) => {

@@ -34,7 +34,7 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   }
 
   const displayRole = (profile?.role || userRole || 'student') as UserRole;
-  const displayName = profile?.name || userName || user?.name || 'Usuário';
+  const displayName = profile?.name || userName || user?.email || 'Usuário';
   const displayAvatar = userAvatar || '';
 
   return (

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCommunications } from '@/hooks/useCommunications';
-import { useApiData } from '@/hooks/useApiData';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import { UserRole } from '@/types/user';
 
 const Notices = () => {
   const { user, isAuthenticated } = useAuth();
-  const { data: communications, loading, createRecord, updateRecord, deleteRecord, refetch } = useApiData('communications');
+  const { data: communications, loading, createCommunication, updateCommunication, deleteCommunication, refetch } = useCommunications();
   const { toast } = useToast();
   
   const [userRole, setUserRole] = useState<UserRole>('secretary');
@@ -44,9 +43,9 @@ const Notices = () => {
     if (storedName) setUserName(storedName);
   }, []);
 
-  // Filtrar apenas avisos criados pela secretaria
+  // Filtrar apenas avisos da secretaria (baseado no role do autor atual)
   const secretaryNotices = communications?.filter(comm => 
-    comm.created_by_role === 'secretary' || userRole === 'secretary'
+    userRole === 'secretary' || userRole === 'admin'
   ) || [];
 
   const handleCreateNotice = async () => {
@@ -61,16 +60,15 @@ const Notices = () => {
 
     try {
       const noticeData = {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        priority: formData.priority,
         target_audience: [formData.target_audience],
-        created_by_role: 'secretary',
-        created_by: user?.id || 'secretary-user',
         is_published: true,
-        published_at: new Date().toISOString(),
         expires_at: formData.expires_at || null
       };
 
-      await createRecord(noticeData);
+      await createCommunication(noticeData);
       
       setFormData({
         title: '',
@@ -80,17 +78,8 @@ const Notices = () => {
         expires_at: ''
       });
       setIsCreateDialogOpen(false);
-      
-      toast({
-        title: "Sucesso!",
-        description: "Aviso criado com sucesso."
-      });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao criar aviso."
-      });
+      console.error('Error creating notice:', error);
     }
   };
 
@@ -106,42 +95,27 @@ const Notices = () => {
 
     try {
       const noticeData = {
-        ...formData,
+        title: formData.title,
+        content: formData.content,
+        priority: formData.priority as 'low' | 'medium' | 'high',
         target_audience: [formData.target_audience],
         expires_at: formData.expires_at || null
       };
 
-      await updateRecord(editingNotice.id, noticeData);
+      await updateCommunication(editingNotice.id, noticeData);
       
       setEditingNotice(null);
       setIsEditDialogOpen(false);
-      
-      toast({
-        title: "Sucesso!",
-        description: "Aviso atualizado com sucesso."
-      });
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao atualizar aviso."
-      });
+      console.error('Error updating notice:', error);
     }
   };
 
   const handleDeleteNotice = async (noticeId: string) => {
     try {
-      await deleteRecord(noticeId);
-      toast({
-        title: "Sucesso!",
-        description: "Aviso excluído com sucesso."
-      });
+      await deleteCommunication(noticeId);
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao excluir aviso."
-      });
+      console.error('Error deleting notice:', error);
     }
   };
 

@@ -1,5 +1,5 @@
-import { useApiData } from './useApiData';
+import { useSupabaseData } from './useSupabaseData';
 
 export const useDeclarations = () => {
-  return useApiData('declarations');
+  return useSupabaseData('declarations');
 };

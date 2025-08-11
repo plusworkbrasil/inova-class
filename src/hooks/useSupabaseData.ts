@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from './use-toast';
 
-export const useSupabaseData = (
-  table: string,
-  query?: string,
-  dependencies: any[] = []
-) => {
+export const useSupabaseData = (table: string, query?: string, dependencies: any[] = []) => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,22 +12,25 @@ export const useSupabaseData = (
     try {
       setLoading(true);
       setError(null);
+
+      let queryBuilder = (supabase as any).from(table).select('*');
       
-      const { data: result, error: fetchError } = await supabase
-        .from(table as any)
-        .select(query || '*');
-      
-      if (fetchError) throw fetchError;
-      
+      if (query) {
+        // Parse basic query parameters
+        const params = new URLSearchParams(query);
+        for (const [key, value] of params.entries()) {
+          queryBuilder = queryBuilder.eq(key, value);
+        }
+      }
+
+      const { data: result, error } = await queryBuilder;
+
+      if (error) throw error;
+
       setData(result || []);
     } catch (err: any) {
-      const errorMessage = err.message || 'Erro ao carregar dados';
-      setError(errorMessage);
-      toast({
-        title: "Erro ao carregar dados",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      setError(err.message);
+      console.error(`Error fetching ${table}:`, err);
     } finally {
       setLoading(false);
     }
@@ -39,27 +38,27 @@ export const useSupabaseData = (
 
   const createRecord = async (record: any) => {
     try {
-      const { data: newRecord, error } = await supabase
-        .from(table as any)
-        .insert([record])
+      const { data, error } = await (supabase as any)
+        .from(table)
+        .insert(record)
         .select()
         .single();
 
       if (error) throw error;
 
-      setData(prev => [newRecord, ...prev]);
-      toast({
-        title: "Registro criado com sucesso!",
-        description: "O novo registro foi adicionado.",
-      });
+      await fetchData();
       
-      return newRecord;
-    } catch (err: any) {
-      const errorMessage = err.message || 'Erro ao criar registro';
       toast({
-        title: "Erro ao criar registro",
-        description: errorMessage,
+        title: "Sucesso!",
+        description: "Registro criado com sucesso."
+      });
+
+      return data;
+    } catch (err: any) {
+      toast({
         variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao criar registro."
       });
       throw err;
     }
@@ -67,31 +66,24 @@ export const useSupabaseData = (
 
   const updateRecord = async (id: string, updates: any) => {
     try {
-      const { data: updatedRecord, error } = await supabase
-        .from(table as any)
+      const { error } = await (supabase as any)
+        .from(table)
         .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
 
       if (error) throw error;
 
-      setData(prev => prev.map(item => 
-        item.id === id ? updatedRecord : item
-      ));
+      await fetchData();
       
       toast({
-        title: "Registro atualizado com sucesso!",
-        description: "As alterações foram salvas.",
+        title: "Sucesso!",
+        description: "Registro atualizado com sucesso."
       });
-      
-      return updatedRecord;
     } catch (err: any) {
-      const errorMessage = err.message || 'Erro ao atualizar registro';
       toast({
-        title: "Erro ao atualizar registro",
-        description: errorMessage,
         variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao atualizar registro."
       });
       throw err;
     }
@@ -99,26 +91,24 @@ export const useSupabaseData = (
 
   const deleteRecord = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from(table as any)
+      const { error } = await (supabase as any)
+        .from(table)
         .delete()
         .eq('id', id);
 
       if (error) throw error;
 
-      setData(prev => prev.filter(item => item.id !== id));
+      await fetchData();
       
       toast({
-        title: "Registro excluído",
-        description: "O registro foi removido do sistema.",
-        variant: "destructive",
+        title: "Sucesso!",
+        description: "Registro excluído com sucesso."
       });
     } catch (err: any) {
-      const errorMessage = err.message || 'Erro ao excluir registro';
       toast({
-        title: "Erro ao excluir registro",
-        description: errorMessage,
         variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao excluir registro."
       });
       throw err;
     }
@@ -135,6 +125,6 @@ export const useSupabaseData = (
     refetch: fetchData,
     createRecord,
     updateRecord,
-    deleteRecord,
+    deleteRecord
   };
 };

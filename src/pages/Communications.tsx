@@ -23,7 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useCommunications } from '@/hooks/useCommunications';
-import { apiClient } from '@/lib/api';
+
 
 const mockStudents = [
   { id: '1', name: 'João Silva', class: '1º Ano A', phone: '11999999999', email: 'joao@email.com' },
@@ -76,7 +76,7 @@ const Communications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { data: communications, loading, error, createRecord, refetch } = useCommunications();
+  const { data: communications, loading, error, createCommunication, refetch } = useCommunications();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('userRole') as UserRole;
@@ -141,14 +141,13 @@ const Communications = () => {
       const newCommunication = {
         title: messageTitle,
         content: messageContent,
-        type: 'announcement',
         target_audience: targetAudience,
         priority: priority,
         is_published: true,
-        published_at: new Date().toISOString(),
+        expires_at: null
       };
 
-      await createRecord(newCommunication);
+      await createCommunication(newCommunication);
 
       // Limpar formulário
       setMessageTitle('');

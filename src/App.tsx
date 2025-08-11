@@ -20,6 +20,8 @@ import Communications from "./pages/Communications";
 import StudentDashboard from "./pages/StudentDashboard";
 import Equipment from "./pages/Equipment";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import Notices from "./pages/Notices";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +47,8 @@ const App = () => (
           <Route path="/equipment" element={<Equipment />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/student-dashboard/:studentId" element={<StudentDashboard />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/notices" element={<Notices />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

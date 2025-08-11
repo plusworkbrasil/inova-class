@@ -16,7 +16,9 @@ import {
   X,
   UserX,
   Monitor,
-  Mail
+  Mail,
+  User,
+  Megaphone
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
@@ -55,6 +57,7 @@ const menuItems = {
     { icon: BookOpen, label: 'Notas', path: '/grades' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
     { icon: UserX, label: 'Evasões', path: '/evasions' },
+    { icon: Megaphone, label: 'Avisos', path: '/notices' },
     { icon: FileText, label: 'Comunicação', path: '/communications' },
   ],
   tutor: [
@@ -76,6 +79,7 @@ const menuItems = {
   ],
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: User, label: 'Meu Perfil', path: '/profile' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],

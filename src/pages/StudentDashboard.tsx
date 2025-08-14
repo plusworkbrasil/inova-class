@@ -8,6 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { ArrowLeft, User, Calendar, BookOpen, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { UserRole } from '@/types/user';
+import StudentBanner from '@/components/dashboard/StudentBanner';
+import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 
 const StudentDashboard = () => {
   const { studentId } = useParams();
@@ -98,6 +100,9 @@ const StudentDashboard = () => {
             <p className="text-muted-foreground">{studentInfo.name} - {studentInfo.class}</p>
           </div>
         </div>
+
+        {/* Banner de avisos urgentes para alunos */}
+        <StudentBanner studentRole="student" />
 
         {/* Student Info Card */}
         <Card>
@@ -254,6 +259,9 @@ const StudentDashboard = () => {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Módulo de Avisos Completo para Alunos */}
+        <StudentNotificationCenter studentRole="student" />
       </div>
     </Layout>
   );

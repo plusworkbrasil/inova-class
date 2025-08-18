@@ -21,8 +21,7 @@ import {
   Megaphone
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 
 interface NavigationProps {
@@ -89,7 +88,7 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { toast } = useToast();
+  const { signOut } = useAuth();
   const currentMenuItems = menuItems[userRole] || [];
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -99,25 +98,9 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
     setIsOpen(false);
   };
 
-  const handleLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      toast({
-        title: "Logout realizado com sucesso!",
-        description: "Você foi desconectado do sistema.",
-      });
-      
-      navigate('/auth');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao sair",
-        description: "Ocorreu um erro ao tentar sair do sistema.",
-      });
-    }
+  const handleLogout = () => {
+    signOut();
+    navigate('/auth');
   };
 
   const isActivePath = (path: string) => {

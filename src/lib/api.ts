@@ -1,5 +1,5 @@
-// API base URL - altere conforme seu domínio cPanel
-const API_BASE_URL = 'https://seudominio.com.br/api'; // ALTERE ESTE URL!
+// API base URL - IMPORTANTE: Altere para o seu domínio cPanel
+const API_BASE_URL = 'https://seu-dominio.com/api'; // ⚠️ ALTERE ESTE URL!
 
 // Classe para gerenciar chamadas da API
 class ApiClient {

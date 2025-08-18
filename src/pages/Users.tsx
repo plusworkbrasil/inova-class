@@ -12,41 +12,30 @@ import { UserForm } from '@/components/forms/UserForm';
 import { InviteStudentForm } from '@/components/forms/InviteStudentForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { roleTranslations } from '@/lib/roleTranslations';
+import { useAuth } from '@/hooks/useAuth';
 
 const Users = () => {
+  const { user } = useAuth();
+  const userRole = (user?.role || 'admin') as UserRole;
+  const userName = user?.name || 'Admin';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState<any[]>([]);
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
   const { toast } = useToast();
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
-    
     fetchUsers();
   }, []);
 
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await apiClient.get('profiles');
       setUsers(data || []);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
@@ -62,34 +51,30 @@ const Users = () => {
 
   const handleCreateUser = async (data: any) => {
     try {
-      // Chamar a Edge Function para criar o usuário
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(`https://gaamkwzexqpzppgpkozy.supabase.co/functions/v1/create-user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ userData: data }),
+      const newUser = await apiClient.create('profiles', {
+        name: data.name,
+        email: data.email,
+        role: data.role,
+        phone: data.phone,
+        cep: data.cep,
+        street: data.street,
+        number: data.number,
+        complement: data.complement,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao criar usuário');
-      }
-
-      setUsers([result.profile, ...users]);
+      setUsers([newUser, ...users]);
       toast({
         title: "Usuário criado com sucesso!",
-        description: `O usuário ${data.name} foi criado com senha temporária: senha123`,
+        description: `O usuário ${data.name} foi criado.`,
       });
     } catch (error) {
       console.error('Erro ao criar usuário:', error);
       toast({
         title: "Erro ao criar usuário",
-        description: error.message || "Não foi possível criar o usuário.",
+        description: "Não foi possível criar o usuário.",
         variant: "destructive",
       });
     }
@@ -130,29 +115,18 @@ const Users = () => {
 
   const handleInviteStudent = async (email: string, name: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(`https://gaamkwzexqpzppgpkozy.supabase.co/functions/v1/invite-student`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ email, name }),
-      });
+      // Por enquanto, simula o convite criando o usuário diretamente
+      const userData = {
+        name: name,
+        email: email,
+        role: 'student',
+      };
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao convidar estudante');
-      }
-
-      // Refresh users list
-      fetchUsers();
+      await handleCreateUser(userData);
       
       toast({
         title: "Convite enviado!",
-        description: `Um email foi enviado para ${email} com instruções para criar a senha.`,
+        description: `Usuário ${name} foi criado com sucesso.`,
       });
     } catch (error: any) {
       console.error('Erro ao convidar estudante:', error);
@@ -166,29 +140,23 @@ const Users = () => {
 
   const handleEditUser = async (userData: any) => {
     try {
-      const { data: updatedUser, error } = await supabase
-        .from('profiles')
-        .update({
-          name: userData.name,
-          email: userData.email,
-          role: userData.role,
-          phone: userData.phone,
-          cep: userData.cep,
-          street: userData.street,
-          number: userData.number,
-          complement: userData.complement,
-          neighborhood: userData.neighborhood,
-          city: userData.city,
-          state: userData.state,
-        })
-        .eq('id', editingUser.id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const updatedUser = await apiClient.update('profiles', editingUser.id, {
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        phone: userData.phone,
+        cep: userData.cep,
+        street: userData.street,
+        number: userData.number,
+        complement: userData.complement,
+        neighborhood: userData.neighborhood,
+        city: userData.city,
+        state: userData.state,
+      });
 
       setUsers(users.map(u => u.id === editingUser.id ? updatedUser : u));
       setEditingUser(null);
+      
       toast({
         title: "Usuário atualizado com sucesso!",
         description: `O usuário ${userData.name} foi atualizado.`,
@@ -205,14 +173,9 @@ const Users = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (error) throw error;
-
+      await apiClient.delete('profiles', userId);
       setUsers(users.filter(u => u.id !== userId));
+      
       toast({
         title: "Usuário excluído",
         description: "O usuário foi removido do sistema.",

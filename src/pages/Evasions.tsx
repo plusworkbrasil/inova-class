@@ -10,93 +10,55 @@ import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart } from
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { useEvasions } from '@/hooks/useEvasions';
-import { supabase } from '@/integrations/supabase/client';
-
-const mockEvasionsData = [
-  {
-    id: 1,
-    studentName: 'Carlos Mendes',
-    studentId: '2024010',
-    class: '1º Ano A',
-    evasionReason: 'Dificuldades financeiras',
-    evasionDate: '2024-01-20',
-    registeredBy: 'Secretaria Maria',
-    registeredAt: '2024-01-20',
-    observations: 'Aluno relatou dificuldades para pagamento das mensalidades'
-  },
-  {
-    id: 2,
-    studentName: 'Fernanda Lima',
-    studentId: '2024015',
-    class: '2º Ano B',
-    evasionReason: 'Mudança de cidade',
-    evasionDate: '2024-01-18',
-    registeredBy: 'Secretaria João',
-    registeredAt: '2024-01-18',
-    observations: 'Família se mudou para outro estado por motivos profissionais'
-  },
-  {
-    id: 3,
-    studentName: 'Roberto Silva',
-    studentId: '2024008',
-    class: '3º Ano A',
-    evasionReason: 'Conseguiu emprego',
-    evasionDate: '2024-01-15',
-    registeredBy: 'Secretaria Maria',
-    registeredAt: '2024-01-15',
-    observations: 'Conseguiu oportunidade de trabalho em horário integral'
-  },
-  {
-    id: 4,
-    studentName: 'Ana Beatriz',
-    studentId: '2024012',
-    class: '1º Ano B',
-    evasionReason: 'Insatisfação com o curso',
-    evasionDate: '2024-01-10',
-    registeredBy: 'Secretaria João',
-    registeredAt: '2024-01-10',
-    observations: 'Relatou que o curso não atendia suas expectativas'
-  },
-];
+import { apiClient } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 const Evasions = () => {
-  const [userRole, setUserRole] = useState<UserRole>('secretary');
-  const [userName, setUserName] = useState('Secretaria Maria');
+  const { user } = useAuth();
+  const userRole = (user?.role || 'secretary') as UserRole;
+  const userName = user?.name || 'Secretaria';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedReason, setSelectedReason] = useState('');
   const [isEvasionFormOpen, setIsEvasionFormOpen] = useState(false);
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
-  const { data: evasions, loading, error, refetch } = useEvasions();
+  const [evasions, setEvasions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
+    fetchEvasions();
   }, []);
+
+  const fetchEvasions = async () => {
+    try {
+      const data = await apiClient.get('evasions');
+      setEvasions(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar evasões:', error);
+      toast({
+        title: "Erro ao carregar evasões",
+        description: "Não foi possível carregar as evasões.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCreateEvasion = async (data: any) => {
     try {
-      const { error } = await supabase
-        .from('evasions')
-        .insert({
-          student_id: data.studentId,
-          date: data.evasionDate,
-          reason: data.evasionReason,
-          reported_by: userRole,
-          observations: data.observations,
-          status: 'active'
-        });
+      await apiClient.create('evasions', {
+        student_id: data.studentId,
+        date: data.evasionDate,
+        reason: data.evasionReason,
+        reported_by: userRole,
+        observations: data.observations,
+        status: 'active'
+      });
 
-      if (error) throw error;
-
-      await refetch();
+      await fetchEvasions();
       toast({
         title: "Evasão registrada com sucesso!",
         description: `Evasão de ${data.studentName} foi registrada.`,
@@ -115,19 +77,14 @@ const Evasions = () => {
     if (!editingEvasion) return;
     
     try {
-      const { error } = await supabase
-        .from('evasions')
-        .update({
-          reason: evasionData.evasionReason,
-          observations: evasionData.observations,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingEvasion.id);
+      await apiClient.update('evasions', editingEvasion.id, {
+        reason: evasionData.evasionReason,
+        observations: evasionData.observations,
+      });
 
-      if (error) throw error;
-
-      await refetch();
+      await fetchEvasions();
       setEditingEvasion(null);
+      
       toast({
         title: "Evasão atualizada com sucesso!",
         description: `Registro de ${evasionData.studentName} foi atualizado.`,
@@ -165,16 +122,37 @@ const Evasions = () => {
   };
 
   // Calcular estatísticas
-  const totalEvasions = (evasions || []).length;
-  const thisMonthEvasions = (evasions || []).filter(e => 
+  const totalEvasions = evasions.length;
+  const thisMonthEvasions = evasions.filter(e => 
     new Date(e.date).getMonth() === new Date().getMonth()
   ).length;
-  const mainReason = (evasions || []).reduce((acc, curr) => {
+  const mainReason = evasions.reduce((acc, curr) => {
     acc[curr.reason] = (acc[curr.reason] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
   const topReason = Object.entries(mainReason).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
-  const classesAffected = new Set((evasions || []).map(e => e.student?.class_id)).size;
+  const classesAffected = new Set(evasions.map(e => e.student?.class_id)).size;
+
+  // Filter evasions
+  const filteredEvasions = evasions.filter(evasion => {
+    if (searchTerm && !evasion.student_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+      return false;
+    }
+    if (selectedReason && evasion.reason !== selectedReason) {
+      return false;
+    }
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -294,8 +272,6 @@ const Evasions = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Aluno</TableHead>
-                  <TableHead>Matrícula</TableHead>
-                  <TableHead>Turma</TableHead>
                   <TableHead>Motivo</TableHead>
                   <TableHead>Data da Evasão</TableHead>
                   <TableHead>Registrado por</TableHead>
@@ -303,18 +279,16 @@ const Evasions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(evasions || []).map((evasion) => (
+                {filteredEvasions.map((evasion) => (
                   <TableRow key={evasion.id}>
-                    <TableCell className="font-medium">{evasion.student?.name || 'N/A'}</TableCell>
-                    <TableCell>{evasion.student?.student_id || 'N/A'}</TableCell>
-                    <TableCell>N/A</TableCell>
+                    <TableCell className="font-medium">{evasion.student_name || 'N/A'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReasonColor(evasion.reason)}`}>
                         {evasion.reason}
                       </span>
                     </TableCell>
                     <TableCell>{new Date(evasion.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{evasion.reported_by_profile?.name || 'N/A'}</TableCell>
+                    <TableCell>{evasion.reported_by || 'N/A'}</TableCell>
                     {userRole === 'secretary' && (
                       <TableCell>
                         <Button 

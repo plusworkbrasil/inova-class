@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiClient } from '@/lib/api';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,13 @@ import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 const Subjects = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const { user } = useAuth();
+  const userRole = (user?.role || 'admin') as UserRole;
+  const userName = user?.name || 'Admin';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
@@ -25,30 +28,12 @@ const Subjects = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
-    
     fetchSubjects();
   }, []);
 
   const fetchSubjects = async () => {
     try {
-      const { data, error } = await supabase
-        .from('subjects')
-        .select(`
-          *,
-          teacher:profiles!subjects_teacher_id_fkey(name),
-          class:classes!subjects_class_id_fkey(name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await apiClient.get('subjects');
       setSubjects(data || []);
     } catch (error) {
       console.error('Erro ao carregar disciplinas:', error);
@@ -64,21 +49,11 @@ const Subjects = () => {
 
   const handleCreateSubject = async (data: any) => {
     try {
-      const { data: newSubject, error } = await supabase
-        .from('subjects')
-        .insert([{
-          name: data.name,
-          teacher_id: data.teacher_id,
-          class_id: data.class_id,
-        }])
-        .select(`
-          *,
-          teacher:profiles!subjects_teacher_id_fkey(name),
-          class:classes!subjects_class_id_fkey(name)
-        `)
-        .single();
-
-      if (error) throw error;
+      const newSubject = await apiClient.create('subjects', {
+        name: data.name,
+        teacher_id: data.teacher_id,
+        class_id: data.class_id,
+      });
 
       setSubjects([newSubject, ...subjects]);
       toast({
@@ -96,26 +71,18 @@ const Subjects = () => {
   };
 
   const handleEditSubject = async (subjectData: any) => {
+    if (!editingSubject) return;
+    
     try {
-      const { data: updatedSubject, error } = await supabase
-        .from('subjects')
-        .update({
-          name: subjectData.name,
-          teacher_id: subjectData.teacher_id,
-          class_id: subjectData.class_id,
-        })
-        .eq('id', editingSubject.id)
-        .select(`
-          *,
-          teacher:profiles!subjects_teacher_id_fkey(name),
-          class:classes!subjects_class_id_fkey(name)
-        `)
-        .single();
-
-      if (error) throw error;
+      const updatedSubject = await apiClient.update('subjects', editingSubject.id, {
+        name: subjectData.name,
+        teacher_id: subjectData.teacher_id,
+        class_id: subjectData.class_id,
+      });
 
       setSubjects(subjects.map(s => s.id === editingSubject.id ? updatedSubject : s));
       setEditingSubject(null);
+      
       toast({
         title: "Disciplina atualizada com sucesso!",
         description: `A disciplina ${subjectData.name} foi atualizada.`,
@@ -132,14 +99,9 @@ const Subjects = () => {
 
   const handleDeleteSubject = async (subjectId: string) => {
     try {
-      const { error } = await supabase
-        .from('subjects')
-        .delete()
-        .eq('id', subjectId);
-
-      if (error) throw error;
-
+      await apiClient.delete('subjects', subjectId);
       setSubjects(subjects.filter(s => s.id !== subjectId));
+      
       toast({
         title: "Disciplina excluída",
         description: "A disciplina foi removida do sistema.",
@@ -225,7 +187,7 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Classes Cobertas</p>
-                  <p className="text-3xl font-bold text-info">{new Set(subjects.map(s => s.class_id)).size}</p>
+                  <p className="text-3xl font-bold text-info">-</p>
                 </div>
                 <Clock className="h-8 w-8 text-info" />
               </div>
@@ -237,7 +199,7 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Instrutores</p>
-                  <p className="text-3xl font-bold text-warning">{new Set(subjects.map(s => s.teacher_id)).size}</p>
+                  <p className="text-3xl font-bold text-warning">-</p>
                 </div>
                 <User className="h-8 w-8 text-warning" />
               </div>
@@ -274,10 +236,8 @@ const Subjects = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Disciplina</TableHead>
-                  <TableHead>Código</TableHead>
                   <TableHead>Instrutor</TableHead>
-                  <TableHead>Carga Horária</TableHead>
-                  <TableHead>Turmas</TableHead>
+                  <TableHead>Turma</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -286,17 +246,10 @@ const Subjects = () => {
                 {filteredSubjects.map((subject) => (
                   <TableRow key={subject.id}>
                     <TableCell className="font-medium">{subject.name}</TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell>{subject.teacher?.name || 'Não atribuído'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Clock size={14} />
-                        -
-                      </div>
-                    </TableCell>
+                    <TableCell>{subject.teacher_name || 'Não atribuído'}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
-                        {subject.class?.name || 'Sem turma'}
+                        {subject.class_name || 'Sem turma'}
                       </Badge>
                     </TableCell>
                     <TableCell>

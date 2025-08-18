@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import Layout from '@/components/layout/Layout';
 import { UserRole } from '@/types/user';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useAuth } from '@/hooks/useAuth';
 
 const equipmentSchema = z.object({
-  student_id: z.string().uuid({ message: 'Selecione um aluno' }),
+  student_id: z.string().min(1, { message: 'Selecione um aluno' }),
   computer_number: z.string().regex(/^[0-9]{3}$/, { message: 'Número deve ter 3 dígitos' }),
   shift: z.enum(['morning', 'afternoon', 'evening'], { message: 'Selecione um turno' }),
   notes: z.string().optional(),
@@ -32,10 +33,10 @@ const Equipment = () => {
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
-  // Mock user data - em produção seria obtido do contexto de autenticação
-  const userRole: UserRole = 'instructor';
-  const userName = 'Professor Instrutor';
+  const userRole: UserRole = (user?.role || 'instructor') as UserRole;
+  const userName = user?.name || 'Professor Instrutor';
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -48,31 +49,31 @@ const Equipment = () => {
   const { data: students = [] } = useQuery({
     queryKey: ['students'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, student_id')
-        .eq('role', 'student')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      try {
+        const data = await apiClient.get('profiles');
+        return data.filter((profile: any) => profile.role === 'student');
+      } catch (error) {
+        console.error('Error fetching students:', error);
+        return [];
+      }
     },
   });
 
-  // Buscar atribuições de computador - usando SQL direto por enquanto
+  // Buscar atribuições de computador - usando mock data por enquanto
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ['computer-assignments'],
     queryFn: async () => {
-      // Por enquanto retornamos dados mock até a tabela estar disponível no TypeScript
+      // Por enquanto retornamos dados mock até a tabela estar implementada
       return [];
     },
   });
 
-  // Criar/Atualizar atribuição - usando SQL direto por enquanto
+  // Criar/Atualizar atribuição - usando mock por enquanto
   const assignmentMutation = useMutation({
     mutationFn: async (data: EquipmentFormData & { id?: string }) => {
-      // Por enquanto simula sucesso - implementação real quando os tipos estiverem atualizados
+      // Por enquanto simula sucesso - implementação real quando a tabela estiver pronta
       await new Promise(resolve => setTimeout(resolve, 1000));
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['computer-assignments'] });
@@ -93,11 +94,12 @@ const Equipment = () => {
     },
   });
 
-  // Remover atribuição - usando SQL direto por enquanto
+  // Remover atribuição - usando mock por enquanto
   const removeMutation = useMutation({
     mutationFn: async (id: string) => {
-      // Por enquanto simula sucesso - implementação real quando os tipos estiverem atualizados
+      // Por enquanto simula sucesso - implementação real quando a tabela estiver pronta
       await new Promise(resolve => setTimeout(resolve, 500));
+      return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['computer-assignments'] });
@@ -195,9 +197,9 @@ const Equipment = () => {
                       <SelectValue placeholder="Selecione um aluno" />
                     </SelectTrigger>
                     <SelectContent>
-                      {students.map((student) => (
+                      {students.map((student: any) => (
                         <SelectItem key={student.id} value={student.id}>
-                          {student.name} ({student.student_id})
+                          {student.name} ({student.student_id || student.email})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -299,43 +301,43 @@ const Equipment = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {assignments.map((assignment) => (
-                    <TableRow key="demo">
+                  {assignments.map((assignment: any) => (
+                    <TableRow key={assignment.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">João Silva</div>
+                          <div className="font-medium">{assignment.student?.name}</div>
                           <div className="text-sm text-muted-foreground">
-                            2024001
+                            {assignment.student?.student_id || assignment.student?.email}
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          PC 001
+                          PC {assignment.computer_number}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          Manhã
+                          {getShiftLabel(assignment.shift)}
                         </Badge>
                       </TableCell>
-                      <TableCell>Professor Instrutor</TableCell>
+                      <TableCell>{assignment.assigned_by_name}</TableCell>
                       <TableCell>
-                        {new Date().toLocaleDateString('pt-BR')}
+                        {assignment.created_at ? new Date(assignment.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {}}
+                            onClick={() => handleEdit(assignment)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {}}
+                            onClick={() => handleRemove(assignment.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

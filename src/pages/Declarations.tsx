@@ -10,74 +10,14 @@ import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle } f
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
-import { useDeclarations } from '@/hooks/useDeclarations';
-
-const mockDeclarationsData = [
-  {
-    id: 1,
-    studentName: 'João Silva',
-    studentId: '2024001',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    type: 'Declaração de Matrícula',
-    status: 'approved',
-    requestDate: '2024-01-15',
-    deliveryDate: '2024-01-16',
-    requestedBy: 'Aluno',
-    purpose: 'Apresentar no trabalho',
-    observations: 'Urgente para processo seletivo'
-  },
-  {
-    id: 2,
-    studentName: 'Maria Santos',
-    studentId: '2024002',
-    class: '2º Ano B',
-    subject: 'Física',
-    type: 'Declaração de Frequência',
-    status: 'pending',
-    requestDate: '2024-01-14',
-    deliveryDate: null,
-    requestedBy: 'Responsável',
-    purpose: 'Bolsa de estudos',
-    observations: ''
-  },
-  {
-    id: 3,
-    studentName: 'Pedro Oliveira',
-    studentId: '2024003',
-    class: '3º Ano C',
-    subject: 'História',
-    type: 'Histórico Escolar',
-    status: 'processing',
-    requestDate: '2024-01-13',
-    deliveryDate: null,
-    requestedBy: 'Aluno',
-    purpose: 'Transferência de escola',
-    observations: 'Incluir notas parciais do semestre'
-  },
-  {
-    id: 4,
-    studentName: 'Ana Costa',
-    studentId: '2024004',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    type: 'Declaração de Conclusão',
-    status: 'rejected',
-    requestDate: '2024-01-12',
-    deliveryDate: null,
-    requestedBy: 'Responsável',
-    purpose: 'Curso técnico',
-    observations: 'Aluno ainda não concluiu o curso'
-  },
-];
+import { apiClient } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 const Declarations = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const { user } = useAuth();
+  const userRole = (user?.role || 'student') as UserRole;
+  const userName = user?.name || user?.email || 'User';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedType, setSelectedType] = useState('');
@@ -88,116 +28,15 @@ const Declarations = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
-
-  useEffect(() => {
     if (user && userRole) {
       fetchDeclarations();
     }
   }, [user, userRole]);
 
-  const fetchProfile = async () => {
-    if (!user) return;
-    
-    console.log('=== DEBUG DECLARATIONS ===');
-    console.log('Current user ID:', user.id);
-    console.log('Current user email:', user.email);
-    
-    // Check if we're using localStorage role simulation
-    const localStorageRole = localStorage.getItem('userRole') as UserRole;
-    const localStorageName = localStorage.getItem('userName');
-    
-    console.log('LocalStorage role:', localStorageRole);
-    console.log('LocalStorage name:', localStorageName);
-    
-    if (localStorageRole && localStorageName) {
-      // Use localStorage simulation instead of database
-      console.log('Using localStorage simulation');
-      setProfile({ 
-        id: user.id, 
-        name: localStorageName, 
-        email: user.email, 
-        role: localStorageRole 
-      });
-      setUserRole(localStorageRole);
-      return;
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      console.log('Profile query result:', { data, error });
-      
-      if (error) throw error;
-      
-      console.log('Setting profile and userRole:', data);
-      console.log('User role will be set to:', data.role);
-      
-      setProfile(data);
-      setUserRole(data.role);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar perfil do usuário.",
-      });
-    }
-  };
-
   const fetchDeclarations = async () => {
-    if (!user) return;
-    
     try {
       setLoading(true);
-      let query = supabase
-        .from('declarations')
-        .select(`
-          *,
-          student:profiles!declarations_student_id_fkey(name, email, student_id),
-          processed_by_profile:profiles!declarations_processed_by_fkey(name)
-        `);
-      
-      // Filter based on user role
-      if (userRole === 'student') {
-        query = query.eq('student_id', user.id);
-      } else if (userRole === 'instructor') {
-        // Instructors can only see medical certificates from their subjects
-        query = query
-          .eq('type', 'medical_certificate')
-          .contains('subject_id', profile?.instructor_subjects || []);
-      }
-      // Admins and secretaries can see all declarations
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
+      const data = await apiClient.get('declarations');
       setDeclarations(data || []);
     } catch (error) {
       console.error('Error fetching declarations:', error);
@@ -212,7 +51,7 @@ const Declarations = () => {
   };
 
   const handleCreateDeclaration = async (data: any) => {
-    if (!user || !profile) return;
+    if (!user) return;
     
     try {
       const declarationData = {
@@ -226,12 +65,7 @@ const Declarations = () => {
         status: 'pending'
       };
 
-      const { error } = await supabase
-        .from('declarations')
-        .insert([declarationData]);
-
-      if (error) throw error;
-
+      await apiClient.create('declarations', declarationData);
       await fetchDeclarations();
       
       toast({
@@ -252,18 +86,12 @@ const Declarations = () => {
     if (!editingDeclaration) return;
     
     try {
-      const { error } = await supabase
-        .from('declarations')
-        .update({
-          title: declarationData.type,
-          description: declarationData.observations,
-          purpose: declarationData.purpose,
-          urgency: declarationData.urgency,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingDeclaration.id);
-
-      if (error) throw error;
+      await apiClient.update('declarations', editingDeclaration.id, {
+        title: declarationData.type,
+        description: declarationData.observations,
+        purpose: declarationData.purpose,
+        urgency: declarationData.urgency,
+      });
 
       await fetchDeclarations();
       setEditingDeclaration(null);
@@ -296,13 +124,7 @@ const Declarations = () => {
         updateData.delivery_date = new Date().toISOString().split('T')[0];
       }
 
-      const { error } = await supabase
-        .from('declarations')
-        .update(updateData)
-        .eq('id', declarationId);
-
-      if (error) throw error;
-
+      await apiClient.update('declarations', declarationId, updateData);
       await fetchDeclarations();
       
       toast({
@@ -344,19 +166,9 @@ const Declarations = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Declaração de Matrícula': return 'bg-blue-100 text-blue-800';
-      case 'Declaração de Frequência': return 'bg-green-100 text-green-800';
-      case 'Histórico Escolar': return 'bg-purple-100 text-purple-800';
-      case 'Declaração de Conclusão': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   // Filter declarations based on search and filters
   const filteredDeclarations = declarations.filter(declaration => {
-    if (searchTerm && !declaration.student?.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !declaration.student_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     if (selectedStatus && declaration.status !== selectedStatus) {
@@ -374,9 +186,9 @@ const Declarations = () => {
   const approvedDeclarations = filteredDeclarations.filter(d => d.status === 'approved').length;
   const processingDeclarations = filteredDeclarations.filter(d => d.status === 'processing').length;
 
-  if (loading || !profile || !userRole) {
+  if (loading) {
     return (
-      <Layout userRole={userRole || 'student'} userName={profile?.name || user?.email || ''} userAvatar="">
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="space-y-6">
           <div className="flex justify-center items-center min-h-[400px]">
             <p>Carregando...</p>
@@ -387,7 +199,7 @@ const Declarations = () => {
   }
 
   return (
-    <Layout userRole={userRole} userName={profile.name} userAvatar="">
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">
@@ -501,128 +313,73 @@ const Declarations = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              {userRole === 'student' ? 'Minhas Solicitações' : 'Solicitações de Declarações'}
-            </CardTitle>
+            <CardTitle>Lista de Declarações</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
-               <TableRow>
-                  {userRole !== 'student' && <TableHead>Aluno</TableHead>}
-                  {userRole !== 'student' && <TableHead>Matrícula</TableHead>}
-                      {userRole === 'instructor' && (
-                        <>
-                          <TableHead>Turma</TableHead>
-                          <TableHead>Disciplina</TableHead>
-                        </>
-                      )}
+                <TableRow>
                   <TableHead>Tipo</TableHead>
+                  <TableHead>Aluno</TableHead>
+                  <TableHead>Data da Solicitação</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Data Solicitação</TableHead>
-                  <TableHead>Data Entrega</TableHead>
-                  <TableHead>Solicitante</TableHead>
-                  <TableHead>Ações</TableHead>
+                  {(userRole === 'admin' || userRole === 'secretary') && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                 {loading ? (
-                   <TableRow>
-                     <TableCell colSpan={8} className="text-center py-8">
-                       Carregando declarações...
-                     </TableCell>
-                   </TableRow>
-                 ) : filteredDeclarations.length === 0 ? (
-                   <TableRow>
-                     <TableCell colSpan={8} className="text-center py-8">
-                       Nenhuma declaração encontrada.
-                     </TableCell>
-                   </TableRow>
-                 ) : (
-                   filteredDeclarations.map((declaration) => (
-                     <TableRow key={declaration.id}>
-                       {userRole !== 'student' && <TableCell className="font-medium">{declaration.student?.name}</TableCell>}
-                       {userRole !== 'student' && <TableCell>{declaration.student?.student_id}</TableCell>}
-                       {userRole === 'instructor' && (
-                         <>
-                           <TableCell>-</TableCell>
-                           <TableCell>{declaration.subject_id}</TableCell>
-                         </>
-                       )}
-                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(declaration.title)}`}>
-                          {declaration.title}
-                        </span>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(declaration.status)}</TableCell>
-                      <TableCell>{new Date(declaration.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                      <TableCell>
-                        {declaration.delivery_date ? new Date(declaration.delivery_date).toLocaleDateString('pt-BR') : '-'}
-                      </TableCell>
-                      <TableCell>Aluno</TableCell>
+                {filteredDeclarations.map((declaration) => (
+                  <TableRow key={declaration.id}>
+                    <TableCell className="font-medium">{declaration.title}</TableCell>
+                    <TableCell>{declaration.student_name || 'N/A'}</TableCell>
                     <TableCell>
-                       <div className="flex gap-2">
-                         {(userRole === 'admin' || userRole === 'secretary') && (
-                           <Button 
-                             variant="outline" 
-                             size="sm"
-                             onClick={() => openEditForm(declaration)}
-                           >
-                             <Edit size={14} />
-                           </Button>
-                         )}
-                         {declaration.status === 'pending' && (userRole === 'admin' || userRole === 'secretary') && (
-                          <>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleStatusChange(declaration.id, 'approved')}
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              <CheckCircle size={14} />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => handleStatusChange(declaration.id, 'rejected')}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <XCircle size={14} />
-                            </Button>
-                          </>
-                        )}
-                        {declaration.status === 'approved' && (
+                      {declaration.created_at ? new Date(declaration.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                    {(userRole === 'admin' || userRole === 'secretary') && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {declaration.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(declaration.id, 'approved')}
+                              >
+                                Aprovar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleStatusChange(declaration.id, 'rejected')}
+                              >
+                                Rejeitar
+                              </Button>
+                            </>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => openEditForm(declaration)}
                           >
-                            <Download size={14} />
+                            <Edit size={14} />
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                     </TableRow>
-                   ))
-                 )}
-               </TableBody>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
             </Table>
           </CardContent>
         </Card>
         
-        {userRole !== 'instructor' && user && (
+        {userRole !== 'instructor' && (
           <DeclarationForm
             open={isDeclarationFormOpen}
             onOpenChange={setIsDeclarationFormOpen}
             onSubmit={editingDeclaration ? handleEditDeclaration : handleCreateDeclaration}
             initialData={editingDeclaration}
             mode={editingDeclaration ? 'edit' : 'create'}
-            userRole={userRole}
-            currentUser={{
-              id: user.id,
-              name: profile?.name || user.email || '',
-              studentId: profile?.student_id || ''
-            }}
           />
         )}
       </div>

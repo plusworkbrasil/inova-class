@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,49 +11,13 @@ import { ClassForm } from '@/components/forms/ClassForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
-
-const mockClassesData = [
-  { 
-    id: 1, 
-    name: '1º Ano A', 
-    period: 'Manhã', 
-    students: 28, 
-    coordinator: 'Maria Santos',
-    subjects: 8,
-    status: 'ativo' 
-  },
-  { 
-    id: 2, 
-    name: '2º Ano B', 
-    period: 'Tarde', 
-    students: 32, 
-    coordinator: 'João Silva',
-    subjects: 9,
-    status: 'ativo' 
-  },
-  { 
-    id: 3, 
-    name: '3º Ano A', 
-    period: 'Manhã', 
-    students: 25, 
-    coordinator: 'Ana Costa',
-    subjects: 10,
-    status: 'ativo' 
-  },
-  { 
-    id: 4, 
-    name: '1º Ano C', 
-    period: 'Noite', 
-    students: 20, 
-    coordinator: 'Pedro Oliveira',
-    subjects: 8,
-    status: 'inativo' 
-  },
-];
+import { useAuth } from '@/hooks/useAuth';
 
 const Classes = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const { user } = useAuth();
+  const userRole = (user?.role || 'admin') as UserRole;
+  const userName = user?.name || 'Admin';
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<any>(null);
@@ -64,29 +28,12 @@ const Classes = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
-    
     fetchClasses();
   }, []);
 
   const fetchClasses = async () => {
     try {
-      const { data, error } = await supabase
-        .from('classes')
-        .select(`
-          *,
-          teacher:profiles!classes_teacher_id_fkey(name)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
+      const data = await apiClient.get('classes');
       setClasses(data || []);
     } catch (error) {
       console.error('Erro ao carregar turmas:', error);
@@ -102,29 +49,13 @@ const Classes = () => {
 
   const handleCreateClass = async (data: any) => {
     try {
-      const { data: newClass, error } = await supabase
-        .from('classes')
-        .insert({
-          name: data.name,
-          grade: data.period, // Using period as grade since that's what the form collects
-          year: data.year,
-          // Note: coordinator field doesn't exist in DB schema, teacher_id should be used instead
-        })
-        .select()
-        .single();
+      const newClass = await apiClient.create('classes', {
+        name: data.name,
+        grade: data.period,
+        year: data.year,
+      });
 
-      if (error) {
-        console.error('Error creating class:', error);
-        toast({
-          title: "Erro ao criar turma",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update local state
-      setClasses([...classes, newClass]);
+      setClasses([newClass, ...classes]);
       toast({
         title: "Turma criada com sucesso!",
         description: `A turma ${data.name} foi criada.`,
@@ -140,34 +71,21 @@ const Classes = () => {
   };
 
   const handleEditClass = async (classData: any) => {
+    if (!editingClass) return;
+    
     try {
-      const { error } = await supabase
-        .from('classes')
-        .update({
-          name: classData.name,
-          grade: classData.period,
-          year: classData.year,
-        })
-        .eq('id', editingClass.id);
+      const updatedClass = await apiClient.update('classes', editingClass.id, {
+        name: classData.name,
+        grade: classData.period,
+        year: classData.year,
+      });
 
-      if (error) {
-        console.error('Error updating class:', error);
-        toast({
-          title: "Erro ao atualizar turma",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update local state
       const updatedClasses = classes.map(c => 
-        c.id === editingClass.id 
-          ? { ...c, ...classData }
-          : c
+        c.id === editingClass.id ? updatedClass : c
       );
       setClasses(updatedClasses);
       setEditingClass(null);
+      
       toast({
         title: "Turma atualizada com sucesso!",
         description: `A turma ${classData.name} foi atualizada.`,
@@ -184,23 +102,9 @@ const Classes = () => {
 
   const handleDeleteClass = async (classId: string) => {
     try {
-      const { error } = await supabase
-        .from('classes')
-        .delete()
-        .eq('id', classId);
-
-      if (error) {
-        console.error('Error deleting class:', error);
-        toast({
-          title: "Erro ao excluir turma",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update local state
+      await apiClient.delete('classes', classId);
       setClasses(classes.filter(c => c.id !== classId));
+      
       toast({
         title: "Turma excluída",
         description: "A turma foi removida do sistema.",
@@ -233,6 +137,16 @@ const Classes = () => {
     setIsFormOpen(true);
   };
 
+  if (loading) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
@@ -250,7 +164,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Turmas</p>
-                  <p className="text-3xl font-bold text-primary">4</p>
+                  <p className="text-3xl font-bold text-primary">{classes.length}</p>
                 </div>
                 <Users className="h-8 w-8 text-primary" />
               </div>
@@ -262,7 +176,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Turmas Ativas</p>
-                  <p className="text-3xl font-bold text-success">3</p>
+                  <p className="text-3xl font-bold text-success">{classes.filter(c => c.status !== 'inativo').length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-success" />
               </div>
@@ -274,7 +188,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Alunos</p>
-                  <p className="text-3xl font-bold text-info">105</p>
+                  <p className="text-3xl font-bold text-info">-</p>
                 </div>
                 <Users className="h-8 w-8 text-info" />
               </div>
@@ -286,7 +200,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Média por Turma</p>
-                  <p className="text-3xl font-bold text-warning">26</p>
+                  <p className="text-3xl font-bold text-warning">-</p>
                 </div>
                 <Users className="h-8 w-8 text-warning" />
               </div>
@@ -323,35 +237,23 @@ const Classes = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Turma</TableHead>
-                  <TableHead>Período</TableHead>
-                  <TableHead>Alunos</TableHead>
-                  <TableHead>Coordenador</TableHead>
-                  <TableHead>Disciplinas</TableHead>
+                  <TableHead>Ano</TableHead>
+                  <TableHead>Série</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classes.map((classItem) => (
+                {classes.filter(c => 
+                  c.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                ).map((classItem) => (
                   <TableRow key={classItem.id}>
                     <TableCell className="font-medium">{classItem.name}</TableCell>
-                    <TableCell>{classItem.period}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Users size={14} />
-                        {classItem.students}
-                      </div>
-                    </TableCell>
-                    <TableCell>{classItem.coordinator}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <BookOpen size={14} />
-                        {classItem.subjects}
-                      </div>
-                    </TableCell>
+                    <TableCell>{classItem.year || '-'}</TableCell>
+                    <TableCell>{classItem.grade || '-'}</TableCell>
                     <TableCell>
                       <Badge variant={classItem.status === 'ativo' ? 'default' : 'secondary'}>
-                        {classItem.status}
+                        {classItem.status || 'ativo'}
                       </Badge>
                     </TableCell>
                     <TableCell>

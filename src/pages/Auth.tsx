@@ -10,6 +10,7 @@ import type { User, Session } from '@supabase/supabase-js';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -126,20 +127,55 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Email enviado!",
+        description: "Verifique sua caixa de entrada para instruções de redefinição de senha.",
+      });
+      
+      setIsForgotPassword(false);
+      setIsLogin(true);
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao enviar email",
+        description: error.message || "Ocorreu um erro ao enviar o email de redefinição.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">
-            {isLogin ? 'Entrar' : 'Criar Conta'}
+            {isForgotPassword ? 'Redefinir Senha' : (isLogin ? 'Entrar' : 'Criar Conta')}
           </CardTitle>
           <p className="text-sm text-muted-foreground text-center">
-            {isLogin ? 'Entre com suas credenciais' : 'Preencha os dados para criar sua conta'}
+            {isForgotPassword 
+              ? 'Digite seu email para receber instruções de redefinição'
+              : (isLogin ? 'Entre com suas credenciais' : 'Preencha os dados para criar sua conta')
+            }
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={isLogin ? handleSignIn : handleSignUp} className="space-y-4">
-            {!isLogin && (
+          <form onSubmit={isForgotPassword ? handleForgotPassword : (isLogin ? handleSignIn : handleSignUp)} className="space-y-4">
+            {!isLogin && !isForgotPassword && (
               <div className="space-y-2">
                 <Label htmlFor="name">Nome</Label>
                 <Input
@@ -165,32 +201,67 @@ const Auth = () => {
               />
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Sua senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
             
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
+              {loading ? 'Carregando...' : 
+                (isForgotPassword ? 'Enviar Email' : 
+                  (isLogin ? 'Entrar' : 'Criar Conta')
+                )
+              }
             </Button>
           </form>
           
-          <div className="mt-4 text-center">
-            <Button 
-              variant="link" 
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm"
-            >
-              {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
-            </Button>
+          <div className="mt-4 text-center space-y-2">
+            {!isForgotPassword && (
+              <>
+                <Button 
+                  variant="link" 
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-sm"
+                >
+                  {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
+                </Button>
+                
+                {isLogin && (
+                  <div>
+                    <Button 
+                      variant="link" 
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-sm"
+                    >
+                      Esqueceu a senha?
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+            
+            {isForgotPassword && (
+              <Button 
+                variant="link" 
+                onClick={() => {
+                  setIsForgotPassword(false);
+                  setIsLogin(true);
+                }}
+                className="text-sm"
+              >
+                Voltar ao login
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, UserPlus } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
+import { InviteStudentForm } from '@/components/forms/InviteStudentForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { supabase } from '@/integrations/supabase/client';
@@ -127,6 +128,42 @@ const Users = () => {
     }
   };
 
+  const handleInviteStudent = async (email: string, name: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(`https://gaamkwzexqpzppgpkozy.supabase.co/functions/v1/invite-student`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ email, name }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao convidar estudante');
+      }
+
+      // Refresh users list
+      fetchUsers();
+      
+      toast({
+        title: "Convite enviado!",
+        description: `Um email foi enviado para ${email} com instruções para criar a senha.`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao convidar estudante:', error);
+      toast({
+        title: "Erro ao convidar estudante",
+        description: error.message || "Não foi possível enviar o convite.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditUser = async (userData: any) => {
     try {
       const { data: updatedUser, error } = await supabase
@@ -229,6 +266,7 @@ const Users = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
           <div className="flex gap-2">
+            <InviteStudentForm onSubmit={handleInviteStudent} />
             <StudentForm onSubmit={handleCreateStudent} />
             <UserForm onSubmit={handleCreateUser} />
           </div>

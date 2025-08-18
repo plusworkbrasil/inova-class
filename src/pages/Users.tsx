@@ -94,6 +94,39 @@ const Users = () => {
     }
   };
 
+  const handleCreateStudent = async (studentData: any) => {
+    try {
+      // Transformar dados do estudante para o formato esperado
+      const userData = {
+        name: studentData.fullName,
+        email: studentData.email,
+        role: 'student',
+        phone: studentData.phone,
+        cep: studentData.cep,
+        street: studentData.street,
+        number: studentData.number,
+        complement: studentData.complement,
+        neighborhood: studentData.neighborhood,
+        city: studentData.city,
+        state: studentData.state,
+        cpf: studentData.cpf,
+        full_name: studentData.fullName,
+        photo: studentData.photo,
+        parent_name: studentData.parentName,
+        escolaridade: studentData.escolaridade,
+      };
+
+      await handleCreateUser(userData);
+    } catch (error) {
+      console.error('Erro ao criar aluno:', error);
+      toast({
+        title: "Erro ao criar aluno",
+        description: "Não foi possível criar o aluno.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleEditUser = async (userData: any) => {
     try {
       const { data: updatedUser, error } = await supabase
@@ -196,7 +229,7 @@ const Users = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
           <div className="flex gap-2">
-            <StudentForm onSubmit={(data) => console.log('Novo aluno:', data)} />
+            <StudentForm onSubmit={handleCreateStudent} />
             <UserForm onSubmit={handleCreateUser} />
           </div>
         </div>

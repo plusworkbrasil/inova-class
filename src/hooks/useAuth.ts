@@ -1,13 +1,13 @@
-import { useSupabaseAuth } from './useSupabaseAuth';
+import { useApiAuth } from './useApiAuth';
 
 export const useAuth = () => {
-  const { user, loading, login, register, logout, isAuthenticated, profile } = useSupabaseAuth();
+  const { user, loading, login, register, signOut, isAuthenticated, profile } = useApiAuth();
 
   return {
     user,
     profile,
     loading,
-    signOut: logout,
+    signOut,
     isAuthenticated,
     login,
     register,

@@ -31,12 +31,12 @@ const Profile = () => {
 
   // Mock data para demonstração (pode ser substituído por dados reais do profile)
   const studentData = {
-    id: profile?.student_id || '001',
+    id: (profile as any)?.student_id || '001',
     name: userName,
     email: user?.email || 'aluno@exemplo.com',
     phone: '(11) 99999-9999',
     address: 'Rua das Flores, 123 - São Paulo, SP',
-    enrollment: profile?.student_id || '2024001',
+    enrollment: (profile as any)?.student_id || '2024001',
     course: 'Administração',
     semester: '3º Semestre',
     entryDate: '2023-02-15',

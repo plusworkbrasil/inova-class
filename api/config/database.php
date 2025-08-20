@@ -2,8 +2,8 @@
 class Database {
     private $host = 'localhost';
     private $db_name = 'escola_db';
-    private $username = 'seu_usuario'; // Altere conforme seu cPanel
-    private $password = 'sua_senha';   // Altere conforme seu cPanel
+    private $username = 'root'; // XAMPP padrão
+    private $password = '';     // XAMPP padrão (sem senha)
     private $conn;
 
     public function getConnection() {

@@ -1,5 +1,5 @@
-// API base URL - IMPORTANTE: Altere para o seu domínio cPanel
-const API_BASE_URL = 'https://seu-dominio.com/api'; // ⚠️ ALTERE ESTE URL!
+// API base URL - Configurado para XAMPP local
+const API_BASE_URL = 'http://localhost/escola-app/api'; // ⚠️ Ajuste conforme sua pasta do projeto
 
 // Classe para gerenciar chamadas da API
 class ApiClient {

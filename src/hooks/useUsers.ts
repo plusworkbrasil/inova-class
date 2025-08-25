@@ -1,0 +1,187 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from './use-toast';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'secretary' | 'instructor' | 'student';
+  phone?: string;
+  cep?: string;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  cpf?: string;
+  full_name?: string;
+  photo?: string;
+  parent_name?: string;
+  escolaridade?: string;
+  guardian_name?: string;
+  guardian_phone?: string;
+  student_id?: string;
+  class_id?: string;
+  instructor_subjects?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const useUsers = () => {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      setUsers(data || []);
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Error fetching users:', err);
+      toast({
+        title: "Erro ao carregar usuários",
+        description: err.message || "Não foi possível carregar os usuários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createUser = async (userData: Partial<User>) => {
+    try {
+      // First create the user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
+        body: { userData }
+      });
+
+      if (authError) throw authError;
+
+      // Refresh the users list
+      await fetchUsers();
+      
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: `O usuário ${userData.name} foi criado.`,
+      });
+
+      return authData;
+    } catch (err: any) {
+      console.error('Error creating user:', err);
+      toast({
+        title: "Erro ao criar usuário",
+        description: err.message || "Não foi possível criar o usuário.",
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
+  const updateUser = async (id: string, updates: Partial<User>) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setUsers(users.map(u => u.id === id ? { ...u, ...data } : u));
+      
+      toast({
+        title: "Usuário atualizado com sucesso!",
+        description: `O usuário foi atualizado.`,
+      });
+
+      return data;
+    } catch (err: any) {
+      console.error('Error updating user:', err);
+      toast({
+        title: "Erro ao atualizar usuário",
+        description: err.message || "Não foi possível atualizar o usuário.",
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
+  const deleteUser = async (id: string) => {
+    try {
+      // First delete from auth.users, this will cascade to profiles table
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(id);
+
+      if (deleteError) throw deleteError;
+
+      setUsers(users.filter(u => u.id !== id));
+      
+      toast({
+        title: "Usuário excluído",
+        description: "O usuário foi removido do sistema.",
+      });
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      toast({
+        title: "Erro ao excluir usuário",
+        description: err.message || "Não foi possível excluir o usuário.",
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
+  const inviteStudent = async (email: string, name: string) => {
+    try {
+      const userData = {
+        name,
+        email,
+        role: 'student' as const,
+        password: Math.random().toString(36).slice(-8) // Generate random password
+      };
+
+      await createUser(userData);
+      
+      toast({
+        title: "Convite enviado!",
+        description: `Usuário ${name} foi criado com sucesso.`,
+      });
+    } catch (err: any) {
+      console.error('Error inviting student:', err);
+      toast({
+        title: "Erro ao convidar estudante",
+        description: err.message || "Não foi possível enviar o convite.",
+        variant: "destructive",
+      });
+      throw err;
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  return {
+    users,
+    loading,
+    error,
+    fetchUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    inviteStudent
+  };
+};

@@ -1,5 +1,7 @@
-// API base URL - Configurado para XAMPP local
-const API_BASE_URL = 'http://localhost/escola-app/api'; // ⚠️ Ajuste conforme sua pasta do projeto
+// API base URL - Configuração para produção
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://seudominio.com.br/api'  // ⚠️ Altere para seu domínio real
+  : 'http://localhost/escola-app/api'; // Desenvolvimento local
 
 // Classe para gerenciar chamadas da API
 class ApiClient {

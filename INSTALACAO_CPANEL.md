@@ -2,12 +2,20 @@
 
 Este guia explica como instalar e configurar o sistema escolar completo no cPanel usando MySQL e APIs PHP.
 
+## 🚀 Instalação Automática (Recomendado)
+
+1. Faça upload de todos os arquivos para `public_html/`
+2. Acesse: `https://seudominio.com.br/install_cpanel.php`
+3. Siga o assistente de instalação
+4. Delete o arquivo `install_cpanel.php` após a conclusão
+
 ## Pré-requisitos
 
 - Hospedagem cPanel
 - MySQL/MariaDB
 - PHP 7.4+
 - Suporte a mod_rewrite
+- Biblioteca Firebase JWT (instalada automaticamente)
 
 ## 1. Configuração do Banco de Dados
 
@@ -61,25 +69,23 @@ public_html/
 
 ## 3. Configuração
 
-### 3.1 Configurar Banco de Dados
-Edite `api/config/database.php`:
+### 3.1 Configurar Ambiente
+O arquivo `api/config/env.php` é criado automaticamente pelo instalador com:
 ```php
-private $host = 'localhost';
-private $db_name = 'seu_usuario_escola_db'; // Nome do banco no cPanel
-private $username = 'seu_usuario';
-private $password = 'sua_senha';
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'seu_banco');
+define('DB_USER', 'seu_usuario');
+define('DB_PASS', 'sua_senha');
+define('JWT_SECRET', 'chave_gerada_automaticamente');
+define('ALLOWED_ORIGINS', ['https://seudominio.com.br']);
 ```
 
-### 3.2 Configurar JWT
-Edite `api/utils/jwt.php`:
-```php
-private static $secret_key = "SUA_CHAVE_SECRETA_SUPER_FORTE_AQUI";
-```
-
-### 3.3 Configurar URL da API
-Edite `src/lib/api.ts`:
+### 3.2 Configurar URL da API  
+Edite `src/lib/api.ts` antes do build:
 ```typescript
-const API_BASE_URL = 'https://seudominio.com.br/api';
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://seudominio.com.br/api'
+  : 'http://localhost/escola-app/api';
 ```
 
 ## 4. Instalar JWT Library
@@ -153,8 +159,44 @@ RewriteCond %{HTTPS} off
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 ```
 
+## 7. Configurações de Segurança
+
+### 7.1 Arquivos Protegidos
+O `.htaccess` automaticamente protege:
+- Arquivos de configuração (`/api/config/`)
+- Logs do sistema (`/api/logs/`)
+- Instaladores (`install_cpanel.php`)
+
+### 7.2 CORS Configurado
+- Apenas domínios autorizados podem acessar a API
+- Headers de segurança aplicados automaticamente
+
+### 7.3 JWT Seguro
+- Chave de 64 caracteres gerada automaticamente
+- Tokens com expiração de 1 hora
+- Validação de issuer/audience
+
 ## Credenciais Padrão
 - Email: admin@escola.com
 - Senha: admin123
 
-**Importante:** Altere a senha padrão após primeiro acesso!
+**⚠️ CRÍTICO:** Altere a senha padrão imediatamente após primeiro acesso!
+
+## 🔧 Troubleshooting
+
+### Erro 500 na API
+- Verifique permissões dos arquivos PHP (644)
+- Verifique se `api/config/env.php` existe
+- Confira logs de erro do cPanel
+
+### CORS Error
+- Confirme se seu domínio está em `ALLOWED_ORIGINS`
+- Verifique se está usando HTTPS em produção
+
+### JWT Error
+- Regenere a chave JWT através do instalador
+- Verifique se a biblioteca Firebase JWT está instalada
+
+### Banco de Dados
+- Confirme credenciais no arquivo `env.php`
+- Teste conexão pelo instalador

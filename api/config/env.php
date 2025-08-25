@@ -9,7 +9,7 @@ define('DB_USER', 'cpanel_usuario'); // Substitua pelo usuário MySQL do cPanel
 define('DB_PASS', 'senha_segura_aqui'); // Substitua pela senha real
 
 // Chave JWT - Gere uma nova chave forte
-define('JWT_SECRET', ''); // Será gerado automaticamente no instalador
+define('JWT_SECRET', 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'); // ALTERE ESTA CHAVE!
 
 // Configurações gerais
 define('ENVIRONMENT', 'production');
@@ -17,6 +17,8 @@ define('DEBUG_MODE', false);
 
 // URLs permitidas para CORS (adicione seus domínios)
 define('ALLOWED_ORIGINS', [
+    'http://localhost:5173',
+    'http://localhost:3000',
     'https://seudominio.com.br',
     'https://www.seudominio.com.br',
     // Adicione outras variações do seu domínio

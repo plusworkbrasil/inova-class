@@ -501,6 +501,10 @@ export type Database = {
         Args: { subject: string; user_id: string }
         Returns: boolean
       }
+      setup_test_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "secretary" | "instructor" | "student"

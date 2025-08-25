@@ -33,10 +33,10 @@ const Equipment = () => {
   const [editingAssignment, setEditingAssignment] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   
-  const userRole: UserRole = (user?.role || 'instructor') as UserRole;
-  const userName = user?.name || 'Professor Instrutor';
+  const userRole: UserRole = (profile?.role || 'instructor') as UserRole;
+  const userName = profile?.name || 'Professor Instrutor';
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),

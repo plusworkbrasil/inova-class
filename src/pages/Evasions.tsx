@@ -14,9 +14,9 @@ import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
 const Evasions = () => {
-  const { user } = useAuth();
-  const userRole = (user?.role || 'secretary') as UserRole;
-  const userName = user?.name || 'Secretaria';
+  const { profile } = useAuth();
+  const userRole = (profile?.role || 'secretary') as UserRole;
+  const userName = profile?.name || 'Secretaria';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');

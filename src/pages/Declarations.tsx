@@ -14,9 +14,9 @@ import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
 const Declarations = () => {
-  const { user } = useAuth();
-  const userRole = (user?.role || 'student') as UserRole;
-  const userName = user?.name || user?.email || 'User';
+  const { profile } = useAuth();
+  const userRole = (profile?.role || 'student') as UserRole;
+  const userName = profile?.name || profile?.email || 'User';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
@@ -28,10 +28,10 @@ const Declarations = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && userRole) {
+    if (profile && userRole) {
       fetchDeclarations();
     }
-  }, [user, userRole]);
+  }, [profile, userRole]);
 
   const fetchDeclarations = async () => {
     try {
@@ -51,11 +51,11 @@ const Declarations = () => {
   };
 
   const handleCreateDeclaration = async (data: any) => {
-    if (!user) return;
+    if (!profile) return;
     
     try {
       const declarationData = {
-        student_id: userRole === 'student' ? user.id : data.studentId,
+        student_id: userRole === 'student' ? profile.id : data.studentId,
         type: data.type === 'Declaração de Matrícula' ? 'enrollment_certificate' : 'medical_certificate',
         title: data.type,
         description: data.observations,
@@ -111,12 +111,12 @@ const Declarations = () => {
   };
 
   const handleStatusChange = async (declarationId: string, newStatus: string) => {
-    if (!user) return;
+    if (!profile) return;
     
     try {
       const updateData: any = {
         status: newStatus,
-        processed_by: user.id,
+        processed_by: profile.id,
         processed_at: new Date().toISOString()
       };
       

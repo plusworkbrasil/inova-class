@@ -1,13 +1,13 @@
 import { useSupabaseAuth } from './useSupabaseAuth';
 
 export const useAuth = () => {
-  const { user, loading, login, register, signOut, isAuthenticated, profile } = useSupabaseAuth();
+  const { user, loading, login, register, logout, isAuthenticated, profile } = useSupabaseAuth();
 
   return {
     user,
     profile,
     loading,
-    signOut,
+    signOut: logout,
     isAuthenticated,
     login,
     register,

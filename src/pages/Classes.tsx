@@ -14,9 +14,9 @@ import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 
 const Classes = () => {
-  const { user } = useAuth();
-  const userRole = (user?.role || 'admin') as UserRole;
-  const userName = user?.name || 'Admin';
+  const { profile } = useAuth();
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);

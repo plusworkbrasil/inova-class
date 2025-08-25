@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,6 +47,23 @@ const Auth = () => {
       navigate('/dashboard');
     } catch (error) {
       // Error handling is already done in useAuth
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTestUser = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-test-user');
+      
+      if (error) {
+        toast.error('Erro ao criar usuário de teste: ' + error.message);
+      } else {
+        toast.success('Usuário de teste criado com sucesso! Você já pode fazer login.');
+      }
+    } catch (error) {
+      toast.error('Erro ao criar usuário de teste');
     } finally {
       setLoading(false);
     }
@@ -122,6 +141,15 @@ const Auth = () => {
             <p className="font-medium">Credenciais de teste:</p>
             <p>Email: admin@escola.com</p>
             <p>Senha: admin123</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 w-full"
+              onClick={createTestUser}
+              disabled={loading}
+            >
+              Criar usuário de teste
+            </Button>
           </div>
         </CardContent>
       </Card>

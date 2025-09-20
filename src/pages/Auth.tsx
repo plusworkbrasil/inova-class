@@ -29,7 +29,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      await register(email, password, name);
       navigate('/dashboard');
     } catch (error) {
       // Error handling is already done in useAuth

@@ -118,10 +118,12 @@ export const useSupabaseAuth = () => {
       setLoading(true);
       
       // First create the user
+      const redirectUrl = `${window.location.origin}/`;
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: redirectUrl,
           data: {
             name: name,
             role: role,

@@ -11,10 +11,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 
 const classFormSchema = z.object({
   name: z.string().min(1, 'Nome da turma é obrigatório'),
-  period: z.string().min(1, 'Período é obrigatório'),
-  coordinator: z.string().min(1, 'Coordenador é obrigatório'),
+  grade: z.string().min(1, 'Série é obrigatória'),
   year: z.number().min(2020, 'Ano deve ser válido'),
-  status: z.string().min(1, 'Status é obrigatório'),
 });
 
 type ClassFormValues = z.infer<typeof classFormSchema>;
@@ -38,10 +36,8 @@ export const ClassForm: React.FC<ClassFormProps> = ({
     resolver: zodResolver(classFormSchema),
     defaultValues: {
       name: initialData?.name || '',
-      period: initialData?.period || '',
-      coordinator: initialData?.coordinator || '',
+      grade: initialData?.grade || '',
       year: initialData?.year || new Date().getFullYear(),
-      status: initialData?.status || 'ativo',
     },
   });
 
@@ -78,36 +74,28 @@ export const ClassForm: React.FC<ClassFormProps> = ({
 
             <FormField
               control={form.control}
-              name="period"
+              name="grade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Período</FormLabel>
+                  <FormLabel>Série</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione o período" />
+                        <SelectValue placeholder="Selecione a série" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Manhã">Manhã</SelectItem>
-                      <SelectItem value="Tarde">Tarde</SelectItem>
-                      <SelectItem value="Noite">Noite</SelectItem>
+                      <SelectItem value="1º Ano">1º Ano</SelectItem>
+                      <SelectItem value="2º Ano">2º Ano</SelectItem>
+                      <SelectItem value="3º Ano">3º Ano</SelectItem>
+                      <SelectItem value="4º Ano">4º Ano</SelectItem>
+                      <SelectItem value="5º Ano">5º Ano</SelectItem>
+                      <SelectItem value="6º Ano">6º Ano</SelectItem>
+                      <SelectItem value="7º Ano">7º Ano</SelectItem>
+                      <SelectItem value="8º Ano">8º Ano</SelectItem>
+                      <SelectItem value="9º Ano">9º Ano</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="coordinator"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Coordenador</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome do coordenador" {...field} />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -132,27 +120,6 @@ export const ClassForm: React.FC<ClassFormProps> = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ativo">Ativo</SelectItem>
-                      <SelectItem value="inativo">Inativo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <div className="flex gap-2 pt-4">
               <Button type="submit" className="flex-1">

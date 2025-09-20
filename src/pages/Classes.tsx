@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useClasses } from '@/hooks/useClasses';
 
 const Classes = () => {
   const { profile } = useAuth();
@@ -23,50 +23,18 @@ const Classes = () => {
   const [editingClass, setEditingClass] = useState<any>(null);
   const [deletingClass, setDeletingClass] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [classes, setClasses] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    fetchClasses();
-  }, []);
-
-  const fetchClasses = async () => {
-    try {
-      const data = await apiClient.get('classes');
-      setClasses(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar turmas:', error);
-      toast({
-        title: "Erro ao carregar turmas",
-        description: "Não foi possível carregar as turmas.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+  const { data: classes, loading, createClass, updateClass, deleteClass } = useClasses();
 
   const handleCreateClass = async (data: any) => {
     try {
-      const newClass = await apiClient.create('classes', {
+      await createClass({
         name: data.name,
-        grade: data.period,
+        grade: data.grade,
         year: data.year,
-      });
-
-      setClasses([newClass, ...classes]);
-      toast({
-        title: "Turma criada com sucesso!",
-        description: `A turma ${data.name} foi criada.`,
       });
     } catch (error) {
       console.error('Error creating class:', error);
-      toast({
-        title: "Erro ao criar turma",
-        description: "Ocorreu um erro inesperado.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -74,49 +42,22 @@ const Classes = () => {
     if (!editingClass) return;
     
     try {
-      const updatedClass = await apiClient.update('classes', editingClass.id, {
+      await updateClass(editingClass.id, {
         name: classData.name,
-        grade: classData.period,
+        grade: classData.grade,
         year: classData.year,
       });
-
-      const updatedClasses = classes.map(c => 
-        c.id === editingClass.id ? updatedClass : c
-      );
-      setClasses(updatedClasses);
       setEditingClass(null);
-      
-      toast({
-        title: "Turma atualizada com sucesso!",
-        description: `A turma ${classData.name} foi atualizada.`,
-      });
     } catch (error) {
       console.error('Error updating class:', error);
-      toast({
-        title: "Erro ao atualizar turma",
-        description: "Ocorreu um erro inesperado.",
-        variant: "destructive",
-      });
     }
   };
 
   const handleDeleteClass = async (classId: string) => {
     try {
-      await apiClient.delete('classes', classId);
-      setClasses(classes.filter(c => c.id !== classId));
-      
-      toast({
-        title: "Turma excluída",
-        description: "A turma foi removida do sistema.",
-        variant: "destructive",
-      });
+      await deleteClass(classId);
     } catch (error) {
       console.error('Error deleting class:', error);
-      toast({
-        title: "Erro ao excluir turma",
-        description: "Ocorreu um erro inesperado.",
-        variant: "destructive",
-      });
     }
     setDeletingClass(null);
     setIsDeleteDialogOpen(false);
@@ -171,12 +112,12 @@ const Classes = () => {
             </CardContent>
           </Card>
           
-          <Card>
+           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Turmas Ativas</p>
-                  <p className="text-3xl font-bold text-success">{classes.filter(c => c.status !== 'inativo').length}</p>
+                  <p className="text-3xl font-bold text-success">{classes.length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-success" />
               </div>
@@ -244,7 +185,7 @@ const Classes = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classes.filter(c => 
+                 {classes.filter(c => 
                   c.name?.toLowerCase().includes(searchTerm.toLowerCase())
                 ).map((classItem) => (
                   <TableRow key={classItem.id}>
@@ -252,8 +193,8 @@ const Classes = () => {
                     <TableCell>{classItem.year || '-'}</TableCell>
                     <TableCell>{classItem.grade || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={classItem.status === 'ativo' ? 'default' : 'secondary'}>
-                        {classItem.status || 'ativo'}
+                      <Badge variant="default">
+                        Ativo
                       </Badge>
                     </TableCell>
                     <TableCell>

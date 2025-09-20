@@ -58,12 +58,42 @@ const Auth = () => {
       const { data, error } = await supabase.functions.invoke('create-test-user');
       
       if (error) {
-        toast.error('Erro ao criar usuário de teste: ' + error.message);
+        toast.error('Erro ao criar usuário de teste: ' + (error.message || ''));
       } else {
-        toast.success('Usuário de teste criado com sucesso! Você já pode fazer login.');
+        toast.success('Usuário de teste pronto! Fazendo login...');
+        try {
+          await login('admin@escola.com', 'admin123');
+          navigate('/dashboard');
+        } catch (e) {
+          // Se ainda falhar, apenas informa para tentar manualmente
+          toast.error('Falha ao logar automaticamente. Tente: admin@escola.com / admin123');
+        }
       }
     } catch (error) {
       toast.error('Erro ao criar usuário de teste');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendConfirmation = async () => {
+    if (!email) {
+      toast.error('Informe o email para reenviar a confirmação.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: redirectUrl }
+      });
+      if (error) {
+        toast.error('Erro ao reenviar e-mail: ' + (error.message || ''));
+      } else {
+        toast.success('E-mail de confirmação reenviado! Verifique sua caixa de entrada.');
+      }
     } finally {
       setLoading(false);
     }
@@ -124,6 +154,20 @@ const Auth = () => {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
             </Button>
+
+            {isLogin && (
+              <div className="text-center mt-2">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-xs"
+                  onClick={resendConfirmation}
+                  disabled={loading || !email}
+                >
+                  Reenviar e-mail de confirmação
+                </Button>
+              </div>
+            )}
           </form>
           
           <div className="mt-4 text-center space-y-2">

@@ -1,5 +1,5 @@
-import { useApiCommunications } from './useApiCommunications';
+import { useCommunications as useSupabaseCommunications } from './useSupabaseCommunications';
 
 export const useCommunications = () => {
-  return useApiCommunications();
+  return useSupabaseCommunications();
 };

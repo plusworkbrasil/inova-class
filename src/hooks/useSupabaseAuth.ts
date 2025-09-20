@@ -47,40 +47,38 @@ export const useSupabaseAuth = () => {
   };
 
   useEffect(() => {
-    const getSession = async () => {
-      try {
-        setLoading(true);
-        
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user) {
-          setUser(session.user);
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
+    setLoading(true);
+
+    // Listen for auth changes FIRST (sync-only updates here)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextUser = session?.user ?? null;
+      setUser(nextUser);
+
+      if (nextUser) {
+        // Defer any Supabase calls to avoid deadlocks
+        setTimeout(() => {
+          fetchProfile(nextUser.id).then((p) => setProfile(p));
+        }, 0);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    // Then, get the current session
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        const currentUser = session?.user ?? null;
+        setUser(currentUser);
+        if (currentUser) {
+          setTimeout(() => {
+            fetchProfile(currentUser.id).then((p) => setProfile(p));
+          }, 0);
         }
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error('Error getting session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          const profileData = await fetchProfile(session.user.id);
-          setProfile(profileData);
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
-        setLoading(false);
-      }
-    );
+      })
+      .finally(() => setLoading(false));
 
     return () => subscription.unsubscribe();
   }, []);

@@ -37,14 +37,18 @@ serve(async (req) => {
       )
     }
 
-    // Update user profile to admin role
+    // Ensure profile exists and set admin role
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ role: 'admin' })
-      .eq('id', authData.user.id)
+      .upsert({
+        id: authData.user.id,
+        name: 'Administrador',
+        email: 'admin@escola.com',
+        role: 'admin'
+      }, { onConflict: 'id' })
 
     if (profileError) {
-      console.error('Error updating profile:', profileError)
+      console.error('Error upserting profile:', profileError)
       return new Response(
         JSON.stringify({ error: profileError.message }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }

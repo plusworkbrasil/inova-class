@@ -136,16 +136,16 @@ serve(async (req) => {
     await new Promise(resolve => setTimeout(resolve, 100))
 
     // Update the profile with additional fields
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: updateError } = await supabaseAdmin
       .from('profiles')
       .update(profileData)
       .eq('id', authUser.user.id)
       .select()
       .single()
 
-    if (profileError) {
-      console.error('Profile update error:', profileError)
-      throw new Error(`Failed to update profile: ${profileError.message}`)
+    if (updateError) {
+      console.error('Profile update error:', updateError)
+      throw new Error(`Failed to update profile: ${updateError.message}`)
     }
 
     console.log(`Successfully created user: ${userData.email}`)

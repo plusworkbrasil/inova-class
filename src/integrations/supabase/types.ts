@@ -358,7 +358,11 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allergies: string | null
           avatar: string | null
+          birth_date: string | null
+          birth_place: string | null
+          blood_type: string | null
           cep: string | null
           city: string | null
           class_id: string | null
@@ -366,28 +370,57 @@ export type Database = {
           cpf: string | null
           created_at: string
           email: string
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relation: string | null
           enrollment_date: string | null
+          enrollment_number: string | null
           escolaridade: string | null
+          father_name: string | null
           full_name: string | null
+          gender: string | null
+          guardian_cpf: string | null
+          guardian_email: string | null
+          guardian_income: string | null
           guardian_name: string | null
           guardian_phone: string | null
+          guardian_profession: string | null
+          guardian_workplace: string | null
+          health_insurance: string | null
           id: string
           instructor_subjects: string[] | null
+          marital_status: string | null
+          medical_conditions: string | null
+          medications: string | null
+          mother_name: string | null
           name: string
+          nationality: string | null
           neighborhood: string | null
+          notes: string | null
           number: string | null
           parent_name: string | null
           phone: string | null
           photo: string | null
+          previous_school: string | null
+          profession: string | null
+          rg: string | null
           role: Database["public"]["Enums"]["app_role"]
+          social_id: string | null
+          special_needs: string | null
           state: string | null
+          status: string | null
           street: string | null
           student_id: string | null
           teacher_id: string | null
+          transportation: string | null
           updated_at: string
         }
         Insert: {
+          allergies?: string | null
           avatar?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          blood_type?: string | null
           cep?: string | null
           city?: string | null
           class_id?: string | null
@@ -395,28 +428,57 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           email: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           enrollment_date?: string | null
+          enrollment_number?: string | null
           escolaridade?: string | null
+          father_name?: string | null
           full_name?: string | null
+          gender?: string | null
+          guardian_cpf?: string | null
+          guardian_email?: string | null
+          guardian_income?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
+          guardian_profession?: string | null
+          guardian_workplace?: string | null
+          health_insurance?: string | null
           id: string
           instructor_subjects?: string[] | null
+          marital_status?: string | null
+          medical_conditions?: string | null
+          medications?: string | null
+          mother_name?: string | null
           name: string
+          nationality?: string | null
           neighborhood?: string | null
+          notes?: string | null
           number?: string | null
           parent_name?: string | null
           phone?: string | null
           photo?: string | null
+          previous_school?: string | null
+          profession?: string | null
+          rg?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          social_id?: string | null
+          special_needs?: string | null
           state?: string | null
+          status?: string | null
           street?: string | null
           student_id?: string | null
           teacher_id?: string | null
+          transportation?: string | null
           updated_at?: string
         }
         Update: {
+          allergies?: string | null
           avatar?: string | null
+          birth_date?: string | null
+          birth_place?: string | null
+          blood_type?: string | null
           cep?: string | null
           city?: string | null
           class_id?: string | null
@@ -424,24 +486,49 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           email?: string
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relation?: string | null
           enrollment_date?: string | null
+          enrollment_number?: string | null
           escolaridade?: string | null
+          father_name?: string | null
           full_name?: string | null
+          gender?: string | null
+          guardian_cpf?: string | null
+          guardian_email?: string | null
+          guardian_income?: string | null
           guardian_name?: string | null
           guardian_phone?: string | null
+          guardian_profession?: string | null
+          guardian_workplace?: string | null
+          health_insurance?: string | null
           id?: string
           instructor_subjects?: string[] | null
+          marital_status?: string | null
+          medical_conditions?: string | null
+          medications?: string | null
+          mother_name?: string | null
           name?: string
+          nationality?: string | null
           neighborhood?: string | null
+          notes?: string | null
           number?: string | null
           parent_name?: string | null
           phone?: string | null
           photo?: string | null
+          previous_school?: string | null
+          profession?: string | null
+          rg?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          social_id?: string | null
+          special_needs?: string | null
           state?: string | null
+          status?: string | null
           street?: string | null
           student_id?: string | null
           teacher_id?: string | null
+          transportation?: string | null
           updated_at?: string
         }
         Relationships: []

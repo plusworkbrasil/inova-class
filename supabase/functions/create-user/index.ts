@@ -71,11 +71,12 @@ serve(async (req) => {
 
     const { userData } = await req.json()
 
-    // Validate the requested role
-    const allowedRoles = ['student', 'instructor', 'secretary']
+    // Validate the requested role - allow all valid roles
+    const allowedRoles = ['student', 'instructor', 'teacher', 'secretary']
     if (callerProfile.role !== 'admin') {
-      // Secretaries can only create students and instructors
-      allowedRoles.pop() // Remove 'secretary' from allowed roles
+      // Secretaries can only create students, instructors and teachers
+      // Remove 'secretary' from allowed roles for non-admin users
+      allowedRoles.splice(allowedRoles.indexOf('secretary'), 1)
     }
 
     if (!allowedRoles.includes(userData.role)) {

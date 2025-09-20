@@ -15,7 +15,7 @@ interface Profile {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'secretary' | 'instructor' | 'student';
+  role: 'admin' | 'secretary' | 'instructor' | 'student' | 'teacher';
   student_id?: string;
   class_id?: string;
   instructor_subjects?: string[];

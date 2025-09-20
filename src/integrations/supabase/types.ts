@@ -117,6 +117,7 @@ export type Database = {
         Row: {
           attachments: string[] | null
           author_id: string
+          category: string | null
           content: string
           created_at: string
           expires_at: string | null
@@ -124,6 +125,7 @@ export type Database = {
           is_published: boolean | null
           priority: string
           published_at: string | null
+          read_by: string[] | null
           target_audience: string[]
           title: string
           type: string
@@ -132,6 +134,7 @@ export type Database = {
         Insert: {
           attachments?: string[] | null
           author_id: string
+          category?: string | null
           content: string
           created_at?: string
           expires_at?: string | null
@@ -139,6 +142,7 @@ export type Database = {
           is_published?: boolean | null
           priority?: string
           published_at?: string | null
+          read_by?: string[] | null
           target_audience: string[]
           title: string
           type: string
@@ -147,6 +151,7 @@ export type Database = {
         Update: {
           attachments?: string[] | null
           author_id?: string
+          category?: string | null
           content?: string
           created_at?: string
           expires_at?: string | null
@@ -154,6 +159,7 @@ export type Database = {
           is_published?: boolean | null
           priority?: string
           published_at?: string | null
+          read_by?: string[] | null
           target_audience?: string[]
           title?: string
           type?: string
@@ -244,6 +250,57 @@ export type Database = {
           },
         ]
       }
+      equipment: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          location: string | null
+          model: string | null
+          name: string
+          observations: string | null
+          purchase_date: string | null
+          responsible_id: string | null
+          serial_number: string | null
+          status: string
+          type: string
+          updated_at: string
+          warranty_date: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          model?: string | null
+          name: string
+          observations?: string | null
+          purchase_date?: string | null
+          responsible_id?: string | null
+          serial_number?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          warranty_date?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          model?: string | null
+          name?: string
+          observations?: string | null
+          purchase_date?: string | null
+          responsible_id?: string | null
+          serial_number?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          warranty_date?: string | null
+        }
+        Relationships: []
+      }
       evasions: {
         Row: {
           created_at: string
@@ -301,6 +358,7 @@ export type Database = {
           date: string
           id: string
           max_value: number
+          observations: string | null
           student_id: string
           subject_id: string
           teacher_id: string
@@ -313,6 +371,7 @@ export type Database = {
           date: string
           id?: string
           max_value?: number
+          observations?: string | null
           student_id: string
           subject_id: string
           teacher_id: string
@@ -325,6 +384,7 @@ export type Database = {
           date?: string
           id?: string
           max_value?: number
+          observations?: string | null
           student_id?: string
           subject_id?: string
           teacher_id?: string
@@ -370,6 +430,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           email: string
+          emergency_contact: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relation: string | null
@@ -391,6 +452,7 @@ export type Database = {
           instructor_subjects: string[] | null
           marital_status: string | null
           medical_conditions: string | null
+          medical_info: string | null
           medications: string | null
           mother_name: string | null
           name: string
@@ -399,6 +461,7 @@ export type Database = {
           notes: string | null
           number: string | null
           parent_name: string | null
+          parent_phone: string | null
           phone: string | null
           photo: string | null
           previous_school: string | null
@@ -428,6 +491,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           email: string
+          emergency_contact?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relation?: string | null
@@ -449,6 +513,7 @@ export type Database = {
           instructor_subjects?: string[] | null
           marital_status?: string | null
           medical_conditions?: string | null
+          medical_info?: string | null
           medications?: string | null
           mother_name?: string | null
           name: string
@@ -457,6 +522,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           parent_name?: string | null
+          parent_phone?: string | null
           phone?: string | null
           photo?: string | null
           previous_school?: string | null
@@ -486,6 +552,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           email?: string
+          emergency_contact?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relation?: string | null
@@ -507,6 +574,7 @@ export type Database = {
           instructor_subjects?: string[] | null
           marital_status?: string | null
           medical_conditions?: string | null
+          medical_info?: string | null
           medications?: string | null
           mother_name?: string | null
           name?: string
@@ -515,6 +583,7 @@ export type Database = {
           notes?: string | null
           number?: string | null
           parent_name?: string | null
+          parent_phone?: string | null
           phone?: string | null
           photo?: string | null
           previous_school?: string | null
@@ -536,27 +605,39 @@ export type Database = {
       subjects: {
         Row: {
           class_id: string | null
+          code: string | null
           created_at: string
+          description: string | null
           id: string
           name: string
+          status: string | null
           teacher_id: string | null
           updated_at: string
+          workload: number | null
         }
         Insert: {
           class_id?: string | null
+          code?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           name: string
+          status?: string | null
           teacher_id?: string | null
           updated_at?: string
+          workload?: number | null
         }
         Update: {
           class_id?: string | null
+          code?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           name?: string
+          status?: string | null
           teacher_id?: string | null
           updated_at?: string
+          workload?: number | null
         }
         Relationships: [
           {

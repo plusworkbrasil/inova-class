@@ -182,27 +182,24 @@ export const useUsers = () => {
 
   const deleteUser = async (id: string) => {
     try {
-      // Delete from profiles table first (this will handle the user deletion)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', id);
+      // Call edge function with admin privileges validation
+      const { data, error } = await supabase.functions.invoke('delete-user', {
+        body: { userId: id }
+      });
 
-      if (profileError) throw profileError;
+      if (error) throw error;
 
-      // Update local state
       setUsers(users.filter(u => u.id !== id));
-      
       toast({
-        title: "Usuário excluído",
-        description: "O usuário foi removido do sistema.",
+        title: 'Usuário excluído',
+        description: 'O usuário foi removido do sistema.',
       });
     } catch (err: any) {
       console.error('Error deleting user:', err);
       toast({
-        title: "Erro ao excluir usuário",
-        description: err.message || "Não foi possível excluir o usuário.",
-        variant: "destructive",
+        title: 'Erro ao excluir usuário',
+        description: err.message || 'Não foi possível excluir o usuário.',
+        variant: 'destructive',
       });
       throw err;
     }

@@ -98,9 +98,13 @@ const Navigation = ({ userRole, userName, userAvatar }: NavigationProps) => {
     setIsOpen(false);
   };
 
-  const handleLogout = () => {
-    signOut();
-    navigate('/auth');
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/auth');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+    }
   };
 
   const isActivePath = (path: string) => {

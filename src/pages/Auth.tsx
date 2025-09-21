@@ -19,6 +19,7 @@ const Auth = () => {
   const { user, login, register, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    // Só redireciona se o usuário estiver autenticado E não estiver carregando
     if (user && !authLoading) {
       navigate('/dashboard', { replace: true });
     }

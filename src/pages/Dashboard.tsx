@@ -14,7 +14,7 @@ import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 
 const Dashboard = () => {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
   const navigate = useNavigate();
   
@@ -22,11 +22,11 @@ const Dashboard = () => {
   const userName = profile?.name || 'Admin';
 
   useEffect(() => {
-    // Verificar se o usuário está autenticado
-    if (!profile) {
-      navigate('/auth');
+    // Só redireciona se não estiver carregando E não estiver autenticado
+    if (!authLoading && !isAuthenticated) {
+      navigate('/auth', { replace: true });
     }
-  }, [profile, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleChangeUser = () => {
     navigate('/auth');

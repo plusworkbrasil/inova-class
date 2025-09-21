@@ -452,6 +452,7 @@ export type Database = {
       profiles: {
         Row: {
           allergies: string | null
+          auto_student_id: number | null
           avatar: string | null
           birth_date: string | null
           birth_place: string | null
@@ -513,6 +514,7 @@ export type Database = {
         }
         Insert: {
           allergies?: string | null
+          auto_student_id?: number | null
           avatar?: string | null
           birth_date?: string | null
           birth_place?: string | null
@@ -574,6 +576,7 @@ export type Database = {
         }
         Update: {
           allergies?: string | null
+          auto_student_id?: number | null
           avatar?: string | null
           birth_date?: string | null
           birth_place?: string | null

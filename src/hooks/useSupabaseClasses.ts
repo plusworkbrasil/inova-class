@@ -48,7 +48,12 @@ export const useSupabaseClasses = () => {
     try {
       const { error } = await supabase
         .from('classes')
-        .insert([classData]);
+        .insert({
+          name: classData.name,
+          year: classData.year,
+          teacher_id: classData.teacher_id,
+          student_count: classData.student_count
+        });
 
       if (error) throw error;
 

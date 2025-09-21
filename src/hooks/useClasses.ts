@@ -44,7 +44,12 @@ export const useClasses = () => {
     try {
       const { data, error } = await supabase
         .from('classes')
-        .insert(classData)
+        .insert({
+          name: classData.name,
+          year: classData.year,
+          teacher_id: classData.teacher_id,
+          student_count: classData.student_count
+        })
         .select()
         .maybeSingle();
 

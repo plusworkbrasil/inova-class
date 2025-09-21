@@ -75,7 +75,6 @@ export type Database = {
       classes: {
         Row: {
           created_at: string
-          grade: string
           id: string
           name: string
           student_count: number | null
@@ -85,7 +84,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          grade: string
           id?: string
           name: string
           student_count?: number | null
@@ -95,7 +93,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          grade?: string
           id?: string
           name?: string
           student_count?: number | null

@@ -226,6 +226,14 @@ const Settings = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label htmlFor="school_name">Nome da Escola</Label>
+                  <Input 
+                    id="school_name" 
+                    value={settings.general.school_name}
+                    onChange={(e) => updateSettings('general', 'school_name', e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="address">Endereço</Label>
                   <Input 
                     id="address" 

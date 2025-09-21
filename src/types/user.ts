@@ -14,6 +14,7 @@ export interface User {
   neighborhood?: string;
   city?: string;
   state?: string;
+  auto_student_id?: number;
   createdAt: Date;
   updatedAt: Date;
 }

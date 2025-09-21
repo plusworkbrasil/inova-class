@@ -190,12 +190,14 @@ const SubjectGrades = () => {
   };
 
   const gradeTypes = [
-    'Prova',
-    'Trabalho',
-    'Seminário',
-    'Projeto',
-    'Atividade',
-    'Participação'
+    { value: 'prova', label: 'Prova' },
+    { value: 'trabalho', label: 'Trabalho' },
+    { value: 'projeto', label: 'Projeto' },
+    { value: 'avaliacao', label: 'Avaliação' },
+    { value: 'exercicio', label: 'Exercício' },
+    { value: 'test', label: 'Test' },
+    { value: 'assignment', label: 'Assignment' },
+    { value: 'final', label: 'Final' }
   ];
 
   return (
@@ -262,13 +264,13 @@ const SubjectGrades = () => {
                   <SelectTrigger>
                     <SelectValue placeholder="Tipo" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {gradeTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                   <SelectContent>
+                     {gradeTypes.map((type) => (
+                       <SelectItem key={type.value} value={type.value}>
+                         {type.label}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
               </div>
 
@@ -357,13 +359,18 @@ const SubjectGrades = () => {
                       const percentage = gradeEntry ? (gradeEntry.value / maxValue) * 100 : 0;
                       
                       return (
-                        <TableRow key={student.id}>
-                          <TableCell className="font-mono">
-                            {student.student_id || 'N/A'}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {student.name}
-                          </TableCell>
+                         <TableRow key={student.id}>
+                           <TableCell className="font-mono">
+                             {(student as any).auto_student_id || student.student_id || 'N/A'}
+                           </TableCell>
+                           <TableCell className="font-medium">
+                             {student.name}
+                             {(student as any).auto_student_id && (
+                               <span className="text-muted-foreground text-sm ml-2">
+                                 (ID: {(student as any).auto_student_id})
+                               </span>
+                             )}
+                           </TableCell>
                           <TableCell>
                             <Input
                               type="number"

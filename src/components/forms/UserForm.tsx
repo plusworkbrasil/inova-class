@@ -14,10 +14,12 @@ import { Plus, Upload } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
-const userFormSchema = z.object({
+const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
+  password: mode === 'create' 
+    ? z.string().min(6, 'Senha deve ter pelo menos 6 caracteres')
+    : z.string().optional(),
   role: z.string().min(1, 'Perfil é obrigatório'),
   class_id: z.string().optional(),
   phone: z.string().optional(),
@@ -31,7 +33,7 @@ const userFormSchema = z.object({
   state: z.string().optional(),
 });
 
-type UserFormValues = z.infer<typeof userFormSchema>;
+type UserFormValues = z.infer<ReturnType<typeof createUserFormSchema>>;
 
 interface UserFormProps {
   onSubmit: (data: UserFormValues & { photo?: string }) => void;
@@ -52,7 +54,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(createUserFormSchema(mode)),
     defaultValues: {
       name: initialData?.name || '',
       email: initialData?.email || '',
@@ -135,8 +137,10 @@ export const UserForm: React.FC<UserFormProps> = ({
   const handleSubmit = (data: UserFormValues) => {
     onSubmit({ ...data, photo: photoPreview });
     setOpen(false);
-    form.reset();
-    setPhotoPreview('');
+    if (mode === 'create') {
+      form.reset();
+      setPhotoPreview('');
+    }
   };
 
   const defaultTrigger = (

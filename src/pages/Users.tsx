@@ -90,8 +90,8 @@ const Users = () => {
     await inviteStudent(email, name, classId);
   };
 
-  const handleEditUser = async (userData: any) => {
-    await updateUser(editingUser.id, {
+  const handleEditUser = async (userData: any, userId: string) => {
+    await updateUser(userId, {
       name: userData.name,
       email: userData.email,
       role: userData.role as 'admin' | 'secretary' | 'instructor' | 'student',
@@ -105,7 +105,6 @@ const Users = () => {
       city: userData.city,
       state: userData.state,
     });
-    setEditingUser(null);
   };
 
   const handleDeleteUser = async (userId: string) => {
@@ -226,7 +225,7 @@ const Users = () => {
                           <Eye size={14} />
                         </Button>
                         <UserForm 
-                          onSubmit={handleEditUser}
+                          onSubmit={(userData) => handleEditUser(userData, user.id)}
                           initialData={user}
                           mode="edit"
                           trigger={

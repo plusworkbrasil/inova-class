@@ -2,14 +2,14 @@
 // Configurações de ambiente para produção cPanel
 // IMPORTANTE: Este arquivo não deve ser versionado (.gitignore)
 
-// Configurações do banco de dados
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'cpanel_usuario_escola_db'); // Substitua pelo nome real do banco
-define('DB_USER', 'cpanel_usuario'); // Substitua pelo usuário MySQL do cPanel
-define('DB_PASS', 'senha_segura_aqui'); // Substitua pela senha real
+// Configurações do banco de dados - Use variáveis de ambiente para segurança
+define('DB_HOST', $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?? 'localhost');
+define('DB_NAME', $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? 'cpanel_usuario_escola_db'); 
+define('DB_USER', $_ENV['DB_USER'] ?? getenv('DB_USER') ?? 'cpanel_usuario'); 
+define('DB_PASS', $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?? 'CONFIGURE_DATABASE_PASSWORD'); // ⚠️ CONFIGURE A VARIÁVEL DE AMBIENTE!
 
-// Chave JWT - Gere uma nova chave forte
-define('JWT_SECRET', 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2'); // ALTERE ESTA CHAVE!
+// Chave JWT - Use variável de ambiente para segurança
+define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?? 'CHANGE_THIS_SECRET_KEY_IN_PRODUCTION'); // ⚠️ CONFIGURE A VARIÁVEL DE AMBIENTE!
 
 // Configurações gerais
 define('ENVIRONMENT', 'production');

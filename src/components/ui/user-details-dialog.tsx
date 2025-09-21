@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Phone, MapPin, Calendar, BookOpen, Users } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, BookOpen, Users, Shield } from 'lucide-react';
 import { roleTranslations } from '@/lib/roleTranslations';
 import type { UserRole } from '@/types/user';
+import { SecureDataAccess } from '@/components/security/SecureDataAccess';
 
 interface UserDetailsDialogProps {
   open: boolean;
@@ -57,7 +58,18 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-6">
+        <SecureDataAccess userId={user.id}>
+          {({ canViewMedicalData, canViewPersonalData, canViewFullProfile, logAccess }) => {
+            useEffect(() => {
+              // Log that user details were accessed
+              const accessedFields = ['name', 'email', 'role'];
+              if (canViewPersonalData) accessedFields.push('cpf', 'rg', 'phone', 'street', 'city');
+              if (canViewMedicalData) accessedFields.push('medical_info', 'allergies', 'medications');
+              logAccess(accessedFields);
+            }, [canViewMedicalData, canViewPersonalData, logAccess]);
+
+            return (
+              <div className="space-y-6">
           {/* Informações Básicas */}
           <Card>
             <CardHeader>
@@ -98,10 +110,16 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                     <span className="text-sm">{user.phone}</span>
                   </div>
                 )}
-                {user.cpf && (
+                {canViewPersonalData && user.cpf && (
                   <div className="flex items-center gap-2">
                     <User size={16} className="text-muted-foreground" />
                     <span className="text-sm">CPF: {user.cpf}</span>
+                  </div>
+                )}
+                {!canViewPersonalData && user.cpf && (
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">CPF: [Dados Pessoais Protegidos]</span>
                   </div>
                 )}
                 {user.student_id && (
@@ -162,23 +180,32 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                 <CardTitle className="text-lg">Endereço</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-start gap-2">
-                  <MapPin size={16} className="text-muted-foreground mt-1" />
-                  <div className="text-sm">
-                    {user.street && (
-                      <div>
-                        {user.street}
-                        {user.number && `, ${user.number}`}
-                        {user.complement && `, ${user.complement}`}
-                      </div>
-                    )}
-                    {user.neighborhood && <div>{user.neighborhood}</div>}
-                    {user.city && user.state && (
-                      <div>{user.city} - {user.state}</div>
-                    )}
-                    {user.cep && <div>CEP: {user.cep}</div>}
+                {canViewPersonalData ? (
+                  <div className="flex items-start gap-2">
+                    <MapPin size={16} className="text-muted-foreground mt-1" />
+                    <div className="text-sm">
+                      {user.street && (
+                        <div>
+                          {user.street}
+                          {user.number && `, ${user.number}`}
+                          {user.complement && `, ${user.complement}`}
+                        </div>
+                      )}
+                      {user.neighborhood && <div>{user.neighborhood}</div>}
+                      {user.city && user.state && (
+                        <div>{user.city} - {user.state}</div>
+                      )}
+                      {user.cep && <div>CEP: {user.cep}</div>}
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-start gap-2">
+                    <Shield size={16} className="text-muted-foreground mt-1" />
+                    <div className="text-sm text-muted-foreground">
+                      [Dados de Endereço Protegidos]
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
@@ -211,7 +238,10 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
               )}
             </CardContent>
           </Card>
-        </div>
+              </div>
+            );
+          }}
+        </SecureDataAccess>
       </DialogContent>
     </Dialog>
   );

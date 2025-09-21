@@ -39,6 +39,7 @@ const Users = () => {
       name: data.name,
       email: data.email,
       role: data.role as 'admin' | 'secretary' | 'instructor' | 'student',
+      class_id: data.class_id,
       phone: data.phone,
       cep: data.cep,
       street: data.street,
@@ -76,8 +77,8 @@ const Users = () => {
     await createUser(userData);
   };
 
-  const handleInviteStudent = async (email: string, name: string) => {
-    await inviteStudent(email, name);
+  const handleInviteStudent = async (email: string, name: string, classId?: string) => {
+    await inviteStudent(email, name, classId);
   };
 
   const handleEditUser = async (userData: any) => {
@@ -85,6 +86,7 @@ const Users = () => {
       name: userData.name,
       email: userData.email,
       role: userData.role as 'admin' | 'secretary' | 'instructor' | 'student',
+      class_id: userData.class_id,
       phone: userData.phone,
       cep: userData.cep,
       street: userData.street,

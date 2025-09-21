@@ -10,7 +10,7 @@ export interface DashboardStats {
   totalSubjects: number;
   totalDeclarations: number;
   pendingDeclarations: number;
-  systemUptime: string;
+  attendanceRate: string;
 }
 
 export const useDashboardStats = () => {
@@ -22,7 +22,7 @@ export const useDashboardStats = () => {
     totalSubjects: 0,
     totalDeclarations: 0,
     pendingDeclarations: 0,
-    systemUptime: '99.9%',
+    attendanceRate: '0%',
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +85,29 @@ export const useDashboardStats = () => {
 
       if (pendingError) throw pendingError;
 
+      // Calcular frequência real dos alunos
+      let attendanceRate = '0%';
+      if (totalStudents && totalStudents > 0) {
+        // Buscar total de registros de presença
+        const { count: totalAttendance, error: attendanceError } = await supabase
+          .from('attendance')
+          .select('*', { count: 'exact', head: true });
+
+        // Buscar total de presenças (is_present = true)
+        const { count: presentCount, error: presentError } = await supabase
+          .from('attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_present', true);
+
+        if (attendanceError || presentError) {
+          console.warn('Erro ao calcular frequência:', attendanceError || presentError);
+          attendanceRate = 'N/A';
+        } else if (totalAttendance && totalAttendance > 0) {
+          const rate = ((presentCount || 0) / totalAttendance) * 100;
+          attendanceRate = `${rate.toFixed(1)}%`;
+        }
+      }
+
       setStats({
         totalUsers: totalUsers || 0,
         totalStudents: totalStudents || 0,
@@ -93,7 +116,7 @@ export const useDashboardStats = () => {
         totalSubjects: totalSubjects || 0,
         totalDeclarations: totalDeclarations || 0,
         pendingDeclarations: pendingDeclarations || 0,
-        systemUptime: '99.9%', // Este valor pode ser calculado de acordo com métricas reais
+        attendanceRate,
       });
     } catch (err: any) {
       setError(err.message);

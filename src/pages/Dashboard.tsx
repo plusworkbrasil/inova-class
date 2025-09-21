@@ -100,7 +100,7 @@ const Dashboard = () => {
             { title: 'Total de Usuários', value: statsLoading ? '...' : stats.totalUsers.toString(), description: 'Usuários ativos' },
             { title: 'Turmas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas ativas' },
             { title: 'Disciplinas', value: statsLoading ? '...' : stats.totalSubjects.toString(), description: 'Disciplinas oferecidas' },
-            { title: 'Sistema', value: stats.systemUptime, description: 'Disponibilidade' },
+            { title: 'Frequência Geral', value: stats.attendanceRate, description: 'Taxa de presença dos alunos' },
           ]
         };
     }

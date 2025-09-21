@@ -8,16 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { useUsers } from '@/hooks/useUsers';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 const subjectFormSchema = z.object({
   name: z.string().min(1, 'Nome da disciplina é obrigatório'),
-  code: z.string().min(1, 'Código é obrigatório'),
-  teacher: z.string().min(1, 'Instrutor é obrigatório'),
+  code: z.string().optional(),
+  teacher_id: z.string().min(1, 'Instrutor é obrigatório'),
+  class_id: z.string().min(1, 'Turma é obrigatória'),
   workload: z.number().min(1, 'Carga horária deve ser maior que 0'),
   description: z.string().optional(),
-  classes: z.array(z.string()).min(1, 'Selecione pelo menos uma turma'),
   status: z.string().min(1, 'Status é obrigatório'),
 });
 
@@ -38,33 +38,23 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
   initialData,
   mode
 }) => {
-  const availableTeachers = [
-    'Prof. João Silva',
-    'Prof. Maria Santos',
-    'Prof. Ana Costa',
-    'Prof. Pedro Oliveira',
-    'Prof. Carlos Souza',
-    'Prof. Luciana Ferreira',
-  ];
+  const { users } = useUsers();
+  const { data: classes } = useSupabaseClasses();
 
-  const availableClasses = [
-    '1º Ano A',
-    '1º Ano B', 
-    '1º Ano C',
-    '2º Ano A',
-    '2º Ano B',
-    '3º Ano A',
-  ];
+  // Filter users to only show instructors/teachers
+  const availableTeachers = users.filter(user => 
+    user.role === 'instructor' || user.role === 'teacher'
+  );
 
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectFormSchema),
     defaultValues: {
       name: initialData?.name || '',
       code: initialData?.code || '',
-      teacher: initialData?.teacher || '',
+      teacher_id: initialData?.teacher_id || '',
+      class_id: initialData?.class_id || '',
       workload: initialData?.workload || 40,
       description: initialData?.description || '',
-      classes: initialData?.classes || [],
       status: initialData?.status || 'ativo',
     },
   });
@@ -75,14 +65,6 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
     form.reset();
   };
 
-  const handleClassToggle = (className: string, checked: boolean) => {
-    const currentClasses = form.getValues('classes') || [];
-    if (checked) {
-      form.setValue('classes', [...currentClasses, className]);
-    } else {
-      form.setValue('classes', currentClasses.filter(c => c !== className));
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -128,7 +110,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="teacher"
+                name="teacher_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Instrutor</FormLabel>
@@ -140,8 +122,8 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {availableTeachers.map((teacher) => (
-                          <SelectItem key={teacher} value={teacher}>
-                            {teacher}
+                          <SelectItem key={teacher.id} value={teacher.id}>
+                            {teacher.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -191,27 +173,24 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
 
             <FormField
               control={form.control}
-              name="classes"
-              render={() => (
+              name="class_id"
+              render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Turmas</FormLabel>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-md">
-                    {availableClasses.map((className) => (
-                      <div key={className} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={className}
-                          checked={form.getValues('classes')?.includes(className) || false}
-                          onCheckedChange={(checked) => handleClassToggle(className, !!checked)}
-                        />
-                        <Label 
-                          htmlFor={className}
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {className}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
+                  <FormLabel>Turma</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a turma" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {classes.map((classItem) => (
+                        <SelectItem key={classItem.id} value={classItem.id}>
+                          {classItem.name} - {classItem.grade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

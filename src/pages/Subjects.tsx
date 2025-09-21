@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api';
+import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useUsers } from '@/hooks/useUsers';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -23,50 +25,44 @@ const Subjects = () => {
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [deletingSubject, setDeletingSubject] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [subjects, setSubjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSubjects();
-  }, []);
+  // Use Supabase hooks
+  const { data: subjects, loading, createSubject, updateSubject, deleteSubject } = useSupabaseSubjects();
+  const { users } = useUsers();
+  const { data: classes } = useSupabaseClasses();
 
-  const fetchSubjects = async () => {
-    try {
-      const data = await apiClient.get('subjects');
-      setSubjects(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar disciplinas:', error);
-      toast({
-        title: "Erro ao carregar disciplinas",
-        description: "Não foi possível carregar as disciplinas.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
+  // Helper functions to get names from IDs
+  const getTeacherName = (teacherId: string | null) => {
+    if (!teacherId) return 'Não atribuído';
+    const teacher = users.find(user => user.id === teacherId);
+    return teacher?.name || 'Não encontrado';
+  };
+
+  const getClassName = (classId: string | null) => {
+    if (!classId) return 'Sem turma';
+    const classItem = classes.find(cls => cls.id === classId);
+    return classItem?.name || 'Não encontrada';
   };
 
   const handleCreateSubject = async (data: any) => {
     try {
-      const newSubject = await apiClient.create('subjects', {
+      await createSubject({
         name: data.name,
+        code: data.code,
         teacher_id: data.teacher_id,
         class_id: data.class_id,
+        workload: data.workload,
+        description: data.description,
+        status: data.status,
       });
-
-      setSubjects([newSubject, ...subjects]);
+      
       toast({
         title: "Disciplina criada com sucesso!",
         description: `A disciplina ${data.name} foi criada.`,
       });
     } catch (error) {
-      console.error('Erro ao criar disciplina:', error);
-      toast({
-        title: "Erro ao criar disciplina",
-        description: "Não foi possível criar a disciplina.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -74,46 +70,36 @@ const Subjects = () => {
     if (!editingSubject) return;
     
     try {
-      const updatedSubject = await apiClient.update('subjects', editingSubject.id, {
+      await updateSubject(editingSubject.id, {
         name: subjectData.name,
+        code: subjectData.code,
         teacher_id: subjectData.teacher_id,
         class_id: subjectData.class_id,
+        workload: subjectData.workload,
+        description: subjectData.description,
+        status: subjectData.status,
       });
-
-      setSubjects(subjects.map(s => s.id === editingSubject.id ? updatedSubject : s));
-      setEditingSubject(null);
       
+      setEditingSubject(null);
       toast({
         title: "Disciplina atualizada com sucesso!",
         description: `A disciplina ${subjectData.name} foi atualizada.`,
       });
     } catch (error) {
-      console.error('Erro ao atualizar disciplina:', error);
-      toast({
-        title: "Erro ao atualizar disciplina",
-        description: "Não foi possível atualizar a disciplina.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
   const handleDeleteSubject = async (subjectId: string) => {
     try {
-      await apiClient.delete('subjects', subjectId);
-      setSubjects(subjects.filter(s => s.id !== subjectId));
-      
+      await deleteSubject(subjectId);
       toast({
         title: "Disciplina excluída",
         description: "A disciplina foi removida do sistema.",
         variant: "destructive",
       });
     } catch (error) {
-      console.error('Erro ao excluir disciplina:', error);
-      toast({
-        title: "Erro ao excluir disciplina",
-        description: "Não foi possível excluir a disciplina.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -245,18 +231,18 @@ const Subjects = () => {
               <TableBody>
                 {filteredSubjects.map((subject) => (
                   <TableRow key={subject.id}>
-                    <TableCell className="font-medium">{subject.name}</TableCell>
-                    <TableCell>{subject.teacher_name || 'Não atribuído'}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {subject.class_name || 'Sem turma'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default">
-                        Ativo
-                      </Badge>
-                    </TableCell>
+                     <TableCell className="font-medium">{subject.name}</TableCell>
+                     <TableCell>{getTeacherName(subject.teacher_id)}</TableCell>
+                     <TableCell>
+                       <Badge variant="outline" className="text-xs">
+                         {getClassName(subject.class_id)}
+                       </Badge>
+                     </TableCell>
+                     <TableCell>
+                       <Badge variant={subject.status === 'ativo' ? 'default' : 'secondary'}>
+                         {subject.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                       </Badge>
+                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         <Button 

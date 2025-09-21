@@ -19,6 +19,7 @@ const studentSchema = z.object({
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF deve ter o formato 000.000.000-00'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   class_id: z.string().optional(),
   parentName: z.string().min(2, 'Nome dos pais é obrigatório'),
   escolaridade: z.string().min(1, 'Escolaridade é obrigatória'),
@@ -51,6 +52,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       cpf: '',
       phone: '',
       email: '',
+      password: '',
       class_id: '',
       parentName: '',
       escolaridade: '',
@@ -251,6 +253,24 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                     <FormLabel>Email *</FormLabel>
                     <FormControl>
                       <Input placeholder="email@exemplo.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Senha de acesso (mínimo 6 caracteres)" 
+                        type="password" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

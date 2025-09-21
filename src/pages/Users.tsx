@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Key } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { InviteStudentForm } from '@/components/forms/InviteStudentForm';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserDetailsDialog } from '@/components/ui/user-details-dialog';
+import { PasswordUpdateDialog } from '@/components/ui/password-update-dialog';
 import { roleTranslations } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
@@ -25,8 +26,10 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [viewingUser, setViewingUser] = useState<any>(null);
+  const [passwordUser, setPasswordUser] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   
   const { 
     users, 
@@ -60,6 +63,7 @@ const Users = () => {
     const userData = {
       name: studentData.fullName,
       email: studentData.email,
+      password: studentData.password, // Incluir senha
       role: 'student' as const,
       class_id: studentData.class_id,
       phone: studentData.phone,
@@ -116,6 +120,11 @@ const Users = () => {
   const openViewDialog = (user: any) => {
     setViewingUser(user);
     setIsViewDialogOpen(true);
+  };
+
+  const openPasswordDialog = (user: any) => {
+    setPasswordUser(user);
+    setIsPasswordDialogOpen(true);
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
@@ -229,6 +238,14 @@ const Users = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
+                          onClick={() => openPasswordDialog(user)}
+                          title="Atualizar senha"
+                        >
+                          <Key size={14} />
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
                           onClick={() => openDeleteDialog(user)}
                         >
                           <Trash2 size={14} />
@@ -246,6 +263,13 @@ const Users = () => {
           open={isViewDialogOpen}
           onOpenChange={setIsViewDialogOpen}
           user={viewingUser}
+        />
+        
+        <PasswordUpdateDialog
+          open={isPasswordDialogOpen}
+          onOpenChange={setIsPasswordDialogOpen}
+          userId={passwordUser?.id || ''}
+          userName={passwordUser?.name || ''}
         />
         
         <DeleteConfirmation

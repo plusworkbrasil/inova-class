@@ -10,45 +10,10 @@ import { Search, Plus, Edit, UserX, Calendar, AlertTriangle } from 'lucide-react
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useAuth } from '@/hooks/useAuth';
 
-const mockAttendanceData = [
-  { 
-    id: 1, 
-    studentName: 'João Silva', 
-    class: '1º Ano A',
-    date: '2024-08-01',
-    subject: 'Matemática',
-    status: 'presente',
-    absences: 2
-  },
-  { 
-    id: 2, 
-    studentName: 'Maria Santos', 
-    class: '1º Ano A',
-    date: '2024-08-01',
-    subject: 'Matemática',
-    status: 'falta',
-    absences: 5
-  },
-  { 
-    id: 3, 
-    studentName: 'Pedro Oliveira', 
-    class: '2º Ano B',
-    date: '2024-08-01',
-    subject: 'Português',
-    status: 'presente',
-    absences: 1
-  },
-  { 
-    id: 4, 
-    studentName: 'Ana Costa', 
-    class: '2º Ano B',
-    date: '2024-08-01',
-    subject: 'Português',
-    status: 'falta',
-    absences: 4
-  },
-];
 
 const Attendance = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -56,54 +21,85 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
-  const [attendanceRecords, setAttendanceRecords] = useState(mockAttendanceData);
   const { toast } = useToast();
+  const { user, profile } = useAuth();
+  const { data: attendanceData, loading: attendanceLoading, createAttendance, refetch } = useSupabaseAttendance();
+  const { data: classes } = useSupabaseClasses();
 
   useEffect(() => {
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
+    if (profile) {
+      setUserRole(profile.role as UserRole);
+      setUserName(profile.name);
     }
-  }, []);
+  }, [profile]);
 
-  const handleAttendanceSubmit = (data: any) => {
-    // Simular criação de registros de frequência
-    const newRecords = data.attendance.map((student: any, index: number) => ({
-      id: attendanceRecords.length + index + 1,
-      studentName: student.studentName,
-      class: mockClasses.find(c => c.id === data.classId)?.name || '',
-      date: data.date,
-      subject: mockSubjects.find(s => s.id === data.subjectId)?.name || '',
-      status: student.isPresent ? 'presente' : 'falta',
-      absences: Math.floor(Math.random() * 6), // Simulação
-    }));
-
-    setAttendanceRecords([...newRecords, ...attendanceRecords]);
-    
-    toast({
-      title: "Chamada registrada com sucesso!",
-      description: `Frequência registrada para ${data.attendance.length} alunos.`,
-    });
+  const handleAttendanceSubmit = async (data: any) => {
+    try {
+      // Criar registros de frequência no banco de dados
+      for (const student of data.attendance) {
+        await createAttendance({
+          student_id: student.studentId,
+          class_id: data.classId,
+          subject_id: data.subjectId,
+          date: data.date,
+          is_present: student.isPresent,
+          justification: student.isPresent ? null : 'Falta não justificada'
+        });
+      }
+      
+      toast({
+        title: "Chamada registrada com sucesso!",
+        description: `Frequência registrada para ${data.attendance.length} alunos.`,
+      });
+      
+      // Atualizar dados
+      refetch();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao registrar chamada",
+        description: "Ocorreu um erro ao salvar a frequência.",
+      });
+    }
   };
 
-  const mockClasses = [
-    { id: '1a', name: '1º Ano A' },
-    { id: '1b', name: '1º Ano B' },
-    { id: '2a', name: '2º Ano A' },
-    { id: '2b', name: '2º Ano B' },
-    { id: '3a', name: '3º Ano A' },
-  ];
+  // Calcular estatísticas dos dados reais
+  const getAttendanceStats = () => {
+    if (userRole === 'student') {
+      const userAttendance = attendanceData.filter(record => record.student_id === user?.id);
+      const presentCount = userAttendance.filter(record => record.is_present).length;
+      const absentCount = userAttendance.filter(record => !record.is_present).length;
+      const totalRecords = userAttendance.length;
+      const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
+      
+      return {
+        present: presentCount,
+        absent: absentCount,
+        rate: attendanceRate,
+        total: absentCount
+      };
+    } else {
+      // Para admins/instrutores - dados gerais do dia atual
+      const today = new Date().toISOString().split('T')[0];
+      const todayRecords = attendanceData.filter(record => record.date === today);
+      const presentCount = todayRecords.filter(record => record.is_present).length;
+      const absentCount = todayRecords.filter(record => !record.is_present).length;
+      const totalRecords = attendanceData.length;
+      const attendanceRate = totalRecords > 0 ? Math.round((attendanceData.filter(r => r.is_present).length / totalRecords) * 100) : 0;
+      
+      // Alunos com mais de 3 faltas (simulação - seria necessário uma query mais complexa)
+      const studentsWithManyAbsences = 8; // Placeholder
+      
+      return {
+        present: presentCount,
+        absent: absentCount,
+        rate: attendanceRate,
+        total: studentsWithManyAbsences
+      };
+    }
+  };
 
-  const mockSubjects = [
-    { id: 'mat', name: 'Matemática' },
-    { id: 'por', name: 'Português' },
-    { id: 'his', name: 'História' },
-    { id: 'geo', name: 'Geografia' },
-    { id: 'cie', name: 'Ciências' },
-  ];
+  const stats = getAttendanceStats();
 
   const getStatusBadge = (status: string) => {
     return status === 'presente' 
@@ -121,12 +117,25 @@ const Attendance = () => {
     return <Badge variant="outline">{absences}</Badge>;
   };
 
-  // Filtrar dados para alunos - apenas suas próprias informações
+  // Filtrar dados para o usuário atual
   const getFilteredData = () => {
+    let filtered = attendanceData;
+    
     if (userRole === 'student') {
-      return attendanceRecords.filter(record => record.studentName === userName);
+      filtered = attendanceData.filter(record => record.student_id === user?.id);
     }
-    return attendanceRecords;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(record => 
+        record.student_id.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (selectedClass) {
+      filtered = filtered.filter(record => record.class_id === selectedClass);
+    }
+    
+    return filtered;
   };
 
   const filteredRecords = getFilteredData();
@@ -158,10 +167,7 @@ const Attendance = () => {
                     {userRole === 'student' ? 'Minhas Presenças' : 'Presentes Hoje'}
                   </p>
                   <p className="text-3xl font-bold text-success">
-                    {userRole === 'student' 
-                      ? filteredRecords.filter(r => r.status === 'presente').length 
-                      : '85'
-                    }
+                    {attendanceLoading ? '...' : stats.present}
                   </p>
                 </div>
                 <UserX className="h-8 w-8 text-success" />
@@ -177,10 +183,7 @@ const Attendance = () => {
                     {userRole === 'student' ? 'Minhas Faltas' : 'Faltas Hoje'}
                   </p>
                   <p className="text-3xl font-bold text-destructive">
-                    {userRole === 'student' 
-                      ? filteredRecords.filter(r => r.status === 'falta').length 
-                      : '15'
-                    }
+                    {attendanceLoading ? '...' : stats.absent}
                   </p>
                 </div>
                 <UserX className="h-8 w-8 text-destructive" />
@@ -196,10 +199,7 @@ const Attendance = () => {
                     {userRole === 'student' ? 'Minha Frequência' : '% Frequência'}
                   </p>
                   <p className="text-3xl font-bold text-primary">
-                    {userRole === 'student' 
-                      ? `${Math.round((filteredRecords.filter(r => r.status === 'presente').length / Math.max(filteredRecords.length, 1)) * 100)}%`
-                      : '85%'
-                    }
+                    {attendanceLoading ? '...' : `${stats.rate}%`}
                   </p>
                 </div>
                 <Calendar className="h-8 w-8 text-primary" />
@@ -215,10 +215,7 @@ const Attendance = () => {
                     {userRole === 'student' ? 'Total de Faltas' : 'Alunos com +3 Faltas'}
                   </p>
                   <p className="text-3xl font-bold text-warning">
-                    {userRole === 'student' 
-                      ? (filteredRecords[0]?.absences || 0)
-                      : '8'
-                    }
+                    {attendanceLoading ? '...' : stats.total}
                   </p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-warning" />
@@ -243,17 +240,18 @@ const Attendance = () => {
                     className="pl-10"
                   />
                 </div>
-                <Select value={selectedClass} onValueChange={setSelectedClass}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Selecionar turma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1a">1º Ano A</SelectItem>
-                    <SelectItem value="1b">1º Ano B</SelectItem>
-                    <SelectItem value="2a">2º Ano A</SelectItem>
-                    <SelectItem value="2b">2º Ano B</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={selectedClass} onValueChange={setSelectedClass}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Selecionar turma" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((classItem) => (
+                        <SelectItem key={classItem.id} value={classItem.id}>
+                          {classItem.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 <Button variant="outline">Filtrar</Button>
               </div>
             </CardContent>
@@ -275,30 +273,52 @@ const Attendance = () => {
                   <TableHead>Data</TableHead>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Total de Faltas</TableHead>
+                  <TableHead>Justificativa</TableHead>
                   {userRole !== 'student' && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecords.map((record) => (
-                  <TableRow key={record.id}>
-                    {userRole !== 'student' && <TableCell className="font-medium">{record.studentName}</TableCell>}
-                    <TableCell>{record.class}</TableCell>
-                    <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{record.subject}</TableCell>
-                    <TableCell>{getStatusBadge(record.status)}</TableCell>
-                    <TableCell>{getAbsencesBadge(record.absences)}</TableCell>
-                    {userRole !== 'student' && (
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Edit size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    )}
+                {attendanceLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={userRole === 'student' ? 5 : 6} className="text-center">
+                      Carregando registros de frequência...
+                    </TableCell>
                   </TableRow>
-                ))}
+                ) : filteredRecords.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={userRole === 'student' ? 5 : 6} className="text-center">
+                      Nenhum registro de frequência encontrado.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredRecords.map((record) => (
+                    <TableRow key={record.id}>
+                      {userRole !== 'student' && <TableCell className="font-medium">Aluno ID: {record.student_id}</TableCell>}
+                      <TableCell>Turma ID: {record.class_id}</TableCell>
+                      <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>Disciplina ID: {record.subject_id}</TableCell>
+                      <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
+                      <TableCell>
+                        {record.justification ? (
+                          <Badge variant="outline" title={record.justification}>
+                            Com justificativa
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">-</Badge>
+                        )}
+                      </TableCell>
+                      {userRole !== 'student' && (
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              <Edit size={14} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardContent>

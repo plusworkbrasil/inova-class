@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, Check, X } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { supabase } from '@/integrations/supabase/client';
 
 const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
@@ -32,6 +33,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit
 }) => {
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
+  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string}>>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
   
@@ -44,14 +47,36 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     },
   });
 
-  const mockStudents = [
-    { id: '1', name: 'João Silva', studentId: '2024001' },
-    { id: '2', name: 'Maria Santos', studentId: '2024002' },
-    { id: '3', name: 'Pedro Oliveira', studentId: '2024003' },
-    { id: '4', name: 'Ana Costa', studentId: '2024004' },
-    { id: '5', name: 'Carlos Souza', studentId: '2024005' },
-    { id: '6', name: 'Luciana Ferreira', studentId: '2024006' },
-  ];
+  // Buscar alunos da turma selecionada
+  const fetchStudentsFromClass = async (classId: string) => {
+    if (!classId) return;
+    
+    setLoadingStudents(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, student_id')
+        .eq('class_id', classId)
+        .eq('role', 'student');
+      
+      if (error) throw error;
+      setStudents(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar alunos:', error);
+      setStudents([]);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  useEffect(() => {
+    const classId = form.watch('classId');
+    if (classId) {
+      fetchStudentsFromClass(classId);
+    } else {
+      setStudents([]);
+    }
+  }, [form.watch('classId')]);
 
   const toggleStudentAttendance = (studentId: string) => {
     setStudentAttendance(prev => ({
@@ -63,7 +88,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const handleSubmit = (data: AttendanceFormValues) => {
     const attendanceData = {
       ...data,
-      attendance: mockStudents.map(student => ({
+      attendance: students.map(student => ({
         studentId: student.id,
         studentName: student.name,
         isPresent: studentAttendance[student.id] || false,
@@ -74,13 +99,14 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     onOpenChange(false);
     form.reset();
     setStudentAttendance({});
+    setStudents([]);
   };
 
   const selectedClass = form.watch('classId');
-  const showStudents = selectedClass && form.watch('subjectId') && form.watch('date');
+  const showStudents = selectedClass && form.watch('subjectId') && form.watch('date') && students.length > 0;
 
   const presentCount = Object.values(studentAttendance).filter(Boolean).length;
-  const absentCount = mockStudents.length - presentCount;
+  const absentCount = students.length - presentCount;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -164,13 +190,23 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
               />
             </div>
 
+            {loadingStudents && selectedClass && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="text-center text-muted-foreground">
+                    Carregando alunos da turma...
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {showStudents && (
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <Users size={20} />
-                      <h3 className="text-lg font-medium">Lista de Chamada</h3>
+                      <h3 className="text-lg font-medium">Lista de Chamada ({students.length} alunos)</h3>
                     </div>
                     <div className="flex gap-4 text-sm">
                       <span className="flex items-center gap-1">
@@ -184,8 +220,13 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {mockStudents.map((student) => {
+                  {students.length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">
+                      Nenhum aluno encontrado nesta turma.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {students.map((student) => {
                       const isPresent = studentAttendance[student.id];
                       return (
                         <div
@@ -202,7 +243,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                           <div>
                             <div className="font-medium">{student.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Matrícula: {student.studentId}
+                              Matrícula: {student.student_id || 'N/A'}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -225,7 +266,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}

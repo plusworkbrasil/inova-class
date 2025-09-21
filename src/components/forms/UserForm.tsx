@@ -17,6 +17,7 @@ import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 const userFormSchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   email: z.string().email('Email inválido'),
+  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres').optional(),
   role: z.string().min(1, 'Perfil é obrigatório'),
   class_id: z.string().optional(),
   phone: z.string().optional(),
@@ -55,6 +56,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     defaultValues: {
       name: initialData?.name || '',
       email: initialData?.email || '',
+      password: '', // Sempre em branco para segurança
       role: initialData?.role || '',
       class_id: initialData?.class_id || '',
       phone: initialData?.phone || '',
@@ -218,6 +220,26 @@ export const UserForm: React.FC<UserFormProps> = ({
                 </FormItem>
               )}
             />
+
+            {mode === 'create' && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Digite a senha (mínimo 6 caracteres)" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
               <FormField
                 control={form.control}

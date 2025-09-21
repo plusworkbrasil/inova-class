@@ -61,24 +61,84 @@ export const useUsers = () => {
     }
   };
 
-  const createUser = async (userData: Partial<User>) => {
+  const createUser = async (userData: Partial<User> & { password?: string }) => {
     try {
-      // First create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
-        body: { userData }
-      });
+      // Para criar um usuário com senha, usar diretamente o supabase.auth.signUp
+      if (userData.password) {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: userData.email!,
+          password: userData.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              name: userData.name,
+              role: userData.role
+            }
+          }
+        });
 
-      if (authError) throw authError;
+        if (authError) throw authError;
 
-      // Refresh the users list
-      await fetchUsers();
-      
-      toast({
-        title: "Usuário criado com sucesso!",
-        description: `O usuário ${userData.name} foi criado.`,
-      });
+        if (authData.user) {
+          // Atualizar o perfil com dados adicionais
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              name: userData.name,
+              role: userData.role,
+              phone: userData.phone,
+              cep: userData.cep,
+              street: userData.street,
+              number: userData.number,
+              complement: userData.complement,
+              neighborhood: userData.neighborhood,
+              city: userData.city,
+              state: userData.state,
+              class_id: userData.class_id,
+              cpf: userData.cpf,
+              full_name: userData.full_name,
+              photo: userData.photo,
+              parent_name: userData.parent_name,
+              escolaridade: userData.escolaridade,
+              guardian_name: userData.guardian_name,
+              guardian_phone: userData.guardian_phone,
+              student_id: userData.student_id,
+              instructor_subjects: userData.instructor_subjects
+            })
+            .eq('id', authData.user.id);
 
-      return authData;
+          if (profileError) {
+            console.error('Error updating profile:', profileError);
+          }
+        }
+
+        // Refresh the users list
+        await fetchUsers();
+        
+        toast({
+          title: "Usuário criado com sucesso!",
+          description: `O usuário ${userData.name} foi criado com senha.`,
+        });
+
+        return authData;
+      } else {
+        // Usar a edge function para criação sem senha (convite)
+        const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
+          body: { userData }
+        });
+
+        if (authError) throw authError;
+
+        // Refresh the users list
+        await fetchUsers();
+        
+        toast({
+          title: "Usuário criado com sucesso!",
+          description: `O usuário ${userData.name} foi criado.`,
+        });
+
+        return authData;
+      }
     } catch (err: any) {
       console.error('Error creating user:', err);
       toast({

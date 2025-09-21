@@ -41,6 +41,7 @@ const Users = () => {
     await createUser({
       name: data.name,
       email: data.email,
+      password: data.password, // Incluir senha
       role: data.role as 'admin' | 'secretary' | 'instructor' | 'student',
       class_id: data.class_id,
       phone: data.phone,

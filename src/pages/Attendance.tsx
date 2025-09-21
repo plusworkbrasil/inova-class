@@ -293,10 +293,10 @@ const Attendance = () => {
                 ) : (
                   filteredRecords.map((record) => (
                     <TableRow key={record.id}>
-                      {userRole !== 'student' && <TableCell className="font-medium">Aluno ID: {record.student_id}</TableCell>}
-                      <TableCell>Turma ID: {record.class_id}</TableCell>
+                     {userRole !== 'student' && <TableCell className="font-medium">{record.student_name || 'Aluno não encontrado'}</TableCell>}
+                      <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
                       <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
-                      <TableCell>Disciplina ID: {record.subject_id}</TableCell>
+                      <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
                       <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
                       <TableCell>
                         {record.justification ? (
@@ -310,7 +310,10 @@ const Attendance = () => {
                       {userRole !== 'student' && (
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" title="Visualizar chamada">
+                              <Search size={14} />
+                            </Button>
+                            <Button variant="outline" size="sm" title="Editar">
                               <Edit size={14} />
                             </Button>
                           </div>

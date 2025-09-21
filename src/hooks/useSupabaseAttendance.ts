@@ -12,6 +12,10 @@ export interface Attendance {
   justification?: string;
   created_at: string;
   updated_at: string;
+  // Joined data
+  student_name?: string;
+  class_name?: string;
+  subject_name?: string;
 }
 
 export const useSupabaseAttendance = () => {
@@ -27,11 +31,25 @@ export const useSupabaseAttendance = () => {
       
       const { data: attendance, error } = await supabase
         .from('attendance')
-        .select('*')
+        .select(`
+          *,
+          profiles:student_id(name),
+          classes:class_id(name),
+          subjects:subject_id(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setData(attendance || []);
+      
+      // Transform the data to include joined fields
+      const transformedData = (attendance || []).map((record: any) => ({
+        ...record,
+        student_name: record.profiles?.name,
+        class_name: record.classes?.name,
+        subject_name: record.subjects?.name
+      }));
+      
+      setData(transformedData);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching attendance:', err);

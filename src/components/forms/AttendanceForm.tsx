@@ -9,6 +9,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, Check, X } from 'lucide-react';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 
 const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
@@ -30,6 +32,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit
 }) => {
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
+  const { data: classes, loading: loadingClasses } = useSupabaseClasses();
+  const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
   
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),
@@ -39,22 +43,6 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       date: new Date().toISOString().split('T')[0],
     },
   });
-
-  const mockClasses = [
-    { id: '1a', name: '1º Ano A' },
-    { id: '1b', name: '1º Ano B' },
-    { id: '2a', name: '2º Ano A' },
-    { id: '2b', name: '2º Ano B' },
-    { id: '3a', name: '3º Ano A' },
-  ];
-
-  const mockSubjects = [
-    { id: 'mat', name: 'Matemática' },
-    { id: 'por', name: 'Português' },
-    { id: 'his', name: 'História' },
-    { id: 'geo', name: 'Geografia' },
-    { id: 'cie', name: 'Ciências' },
-  ];
 
   const mockStudents = [
     { id: '1', name: 'João Silva', studentId: '2024001' },
@@ -120,9 +108,9 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockClasses.map((classItem) => (
+                        {classes.map((classItem) => (
                           <SelectItem key={classItem.id} value={classItem.id}>
-                            {classItem.name}
+                            {classItem.name} - {classItem.year}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -145,7 +133,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockSubjects.map((subject) => (
+                        {subjects.map((subject) => (
                           <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
                           </SelectItem>

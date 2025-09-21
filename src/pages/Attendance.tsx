@@ -8,9 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, UserX, Calendar, AlertTriangle } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
+import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
+import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
+import { useSupabaseAttendance, type Attendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,9 +23,12 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
   const { toast } = useToast();
   const { user, profile } = useAuth();
-  const { data: attendanceData, loading: attendanceLoading, createAttendance, refetch } = useSupabaseAttendance();
+  const { data: attendanceData, loading: attendanceLoading, createAttendance, updateAttendance, refetch } = useSupabaseAttendance();
   const { data: classes } = useSupabaseClasses();
 
   useEffect(() => {
@@ -59,6 +64,32 @@ const Attendance = () => {
         variant: "destructive",
         title: "Erro ao registrar chamada",
         description: "Ocorreu um erro ao salvar a frequência.",
+      });
+    }
+  };
+
+  const handleViewAttendance = (attendance: Attendance) => {
+    setSelectedAttendance(attendance);
+    setViewDialogOpen(true);
+  };
+
+  const handleEditAttendance = (attendance: Attendance) => {
+    setSelectedAttendance(attendance);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateAttendance = async (id: string, updates: Partial<Attendance>) => {
+    try {
+      await updateAttendance(id, updates);
+      toast({
+        title: "Frequência atualizada!",
+        description: "O registro foi atualizado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao atualizar",
+        description: "Ocorreu um erro ao atualizar a frequência.",
       });
     }
   };
@@ -310,10 +341,20 @@ const Attendance = () => {
                       {userRole !== 'student' && (
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm" title="Visualizar chamada">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              title="Visualizar chamada"
+                              onClick={() => handleViewAttendance(record)}
+                            >
                               <Search size={14} />
                             </Button>
-                            <Button variant="outline" size="sm" title="Editar">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              title="Editar"
+                              onClick={() => handleEditAttendance(record)}
+                            >
                               <Edit size={14} />
                             </Button>
                           </div>
@@ -328,11 +369,26 @@ const Attendance = () => {
         </Card>
         
         {userRole !== 'student' && (
-          <AttendanceForm
-            open={isAttendanceFormOpen}
-            onOpenChange={setIsAttendanceFormOpen}
-            onSubmit={handleAttendanceSubmit}
-          />
+          <>
+            <AttendanceForm
+              open={isAttendanceFormOpen}
+              onOpenChange={setIsAttendanceFormOpen}
+              onSubmit={handleAttendanceSubmit}
+            />
+            
+            <AttendanceViewDialog
+              open={viewDialogOpen}
+              onOpenChange={setViewDialogOpen}
+              attendance={selectedAttendance}
+            />
+            
+            <AttendanceEditForm
+              open={editDialogOpen}
+              onOpenChange={setEditDialogOpen}
+              attendance={selectedAttendance}
+              onSave={handleUpdateAttendance}
+            />
+          </>
         )}
       </div>
     </Layout>

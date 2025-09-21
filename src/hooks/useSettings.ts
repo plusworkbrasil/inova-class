@@ -144,10 +144,12 @@ export const useSettings = () => {
             key: setting.key,
             value: setting.value,
             updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'category,key'
           });
 
         if (error) {
-          console.error('Error saving setting:', error);
+          console.error('Error saving setting:', setting, error);
           throw error;
         }
       }

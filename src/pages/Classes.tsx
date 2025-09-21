@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
-import { useClasses } from '@/hooks/useClasses';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 const Classes = () => {
   const { profile } = useAuth();
@@ -24,7 +24,7 @@ const Classes = () => {
   const [deletingClass, setDeletingClass] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
-  const { data: classes, loading, createClass, updateClass, deleteClass } = useClasses();
+  const { data: classes, loading, createClass, updateClass, deleteClass } = useSupabaseClasses();
 
   const handleCreateClass = async (data: any) => {
     try {

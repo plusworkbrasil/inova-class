@@ -49,22 +49,40 @@ export const useSupabaseGrades = () => {
 
   const createGrade = async (gradeData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { error } = await supabase
-        .from('grades')
-        .insert([gradeData]);
+      console.log('Hook createGrade - dados recebidos:', gradeData);
+      
+      // Validar dados antes de enviar
+      if (!gradeData.student_id || !gradeData.subject_id || !gradeData.teacher_id) {
+        throw new Error('Dados obrigatórios ausentes: student_id, subject_id ou teacher_id');
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase
+        .from('grades')
+        .insert([gradeData])
+        .select();
+
+      console.log('Resultado da inserção:', { data, error });
+
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw error;
+      }
 
       await fetchGrades();
+      console.log('Nota criada com sucesso');
+      
       toast({
         title: "Sucesso!",
         description: "Nota lançada com sucesso."
       });
     } catch (err: any) {
+      console.error('Erro completo no createGrade:', err);
+      const errorMessage = err?.message || err?.error_description || "Erro desconhecido ao lançar nota.";
+      
       toast({
         variant: "destructive",
         title: "Erro",
-        description: err.message || "Erro ao lançar nota."
+        description: errorMessage
       });
       throw err;
     }

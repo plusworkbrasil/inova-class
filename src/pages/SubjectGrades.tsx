@@ -105,37 +105,66 @@ const SubjectGrades = () => {
           title: "Erro",
           description: "Insira pelo menos uma nota válida."
         });
+        setLoading(false);
         return;
       }
 
-      // Salvar todas as notas
-      for (const grade of validGrades) {
-        await createGrade({
-          student_id: grade.studentId,
-          subject_id: selectedSubject,
-          value: grade.value,
-          max_value: maxValue,
-          date: gradeDate,
-          teacher_id: profile?.id || '',
-          type: gradeType,
-          observations: grade.observations || null,
-        });
-      }
-
-      toast({
-        title: "Sucesso!",
-        description: `${validGrades.length} notas foram lançadas com sucesso.`
+      console.log('Dados para salvamento:', {
+        selectedClass,
+        selectedSubject,
+        gradeType,
+        gradeDate,
+        maxValue,
+        validGrades,
+        profileId: profile?.id
       });
 
-      // Limpar formulário
-      setGrades(grades.map(grade => ({ ...grade, value: 0, observations: '' })));
+      // Salvar todas as notas uma por vez para melhor controle de erro
+      let successCount = 0;
+      for (const grade of validGrades) {
+        try {
+          const gradeData = {
+            student_id: grade.studentId,
+            subject_id: selectedSubject,
+            value: Number(grade.value),
+            max_value: Number(maxValue),
+            date: gradeDate,
+            teacher_id: profile?.id || '',
+            type: gradeType,
+            observations: grade.observations || null,
+          };
+          
+          console.log('Salvando nota:', gradeData);
+          
+          await createGrade(gradeData);
+          successCount++;
+        } catch (gradeError) {
+          console.error('Erro ao salvar nota individual:', gradeError);
+          const studentName = getStudentName(grade.studentId);
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: `Erro ao salvar nota de ${studentName}: ${gradeError}`
+          });
+        }
+      }
+
+      if (successCount > 0) {
+        toast({
+          title: "Sucesso!",
+          description: `${successCount} de ${validGrades.length} notas foram lançadas com sucesso.`
+        });
+
+        // Limpar formulário apenas se houve sucesso
+        setGrades(grades.map(grade => ({ ...grade, value: 0, observations: '' })));
+      }
       
     } catch (error) {
-      console.error('Error creating grades:', error);
+      console.error('Erro geral ao criar notas:', error);
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Erro ao salvar as notas. Tente novamente."
+        description: `Erro ao salvar as notas: ${error}`
       });
     } finally {
       setLoading(false);

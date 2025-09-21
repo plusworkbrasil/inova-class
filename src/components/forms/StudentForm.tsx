@@ -12,12 +12,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Plus } from 'lucide-react';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 const studentSchema = z.object({
   fullName: z.string().min(2, 'Nome completo é obrigatório'),
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF deve ter o formato 000.000.000-00'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido'),
+  class_id: z.string().optional(),
   parentName: z.string().min(2, 'Nome dos pais é obrigatório'),
   escolaridade: z.string().min(1, 'Escolaridade é obrigatória'),
   cep: z.string().regex(/^\d{5}-\d{3}$/, 'CEP deve ter o formato 00000-000'),
@@ -40,6 +42,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
   const [open, setOpen] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -48,6 +51,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       cpf: '',
       phone: '',
       email: '',
+      class_id: '',
       parentName: '',
       escolaridade: '',
       cep: '',
@@ -248,6 +252,31 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                     <FormControl>
                       <Input placeholder="email@exemplo.com" type="email" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="class_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Turma</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a turma" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {classes.map((classItem) => (
+                          <SelectItem key={classItem.id} value={classItem.id}>
+                            {classItem.name} - {classItem.year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

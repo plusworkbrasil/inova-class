@@ -57,6 +57,7 @@ const Users = () => {
       name: studentData.fullName,
       email: studentData.email,
       role: 'student' as const,
+      class_id: studentData.class_id,
       phone: studentData.phone,
       cep: studentData.cep,
       street: studentData.street,

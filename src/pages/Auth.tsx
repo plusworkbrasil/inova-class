@@ -16,13 +16,13 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
-  const { user, login, register } = useAuth();
+  const { user, login, register, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
+    if (user && !authLoading) {
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

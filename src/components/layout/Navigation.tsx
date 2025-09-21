@@ -80,6 +80,7 @@ const menuItems = {
   student: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
     { icon: User, label: 'Meu Perfil', path: '/profile' },
+    { icon: BookOpen, label: 'Minhas Notas', path: '/student-grades' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },
   ],

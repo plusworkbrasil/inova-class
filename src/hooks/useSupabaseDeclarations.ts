@@ -20,6 +20,9 @@ export interface Declaration {
   delivery_date?: string;
   created_at: string;
   updated_at: string;
+  profiles?: {
+    name: string;
+  };
 }
 
 export const useSupabaseDeclarations = () => {
@@ -35,7 +38,10 @@ export const useSupabaseDeclarations = () => {
       
       const { data: declarations, error } = await supabase
         .from('declarations')
-        .select('*')
+        .select(`
+          *,
+          profiles!declarations_student_id_fkey(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle } f
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
 
 const Declarations = () => {
   const { profile } = useAuth();
@@ -23,38 +23,16 @@ const Declarations = () => {
   const [selectedType, setSelectedType] = useState('');
   const [isDeclarationFormOpen, setIsDeclarationFormOpen] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<any>(null);
-  const [declarations, setDeclarations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (profile && userRole) {
-      fetchDeclarations();
-    }
-  }, [profile, userRole]);
-
-  const fetchDeclarations = async () => {
-    try {
-      setLoading(true);
-      const data = await apiClient.get('declarations');
-      setDeclarations(data || []);
-    } catch (error) {
-      console.error('Error fetching declarations:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar declarações.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use Supabase hook
+  const { data: declarations, loading, createDeclaration, updateDeclaration } = useSupabaseDeclarations();
 
   const handleCreateDeclaration = async (data: any) => {
     if (!profile) return;
     
     try {
-      const declarationData = {
+      await createDeclaration({
         student_id: userRole === 'student' ? profile.id : data.studentId,
         type: data.type === 'Declaração de Matrícula' ? 'enrollment_certificate' : 'medical_certificate',
         title: data.type,
@@ -63,22 +41,14 @@ const Declarations = () => {
         urgency: data.urgency,
         subject_id: data.subjectId,
         status: 'pending'
-      };
-
-      await apiClient.create('declarations', declarationData);
-      await fetchDeclarations();
+      });
       
       toast({
         title: "Declaração solicitada com sucesso!",
         description: `Solicitação de ${data.type} registrada.`,
       });
     } catch (error) {
-      console.error('Error creating declaration:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao criar declaração.",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -86,27 +56,20 @@ const Declarations = () => {
     if (!editingDeclaration) return;
     
     try {
-      await apiClient.update('declarations', editingDeclaration.id, {
+      await updateDeclaration(editingDeclaration.id, {
         title: declarationData.type,
         description: declarationData.observations,
         purpose: declarationData.purpose,
         urgency: declarationData.urgency,
       });
 
-      await fetchDeclarations();
       setEditingDeclaration(null);
-      
       toast({
         title: "Declaração atualizada com sucesso!",
         description: "Declaração foi atualizada.",
       });
     } catch (error) {
-      console.error('Error updating declaration:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao atualizar declaração.",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -124,20 +87,14 @@ const Declarations = () => {
         updateData.delivery_date = new Date().toISOString().split('T')[0];
       }
 
-      await apiClient.update('declarations', declarationId, updateData);
-      await fetchDeclarations();
+      await updateDeclaration(declarationId, updateData);
       
       toast({
         title: "Status atualizado!",
         description: `Declaração ${newStatus === 'approved' ? 'aprovada' : newStatus === 'rejected' ? 'rejeitada' : 'em processamento'}.`,
       });
     } catch (error) {
-      console.error('Error updating status:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao atualizar status.",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -168,7 +125,7 @@ const Declarations = () => {
 
   // Filter declarations based on search and filters
   const filteredDeclarations = declarations.filter(declaration => {
-    if (searchTerm && !declaration.student_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !declaration.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     if (selectedStatus && declaration.status !== selectedStatus) {
@@ -330,7 +287,7 @@ const Declarations = () => {
                 {filteredDeclarations.map((declaration) => (
                   <TableRow key={declaration.id}>
                     <TableCell className="font-medium">{declaration.title}</TableCell>
-                    <TableCell>{declaration.student_name || 'N/A'}</TableCell>
+                     <TableCell>{declaration.profiles?.name || 'N/A'}</TableCell>
                     <TableCell>
                       {declaration.created_at ? new Date(declaration.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </TableCell>

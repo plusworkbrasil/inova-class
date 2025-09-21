@@ -12,6 +12,9 @@ export interface Evasion {
   observations?: string;
   created_at: string;
   updated_at: string;
+  profiles?: {
+    name: string;
+  };
 }
 
 export const useSupabaseEvasions = () => {
@@ -27,7 +30,10 @@ export const useSupabaseEvasions = () => {
       
       const { data: evasions, error } = await supabase
         .from('evasions')
-        .select('*')
+        .select(`
+          *,
+          profiles!evasions_student_id_fkey(name)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

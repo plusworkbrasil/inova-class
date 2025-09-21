@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,8 @@ import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart } from
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -23,53 +23,30 @@ const Evasions = () => {
   const [selectedReason, setSelectedReason] = useState('');
   const [isEvasionFormOpen, setIsEvasionFormOpen] = useState(false);
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
-  const [evasions, setEvasions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchEvasions();
-  }, []);
-
-  const fetchEvasions = async () => {
-    try {
-      const data = await apiClient.get('evasions');
-      setEvasions(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar evasões:', error);
-      toast({
-        title: "Erro ao carregar evasões",
-        description: "Não foi possível carregar as evasões.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use Supabase hook
+  const { data: evasions, loading, createEvasion, updateEvasion } = useSupabaseEvasions();
 
   const handleCreateEvasion = async (data: any) => {
+    if (!profile?.id) return;
+    
     try {
-      await apiClient.create('evasions', {
+      await createEvasion({
         student_id: data.studentId,
         date: data.evasionDate,
         reason: data.evasionReason,
-        reported_by: userRole,
+        reported_by: profile.id,
         observations: data.observations,
         status: 'active'
       });
 
-      await fetchEvasions();
       toast({
         title: "Evasão registrada com sucesso!",
         description: `Evasão de ${data.studentName} foi registrada.`,
       });
     } catch (error) {
-      console.error('Erro ao criar evasão:', error);
-      toast({
-        title: "Erro ao registrar evasão",
-        description: "Não foi possível registrar a evasão.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -77,25 +54,18 @@ const Evasions = () => {
     if (!editingEvasion) return;
     
     try {
-      await apiClient.update('evasions', editingEvasion.id, {
+      await updateEvasion(editingEvasion.id, {
         reason: evasionData.evasionReason,
         observations: evasionData.observations,
       });
 
-      await fetchEvasions();
       setEditingEvasion(null);
-      
       toast({
         title: "Evasão atualizada com sucesso!",
         description: `Registro de ${evasionData.studentName} foi atualizado.`,
       });
     } catch (error) {
-      console.error('Erro ao atualizar evasão:', error);
-      toast({
-        title: "Erro ao atualizar evasão",
-        description: "Não foi possível atualizar a evasão.",
-        variant: "destructive",
-      });
+      // Error handling is done in the hook
     }
   };
 
@@ -131,11 +101,11 @@ const Evasions = () => {
     return acc;
   }, {} as Record<string, number>);
   const topReason = Object.entries(mainReason).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A';
-  const classesAffected = new Set(evasions.map(e => e.student?.class_id)).size;
+  const classesAffected = new Set(evasions.map(e => e.student_id)).size;
 
   // Filter evasions
   const filteredEvasions = evasions.filter(evasion => {
-    if (searchTerm && !evasion.student_name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (searchTerm && !evasion.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     if (selectedReason && evasion.reason !== selectedReason) {
@@ -281,7 +251,7 @@ const Evasions = () => {
               <TableBody>
                 {filteredEvasions.map((evasion) => (
                   <TableRow key={evasion.id}>
-                    <TableCell className="font-medium">{evasion.student_name || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">{evasion.profiles?.name || 'N/A'}</TableCell>
                     <TableCell>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReasonColor(evasion.reason)}`}>
                         {evasion.reason}

@@ -11,6 +11,7 @@ import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
 import { InviteStudentForm } from '@/components/forms/InviteStudentForm';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
+import { UserDetailsDialog } from '@/components/ui/user-details-dialog';
 import { roleTranslations } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
@@ -23,7 +24,9 @@ const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
+  const [viewingUser, setViewingUser] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   
   const { 
     users, 
@@ -107,6 +110,11 @@ const Users = () => {
   const openDeleteDialog = (user: any) => {
     setDeletingUser(user);
     setIsDeleteDialogOpen(true);
+  };
+
+  const openViewDialog = (user: any) => {
+    setViewingUser(user);
+    setIsViewDialogOpen(true);
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
@@ -200,7 +208,11 @@ const Users = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openViewDialog(user)}
+                        >
                           <Eye size={14} />
                         </Button>
                         <UserForm 
@@ -228,6 +240,12 @@ const Users = () => {
             </Table>
           </CardContent>
         </Card>
+        
+        <UserDetailsDialog
+          open={isViewDialogOpen}
+          onOpenChange={setIsViewDialogOpen}
+          user={viewingUser}
+        />
         
         <DeleteConfirmation
           open={isDeleteDialogOpen}

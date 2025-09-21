@@ -30,8 +30,8 @@ export function PasswordUpdateDialog({ open, onOpenChange, userId, userName }: P
 
   const newPassword = watch('newPassword');
 
-  const onSubmit = async (data: PasswordFormData) => {
-    if (data.newPassword !== data.confirmPassword) {
+  const onSubmit = async (formData: PasswordFormData) => {
+    if (formData.newPassword !== formData.confirmPassword) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -40,7 +40,7 @@ export function PasswordUpdateDialog({ open, onOpenChange, userId, userName }: P
       return;
     }
 
-    if (data.newPassword.length < 6) {
+    if (formData.newPassword.length < 6) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -51,9 +51,12 @@ export function PasswordUpdateDialog({ open, onOpenChange, userId, userName }: P
 
     setLoading(true);
     try {
-      // Usar a API admin do Supabase para atualizar a senha
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: data.newPassword
+      // Usar Edge Function com privilégios de admin
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
+        body: { 
+          userId: userId,
+          newPassword: formData.newPassword 
+        }
       });
 
       if (error) throw error;

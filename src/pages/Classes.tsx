@@ -179,7 +179,6 @@ const Classes = () => {
                 <TableRow>
                   <TableHead>Turma</TableHead>
                   <TableHead>Ano</TableHead>
-                  <TableHead>Série</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -191,7 +190,6 @@ const Classes = () => {
                   <TableRow key={classItem.id}>
                     <TableCell className="font-medium">{classItem.name}</TableCell>
                     <TableCell>{classItem.year || '-'}</TableCell>
-                    <TableCell>{classItem.grade || '-'}</TableCell>
                     <TableCell>
                       <Badge variant="default">
                         Ativo

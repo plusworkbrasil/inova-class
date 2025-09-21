@@ -30,7 +30,6 @@ const Classes = () => {
     try {
       await createClass({
         name: data.name,
-        grade: data.grade,
         year: data.year,
       });
     } catch (error) {
@@ -44,7 +43,6 @@ const Classes = () => {
     try {
       await updateClass(editingClass.id, {
         name: classData.name,
-        grade: classData.grade,
         year: classData.year,
       });
       setEditingClass(null);

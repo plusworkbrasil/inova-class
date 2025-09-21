@@ -5,7 +5,7 @@ import { useToast } from './use-toast';
 export interface Class {
   id: string;
   name: string;
-  grade: string;
+  grade?: string;
   year: number;
   teacher_id?: string;
   student_count?: number;

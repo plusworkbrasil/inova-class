@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Edit, Trash2, Users, BookOpen } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Users, BookOpen, Eye } from 'lucide-react';
 import { ClassForm } from '@/components/forms/ClassForm';
+import { ClassSubjectsDialog } from '@/components/ui/class-subjects-dialog';
+import { ClassStudentsDialog } from '@/components/ui/class-students-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
@@ -23,6 +25,9 @@ const Classes = () => {
   const [editingClass, setEditingClass] = useState<any>(null);
   const [deletingClass, setDeletingClass] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [subjectsDialogOpen, setSubjectsDialogOpen] = useState(false);
+  const [studentsDialogOpen, setStudentsDialogOpen] = useState(false);
+  const [selectedClassForDialog, setSelectedClassForDialog] = useState<any>(null);
   
   const { data: classes, loading, createClass, updateClass, deleteClass } = useSupabaseClasses();
 
@@ -74,6 +79,16 @@ const Classes = () => {
   const openCreateForm = () => {
     setEditingClass(null);
     setIsFormOpen(true);
+  };
+
+  const openSubjectsDialog = (classItem: any) => {
+    setSelectedClassForDialog(classItem);
+    setSubjectsDialogOpen(true);
+  };
+
+  const openStudentsDialog = (classItem: any) => {
+    setSelectedClassForDialog(classItem);
+    setStudentsDialogOpen(true);
   };
 
   if (loading) {
@@ -178,6 +193,8 @@ const Classes = () => {
                   <TableHead>Turma</TableHead>
                   <TableHead>Ano</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Alunos</TableHead>
+                  <TableHead>Disciplinas</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -194,11 +211,34 @@ const Classes = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openStudentsDialog(classItem)}
+                        title="Ver alunos da turma"
+                      >
+                        <Users size={14} className="mr-1" />
+                        Alunos
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => openSubjectsDialog(classItem)}
+                        title="Ver disciplinas da turma"
+                      >
+                        <BookOpen size={14} className="mr-1" />
+                        Disciplinas
+                      </Button>
+                    </TableCell>
+                    <TableCell>
                       <div className="flex gap-2">
                         <Button 
                           variant="outline" 
                           size="sm"
                           onClick={() => openEditForm(classItem)}
+                          title="Editar turma"
                         >
                           <Edit size={14} />
                         </Button>
@@ -206,6 +246,7 @@ const Classes = () => {
                           variant="outline" 
                           size="sm"
                           onClick={() => openDeleteDialog(classItem)}
+                          title="Excluir turma"
                         >
                           <Trash2 size={14} />
                         </Button>
@@ -224,6 +265,20 @@ const Classes = () => {
           onSubmit={editingClass ? handleEditClass : handleCreateClass}
           initialData={editingClass}
           mode={editingClass ? 'edit' : 'create'}
+        />
+        
+        <ClassSubjectsDialog
+          open={subjectsDialogOpen}
+          onOpenChange={setSubjectsDialogOpen}
+          classId={selectedClassForDialog?.id}
+          className={selectedClassForDialog?.name || ''}
+        />
+        
+        <ClassStudentsDialog
+          open={studentsDialogOpen}
+          onOpenChange={setStudentsDialogOpen}
+          classId={selectedClassForDialog?.id}
+          className={selectedClassForDialog?.name || ''}
         />
         
         <DeleteConfirmation

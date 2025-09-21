@@ -64,7 +64,7 @@ serve(async (req) => {
     }
 
     // Parse the request body
-    const { email, name } = await req.json();
+    const { email, name, class_id } = await req.json();
 
     if (!email || !name) {
       return new Response(
@@ -123,13 +123,19 @@ serve(async (req) => {
     }
 
     // Update the profile with additional information
+    const profileData: any = {
+      name: name,
+      email: email,
+      role: 'student'
+    };
+    
+    if (class_id) {
+      profileData.class_id = class_id;
+    }
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        name: name,
-        email: email,
-        role: 'student'
-      })
+      .update(profileData)
       .eq('id', newUser.user.id)
       .select()
       .single();

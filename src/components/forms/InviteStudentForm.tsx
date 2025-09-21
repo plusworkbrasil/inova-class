@@ -5,26 +5,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserPlus } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 interface InviteStudentFormProps {
-  onSubmit: (email: string, name: string) => Promise<void>;
+  onSubmit: (email: string, name: string, classId?: string) => Promise<void>;
 }
 
 interface FormData {
   email: string;
   name: string;
+  class_id?: string;
 }
 
 export const InviteStudentForm = ({ onSubmit }: InviteStudentFormProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>();
+  const { register, handleSubmit, reset, formState: { errors }, setValue, watch } = useForm<FormData>();
 
   const handleFormSubmit = async (data: FormData) => {
     setLoading(true);
     try {
-      await onSubmit(data.email, data.name);
+      await onSubmit(data.email, data.name, data.class_id);
       setOpen(false);
       reset();
     } catch (error) {
@@ -78,6 +82,22 @@ export const InviteStudentForm = ({ onSubmit }: InviteStudentFormProps) => {
             {errors.email && (
               <p className="text-sm text-destructive">{errors.email.message}</p>
             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="class_id">Turma (Opcional)</Label>
+            <Select onValueChange={(value) => setValue('class_id', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione uma turma" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((classItem) => (
+                  <SelectItem key={classItem.id} value={classItem.id}>
+                    {classItem.name} - {classItem.year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">

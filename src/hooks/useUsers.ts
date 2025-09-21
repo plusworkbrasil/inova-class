@@ -144,27 +144,24 @@ export const useUsers = () => {
     }
   };
 
-  const inviteStudent = async (email: string, name: string) => {
+  const inviteStudent = async (email: string, name: string, classId?: string) => {
     try {
-      const userData = {
-        name,
-        email,
-        role: 'student' as const,
-        password: Math.random().toString(36).slice(-8) // Generate random password
-      };
+      const { data, error } = await supabase.functions.invoke('invite-student', {
+        body: { email, name, class_id: classId }
+      });
 
-      await createUser(userData);
-      
+      if (error) throw error;
+
+      await fetchUsers();
       toast({
-        title: "Convite enviado!",
-        description: `Usuário ${name} foi criado com sucesso.`,
+        title: "Sucesso!",
+        description: "Convite enviado com sucesso."
       });
     } catch (err: any) {
-      console.error('Error inviting student:', err);
       toast({
-        title: "Erro ao convidar estudante",
-        description: err.message || "Não foi possível enviar o convite.",
-        variant: "destructive",
+        variant: "destructive", 
+        title: "Erro",
+        description: err.message || "Erro ao enviar convite."
       });
       throw err;
     }

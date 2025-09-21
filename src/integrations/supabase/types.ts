@@ -726,6 +726,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_medical_data: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
+      can_access_personal_data: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       can_access_profile_data: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -754,10 +762,13 @@ export type Database = {
       get_student_basic_info_for_instructor: {
         Args: { target_student_id: string }
         Returns: {
-          class_name: string
-          enrollment_status: string
-          student_name: string
-          student_number: string
+          class_id: string
+          email: string
+          enrollment_number: string
+          id: string
+          name: string
+          status: string
+          student_id: string
         }[]
       }
       get_user_role: {

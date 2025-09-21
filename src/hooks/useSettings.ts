@@ -10,6 +10,7 @@ export interface SystemSettings {
     timezone: string;
   };
   school: {
+    name: string;
     address: string;
     phone: string;
     email: string;
@@ -44,6 +45,7 @@ export const useSettings = () => {
       timezone: '',
     },
     school: {
+      name: '',
       address: '',
       phone: '',
       email: '',

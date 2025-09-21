@@ -11,9 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2 } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
+import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
+import { useAuth } from '@/hooks/useAuth';
 
 const Settings = () => {
   const { settings, loading, saving, updateSettings, saveSettings } = useSettings();
+  const { profile } = useAuth();
 
   // Mock data para logs de auditoria
   const auditLogs = [
@@ -325,6 +328,13 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                {profile?.role && ['admin', 'secretary'].includes(profile.role) && (
+                  <div className="mt-6 pt-6 border-t space-y-4">
+                    <h3 className="text-lg font-semibold">Confirmação de Emails</h3>
+                    <EmailConfirmationForm />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

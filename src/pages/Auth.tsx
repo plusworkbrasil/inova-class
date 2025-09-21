@@ -93,7 +93,7 @@ const Auth = () => {
       if (error) {
         toast.error('Erro ao reenviar e-mail: ' + (error.message || ''));
       } else {
-        toast.success('E-mail de confirmação reenviado! Verifique sua caixa de entrada.');
+        toast.success('E-mail de confirmação reenviado! Verifique sua caixa de entrada. Pode levar alguns minutos para chegar.');
       }
     } finally {
       setLoading(false);

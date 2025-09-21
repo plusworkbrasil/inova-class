@@ -46,7 +46,7 @@ export const useClasses = () => {
         .from('classes')
         .insert(classData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -59,6 +59,7 @@ export const useClasses = () => {
 
       return data;
     } catch (err: any) {
+      console.error('Error creating class:', err);
       toast({
         variant: "destructive",
         title: "Erro",

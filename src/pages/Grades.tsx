@@ -9,124 +9,98 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { useToast } from '@/hooks/use-toast';
-
+import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useUsers } from '@/hooks/useUsers';
 import { UserRole } from '@/types/user';
 
-interface GradesProps {
-  userRole?: string;
-  currentUser?: any;
-}
+const Grades = () => {
+  const { profile } = useAuth();
+  const { data: grades, loading: gradesLoading, createGrade, updateGrade } = useSupabaseGrades();
+  const { data: classes } = useSupabaseClasses();
+  const { data: subjects } = useSupabaseSubjects();
+  const { users } = useUsers();
+  const { toast } = useToast();
 
-const mockGradesData = [
-  {
-    id: 1,
-    studentName: 'João Silva',
-    studentId: '2024001',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    grade: 8.5,
-    maxGrade: 10,
-    type: 'Prova',
-    date: '2024-01-15',
-    teacher: 'Prof. Carlos'
-  },
-  {
-    id: 2,
-    studentName: 'Maria Santos',
-    studentId: '2024002',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    grade: 7.2,
-    maxGrade: 10,
-    type: 'Trabalho',
-    date: '2024-01-14',
-    teacher: 'Prof. Carlos'
-  },
-  {
-    id: 3,
-    studentName: 'Pedro Oliveira',
-    studentId: '2024003',
-    class: '2º Ano B',
-    subject: 'Português',
-    grade: 9.0,
-    maxGrade: 10,
-    type: 'Prova',
-    date: '2024-01-13',
-    teacher: 'Prof. Ana'
-  },
-  {
-    id: 4,
-    studentName: 'Ana Costa',
-    studentId: '2024004',
-    class: '2º Ano B',
-    subject: 'História',
-    grade: 6.8,
-    maxGrade: 10,
-    type: 'Seminário',
-    date: '2024-01-12',
-    teacher: 'Prof. Maria'
-  },
-];
-
-const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: GradesProps = {}) => {
-  const [userRole, setUserRole] = useState<UserRole>(propUserRole as UserRole || 'admin');
-  const [userName, setUserName] = useState('Admin');
-
-  useEffect(() => {
-    // Recuperar dados do usuário do localStorage se não foram passados via props
-    if (!propUserRole) {
-      const savedRole = localStorage.getItem('userRole') as UserRole;
-      const savedName = localStorage.getItem('userName');
-      
-      if (savedRole && savedName) {
-        setUserRole(savedRole);
-        setUserName(savedName);
-      }
-    } else {
-      setUserRole(propUserRole as UserRole);
-    }
-  }, [propUserRole]);
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
-  const [grades, setGrades] = useState(mockGradesData);
-  const { toast } = useToast();
 
-  const handleCreateGrade = (data: any) => {
-    const newGrade = {
-      id: grades.length + 1,
-      studentName: data.studentName,
-      studentId: data.studentId,
-      class: data.class,
-      subject: data.subject,
-      grade: data.grade,
-      maxGrade: data.maxGrade,
-      type: data.type,
-      date: data.date,
-      teacher: data.teacher,
-    };
-    setGrades([newGrade, ...grades]);
-    toast({
-      title: "Nota lançada com sucesso!",
-      description: `Nota ${data.grade} registrada para ${data.studentName}.`,
-    });
+  // Verificar permissões de acesso
+  const canManageGrades = ['admin', 'secretary', 'instructor', 'teacher'].includes(userRole);
+
+  if (!canManageGrades) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <h2 className="text-2xl font-semibold mb-2">Acesso Negado</h2>
+            <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Função para buscar dados do estudante
+  const getStudentData = (studentId: string) => {
+    return users.find(user => user.id === studentId);
   };
 
-  const handleEditGrade = (gradeData: any) => {
-    const updatedGrades = grades.map(g => 
-      g.id === editingGrade.id 
-        ? { ...g, ...gradeData }
-        : g
-    );
-    setGrades(updatedGrades);
-    setEditingGrade(null);
-    toast({
-      title: "Nota atualizada com sucesso!",
-      description: `Nota de ${gradeData.studentName} foi atualizada.`,
-    });
+  // Função para buscar dados da disciplina
+  const getSubjectData = (subjectId: string) => {
+    return subjects.find(subject => subject.id === subjectId);
+  };
+
+  // Função para buscar dados da turma
+  const getClassData = (classId: string) => {
+    return classes.find(cls => cls.id === classId);
+  };
+
+  // Função para buscar dados do professor
+  const getTeacherData = (teacherId: string) => {
+    return users.find(user => user.id === teacherId);
+  };
+
+  const handleCreateGrade = async (data: any) => {
+    try {
+      await createGrade({
+        student_id: data.student_id,
+        subject_id: data.subject_id,
+        value: data.grade,
+        max_value: data.maxGrade,
+        date: data.date,
+        teacher_id: profile?.id || '',
+        type: data.type,
+        observations: data.observations,
+      });
+    } catch (error) {
+      console.error('Error creating grade:', error);
+    }
+  };
+
+  const handleEditGrade = async (data: any) => {
+    if (!editingGrade) return;
+    
+    try {
+      await updateGrade(editingGrade.id, {
+        value: data.grade,
+        max_value: data.maxGrade,
+        date: data.date,
+        type: data.type,
+        observations: data.observations,
+      });
+      setEditingGrade(null);
+    } catch (error) {
+      console.error('Error updating grade:', error);
+    }
   };
 
   const openEditForm = (grade: any) => {
@@ -156,11 +130,11 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
     }
   };
 
-  // Calcular estatísticas
+  // Calcular estatísticas com dados reais
   const totalGrades = grades.length;
-  const averageGrade = grades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades;
-  const failingGrades = grades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
-  const subjectsCount = new Set(grades.map(grade => grade.subject)).size;
+  const averageGrade = totalGrades > 0 ? grades.reduce((sum, grade) => sum + grade.value, 0) / totalGrades : 0;
+  const failingGrades = grades.filter(grade => (grade.value / grade.max_value) * 100 < 60).length;
+  const subjectsCount = new Set(grades.map(grade => grade.subject_id)).size;
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -179,7 +153,7 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Notas</p>
-                  <p className="text-3xl font-bold text-primary">{totalGrades}</p>
+                  <p className="text-3xl font-bold text-primary">{gradesLoading ? '...' : totalGrades}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-primary" />
               </div>
@@ -191,7 +165,9 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Média Geral</p>
-                  <p className="text-3xl font-bold text-success">{averageGrade.toFixed(1)}</p>
+                  <p className="text-3xl font-bold text-success">
+                    {gradesLoading ? '...' : (totalGrades > 0 ? averageGrade.toFixed(1) : '0.0')}
+                  </p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-success" />
               </div>
@@ -203,7 +179,7 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Disciplinas</p>
-                  <p className="text-3xl font-bold text-info">{subjectsCount}</p>
+                  <p className="text-3xl font-bold text-info">{gradesLoading ? '...' : subjectsCount}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-info" />
               </div>
@@ -215,7 +191,7 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Notas Baixas</p>
-                  <p className="text-3xl font-bold text-warning">{failingGrades}</p>
+                  <p className="text-3xl font-bold text-warning">{gradesLoading ? '...' : failingGrades}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-warning" />
               </div>
@@ -243,10 +219,11 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1a">1º Ano A</SelectItem>
-                  <SelectItem value="1b">1º Ano B</SelectItem>
-                  <SelectItem value="2a">2º Ano A</SelectItem>
-                  <SelectItem value="2b">2º Ano B</SelectItem>
+                  {classes.map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      {classItem.name} - {classItem.year}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={selectedSubject} onValueChange={setSelectedSubject}>
@@ -254,10 +231,11 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
                   <SelectValue placeholder="Selecionar disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="matematica">Matemática</SelectItem>
-                  <SelectItem value="portugues">Português</SelectItem>
-                  <SelectItem value="historia">História</SelectItem>
-                  <SelectItem value="geografia">Geografia</SelectItem>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button variant="outline">Filtrar</Button>
@@ -285,37 +263,58 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {grades.map((grade) => (
-                  <TableRow key={grade.id}>
-                    <TableCell className="font-medium">{grade.studentName}</TableCell>
-                    <TableCell>{grade.studentId}</TableCell>
-                    <TableCell>{grade.class}</TableCell>
-                    <TableCell>{grade.subject}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(grade.type)}`}>
-                        {grade.type}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getGradeBadgeVariant(grade.grade, grade.maxGrade)}>
-                        {grade.grade}/{grade.maxGrade}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{grade.teacher}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditForm(grade)}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                      </div>
+                {gradesLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      Carregando notas...
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : grades.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8">
+                      Nenhuma nota encontrada
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  grades.map((grade) => {
+                    const student = getStudentData(grade.student_id);
+                    const subject = getSubjectData(grade.subject_id);
+                    const teacher = getTeacherData(grade.teacher_id);
+                    const studentClass = student?.class_id ? getClassData(student.class_id) : null;
+
+                    return (
+                      <TableRow key={grade.id}>
+                        <TableCell className="font-medium">{student?.name || 'N/A'}</TableCell>
+                        <TableCell>{student?.student_id || 'N/A'}</TableCell>
+                        <TableCell>{studentClass?.name || 'N/A'}</TableCell>
+                        <TableCell>{subject?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(grade.type)}`}>
+                            {grade.type}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getGradeBadgeVariant(grade.value, grade.max_value)}>
+                            {grade.value.toFixed(1)}/{grade.max_value.toFixed(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{teacher?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openEditForm(grade)}
+                            >
+                              <Edit size={14} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -328,7 +327,7 @@ const Grades = ({ userRole: propUserRole, currentUser: propCurrentUser }: Grades
           initialData={editingGrade}
           mode={editingGrade ? 'edit' : 'create'}
           userRole={userRole}
-          currentUser={propCurrentUser || { name: userName, role: userRole }}
+          currentUser={profile}
         />
       </div>
     </Layout>

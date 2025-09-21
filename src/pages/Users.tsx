@@ -108,7 +108,14 @@ const Users = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    await deleteUser(userId);
+    try {
+      await deleteUser(userId);
+      setDeletingUser(null);
+      setIsDeleteDialogOpen(false);
+    } catch (error) {
+      // O erro já foi tratado no hook useUsers
+      console.error('Erro ao excluir usuário:', error);
+    }
   };
 
   const openDeleteDialog = (user: any) => {

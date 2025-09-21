@@ -182,11 +182,15 @@ export const useUsers = () => {
 
   const deleteUser = async (id: string) => {
     try {
-      // First delete from auth.users, this will cascade to profiles table
-      const { error: deleteError } = await supabase.auth.admin.deleteUser(id);
+      // Delete from profiles table first (this will handle the user deletion)
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (profileError) throw profileError;
 
+      // Update local state
       setUsers(users.filter(u => u.id !== id));
       
       toast({

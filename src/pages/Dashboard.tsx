@@ -7,36 +7,33 @@ import { UserRole } from '@/types/user';
 import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
+import { useAuth } from '@/hooks/useAuth';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 
 const Dashboard = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const { profile } = useAuth();
+  const { stats, loading: statsLoading } = useDashboardStats();
   const navigate = useNavigate();
+  
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
+    // Verificar se o usuário está autenticado
+    if (!profile) {
+      navigate('/auth');
     }
-  }, []);
+  }, [profile, navigate]);
 
   const handleChangeUser = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    navigate('/');
+    navigate('/auth');
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userName');
-    navigate('/');
+    navigate('/auth');
   };
 
   const getDashboardContent = () => {
@@ -56,10 +53,10 @@ const Dashboard = () => {
           title: 'Dashboard do Instrutor',
           description: 'Gerencie suas turmas e atividades',
           cards: [
-            { title: 'Turmas', value: '4', description: 'Turmas ativas' },
-            { title: 'Alunos', value: '120', description: 'Total de alunos' },
-            { title: 'Chamadas Pendentes', value: '2', description: 'Aguardando registro' },
-            { title: 'Notas a Lançar', value: '15', description: 'Avaliações pendentes' },
+            { title: 'Turmas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas ativas' },
+            { title: 'Alunos', value: statsLoading ? '...' : stats.totalStudents.toString(), description: 'Total de alunos' },
+            { title: 'Chamadas Pendentes', value: '0', description: 'Aguardando registro' },
+            { title: 'Notas a Lançar', value: '0', description: 'Avaliações pendentes' },
           ]
         };
       case 'coordinator':
@@ -67,10 +64,10 @@ const Dashboard = () => {
           title: 'Dashboard do Coordenador',
           description: 'Visão geral da coordenação acadêmica',
           cards: [
-            { title: 'Turmas Gerenciadas', value: '8', description: 'Turmas sob coordenação' },
-            { title: 'Instrutores', value: '25', description: 'Corpo docente' },
-            { title: 'Relatórios', value: '12', description: 'Relatórios mensais' },
-            { title: 'Reuniões', value: '3', description: 'Agendadas esta semana' },
+            { title: 'Turmas Gerenciadas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas sob coordenação' },
+            { title: 'Instrutores', value: statsLoading ? '...' : stats.totalTeachers.toString(), description: 'Corpo docente' },
+            { title: 'Relatórios', value: '0', description: 'Relatórios mensais' },
+            { title: 'Reuniões', value: '0', description: 'Agendadas esta semana' },
           ]
         };
       case 'secretary':
@@ -78,10 +75,10 @@ const Dashboard = () => {
           title: 'Dashboard da Secretaria',
           description: 'Gestão administrativa e documentos',
           cards: [
-            { title: 'Matrículas', value: '450', description: 'Alunos matriculados' },
-            { title: 'Declarações', value: '8', description: 'Pendentes de emissão' },
-            { title: 'Documentos', value: '23', description: 'Aguardando validação' },
-            { title: 'Atendimentos', value: '12', description: 'Agendados hoje' },
+            { title: 'Matrículas', value: statsLoading ? '...' : stats.totalStudents.toString(), description: 'Alunos matriculados' },
+            { title: 'Declarações', value: statsLoading ? '...' : stats.pendingDeclarations.toString(), description: 'Pendentes de emissão' },
+            { title: 'Documentos', value: statsLoading ? '...' : stats.totalDeclarations.toString(), description: 'Total no sistema' },
+            { title: 'Atendimentos', value: '0', description: 'Agendados hoje' },
           ]
         };
       case 'tutor':
@@ -100,10 +97,10 @@ const Dashboard = () => {
           title: 'Dashboard do Administrador',
           description: 'Visão geral completa do sistema',
           cards: [
-            { title: 'Total de Usuários', value: '245', description: 'Usuários ativos' },
-            { title: 'Turmas', value: '18', description: 'Turmas ativas' },
-            { title: 'Disciplinas', value: '32', description: 'Disciplinas oferecidas' },
-            { title: 'Sistema', value: '99.9%', description: 'Disponibilidade' },
+            { title: 'Total de Usuários', value: statsLoading ? '...' : stats.totalUsers.toString(), description: 'Usuários ativos' },
+            { title: 'Turmas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas ativas' },
+            { title: 'Disciplinas', value: statsLoading ? '...' : stats.totalSubjects.toString(), description: 'Disciplinas oferecidas' },
+            { title: 'Sistema', value: stats.systemUptime, description: 'Disponibilidade' },
           ]
         };
     }

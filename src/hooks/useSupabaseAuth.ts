@@ -133,7 +133,7 @@ export const useSupabaseAuth = () => {
 
       toast({
         title: "Registro realizado com sucesso!",
-        description: "Verifique seu email para confirmar a conta."
+        description: "Bem-vindo ao sistema! Você já pode fazer login."
       });
 
       return data;

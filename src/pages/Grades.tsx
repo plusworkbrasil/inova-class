@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle, GraduationCap } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
+import { InstructorGradesBySubjectForm } from '@/components/forms/InstructorGradesBySubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
@@ -31,6 +32,7 @@ const Grades = () => {
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
+  const [isSubjectGradeFormOpen, setIsSubjectGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
 
   // Verificar permissões de acesso
@@ -83,6 +85,25 @@ const Grades = () => {
       });
     } catch (error) {
       console.error('Error creating grade:', error);
+    }
+  };
+
+  const handleCreateMultipleGrades = async (gradesData: any[]) => {
+    try {
+      for (const gradeData of gradesData) {
+        await createGrade(gradeData);
+      }
+      toast({
+        title: "Notas lançadas com sucesso!",
+        description: `${gradesData.length} notas foram adicionadas.`,
+      });
+    } catch (error) {
+      console.error('Error creating multiple grades:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao lançar notas",
+        description: "Ocorreu um erro ao salvar as notas.",
+      });
     }
   };
 
@@ -140,11 +161,21 @@ const Grades = () => {
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Notas</h1>
-          <Button className="flex items-center gap-2" onClick={openCreateForm}>
-            <Plus size={16} />
-            Lançar Nota
-          </Button>
+          <h1 className="text-3xl font-bold text-foreground">
+            {userRole === 'instructor' ? 'Minhas Notas' : 'Gerenciamento de Notas'}
+          </h1>
+          <div className="flex gap-2">
+            {userRole === 'instructor' && (
+              <Button className="flex items-center gap-2" onClick={() => setIsSubjectGradeFormOpen(true)}>
+                <GraduationCap size={16} />
+                Lançar Notas por Disciplina
+              </Button>
+            )}
+            <Button className="flex items-center gap-2" onClick={openCreateForm}>
+              <Plus size={16} />
+              Lançar Nota Individual
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -328,6 +359,13 @@ const Grades = () => {
           mode={editingGrade ? 'edit' : 'create'}
           userRole={userRole}
           currentUser={profile}
+        />
+        
+        <InstructorGradesBySubjectForm
+          open={isSubjectGradeFormOpen}
+          onOpenChange={setIsSubjectGradeFormOpen}
+          onSubmit={handleCreateMultipleGrades}
+          onUpdate={handleEditGrade}
         />
       </div>
     </Layout>

@@ -71,10 +71,10 @@ export const useSecureStudentAccess = () => {
     }
   };
 
-  // Get student basic info (name, number, class) for instructor
+  // Get student basic info (name, number, class) for instructor using secure function
   const getStudentBasicInfo = async (studentId: string) => {
     try {
-      const { data, error } = await supabase.rpc('get_student_basic_info_for_instructor', {
+      const { data, error } = await supabase.rpc('get_instructor_viewable_student_data', {
         target_student_id: studentId
       });
 
@@ -103,8 +103,8 @@ export const useSecureStudentAccess = () => {
     fetchInstructorStudents,
     getSafeStudentData,
     getStudentBasicInfo,
-    // Security note: This hook only provides access to non-sensitive student data
-    // Sensitive information like emails, phone numbers, addresses, CPF, medical conditions,
-    // and guardian information is NOT accessible through this interface
+    // Security note: This hook uses secure functions that only provide access to essential academic data
+    // Instructors cannot access sensitive personal information like CPF, addresses, medical conditions,
+    // phone numbers, or guardian information - only basic academic data is accessible
   };
 };

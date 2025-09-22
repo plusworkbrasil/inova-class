@@ -788,6 +788,19 @@ export type Database = {
           student_id: string
         }[]
       }
+      get_instructor_viewable_student_data: {
+        Args: { target_student_id: string }
+        Returns: {
+          class_id: string
+          email: string
+          enrollment_number: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          student_id: string
+        }[]
+      }
       get_safe_student_data: {
         Args: { target_student_id: string }
         Returns: {

@@ -245,7 +245,7 @@ const Evasions = () => {
                   <TableHead>Motivo</TableHead>
                   <TableHead>Data da Evasão</TableHead>
                   <TableHead>Registrado por</TableHead>
-                  {userRole === 'secretary' && <TableHead>Ações</TableHead>}
+                  {(userRole === 'admin' || userRole === 'secretary') && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -259,7 +259,7 @@ const Evasions = () => {
                     </TableCell>
                     <TableCell>{new Date(evasion.date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{evasion.reported_by || 'N/A'}</TableCell>
-                    {userRole === 'secretary' && (
+                    {(userRole === 'admin' || userRole === 'secretary') && (
                       <TableCell>
                         <Button 
                           variant="outline" 
@@ -277,7 +277,7 @@ const Evasions = () => {
           </CardContent>
         </Card>
         
-        {userRole === 'secretary' && (
+        {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor') && (
           <EvasionForm
             open={isEvasionFormOpen}
             onOpenChange={setIsEvasionFormOpen}

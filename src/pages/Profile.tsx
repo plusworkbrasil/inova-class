@@ -29,18 +29,24 @@ const Profile = () => {
     comm.target_audience?.includes('student')
   ) || [];
 
-  // Mock data para demonstração (pode ser substituído por dados reais do profile)
-  const studentData = {
-    id: (profile as any)?.student_id || '001',
-    name: userName,
-    email: user?.email || 'aluno@exemplo.com',
-    phone: '(11) 99999-9999',
-    address: 'Rua das Flores, 123 - São Paulo, SP',
-    enrollment: (profile as any)?.student_id || '2024001',
-    course: 'Administração',
-    semester: '3º Semestre',
-    entryDate: '2023-02-15',
-    status: 'Ativo'
+  // Dados reais do profile do banco de dados
+  const profileData = {
+    id: profile?.id || '',
+    name: profile?.name || userName,
+    email: profile?.email || user?.email || '',
+    phone: profile?.phone || 'Não informado',
+    address: profile?.street && profile?.city ? 
+      `${profile.street}${profile.number ? `, ${profile.number}` : ''} - ${profile.city}, ${profile.state || ''}` :
+      'Endereço não informado',
+    enrollment: profile?.enrollment_number || profile?.student_id || 'Não informado',
+    course: 'Curso não informado', // Este campo não existe na tabela profiles ainda
+    semester: 'Semestre não informado', // Este campo não existe na tabela profiles ainda
+    entryDate: profile?.enrollment_date || profile?.created_at || new Date().toISOString(),
+    status: profile?.status || 'Ativo',
+    cep: profile?.cep || '',
+    city: profile?.city || '',
+    state: profile?.state || '',
+    avatar: profile?.avatar || ''
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -120,13 +126,13 @@ const Profile = () => {
             <CardHeader className="flex flex-row items-center space-y-0 pb-2">
               <div className="flex items-center space-x-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src="" />
+                  <AvatarImage src={profileData.avatar} />
                   <AvatarFallback className="text-lg">
-                    {studentData.name.charAt(0)}
+                    {profileData.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle>{studentData.name}</CardTitle>
+                  <CardTitle>{profileData.name}</CardTitle>
                   <CardDescription>
                     <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>
                   </CardDescription>
@@ -137,20 +143,20 @@ const Profile = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{studentData.email}</span>
+                  <span className="text-sm">{profileData.email}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{studentData.phone}</span>
+                  <span className="text-sm">{profileData.phone}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{studentData.address}</span>
+                  <span className="text-sm">{profileData.address}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CalendarDays className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    Matrícula desde {new Date(studentData.entryDate).toLocaleDateString('pt-BR')}
+                    Cadastrado desde {new Date(profileData.entryDate).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
               </div>
@@ -166,13 +172,13 @@ const Profile = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Matrícula</label>
-                  <p className="text-sm font-semibold">{studentData.enrollment}</p>
+                  <p className="text-sm font-semibold">{profileData.enrollment}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Status</label>
                   <p className="text-sm">
                     <Badge variant="default" className="bg-green-500">
-                      {studentData.status}
+                      {profileData.status}
                     </Badge>
                   </p>
                 </div>
@@ -182,17 +188,26 @@ const Profile = () => {
                 <div className="flex items-center space-x-2">
                   <GraduationCap className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">{studentData.course}</p>
+                    <p className="text-sm font-medium">{profileData.course}</p>
                     <p className="text-xs text-muted-foreground">Curso</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <BookOpen className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-sm font-medium">{studentData.semester}</p>
+                    <p className="text-sm font-medium">{profileData.semester}</p>
                     <p className="text-xs text-muted-foreground">Período Atual</p>
                   </div>
                 </div>
+                {profileData.cep && (
+                  <div className="flex items-center space-x-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{profileData.cep} - {profileData.city}/{profileData.state}</p>
+                      <p className="text-xs text-muted-foreground">CEP</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -20,11 +20,16 @@ interface Profile {
   class_id?: string;
   instructor_subjects?: string[];
   enrollment_number?: string;
+  enrollment_date?: string;
   phone?: string;
   street?: string;
   number?: string;
   city?: string;
   state?: string;
+  cep?: string;
+  status?: string;
+  avatar?: string;
+  created_at?: string;
 }
 
 export const useSupabaseAuth = () => {

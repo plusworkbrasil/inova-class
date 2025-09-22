@@ -848,6 +848,15 @@ export type Database = {
         Args: { subject: string; user_id: string }
         Returns: boolean
       }
+      log_profile_update_attempt: {
+        Args: {
+          details?: string
+          operation: string
+          target_id: string
+          user_id: string
+        }
+        Returns: undefined
+      }
       log_sensitive_access: {
         Args: {
           p_accessed_fields: string[]

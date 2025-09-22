@@ -152,15 +152,26 @@ export const useUsers = () => {
 
   const updateUser = async (id: string, updates: Partial<User>) => {
     try {
+      // Remove campos undefined/null para evitar problemas
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+      );
+
+      console.log('Updating user with data:', cleanUpdates);
+
       const { data, error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
 
+      // Atualizar o estado local
       setUsers(users.map(u => u.id === id ? { ...u, ...data } : u));
       
       toast({
@@ -171,9 +182,20 @@ export const useUsers = () => {
       return data;
     } catch (err: any) {
       console.error('Error updating user:', err);
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = "Não foi possível atualizar o usuário.";
+      if (err.message.includes('role')) {
+        errorMessage = "Erro: Você não tem permissão para alterar funções de usuário.";
+      } else if (err.message.includes('RLS')) {
+        errorMessage = "Erro: Acesso negado. Verifique suas permissões.";
+      } else if (err.message.includes('Access denied')) {
+        errorMessage = "Erro: Acesso negado. Verifique suas permissões.";
+      }
+      
       toast({
         title: "Erro ao atualizar usuário",
-        description: err.message || "Não foi possível atualizar o usuário.",
+        description: errorMessage,
         variant: "destructive",
       });
       throw err;

@@ -264,7 +264,7 @@ const Evasions = () => {
                       </span>
                     </TableCell>
                     <TableCell>{new Date(evasion.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>{evasion.reported_by || 'N/A'}</TableCell>
+                    <TableCell>{evasion.reporter_profile?.name || 'N/A'}</TableCell>
                     {(userRole === 'admin' || userRole === 'secretary') && (
                       <TableCell>
                         <Button 

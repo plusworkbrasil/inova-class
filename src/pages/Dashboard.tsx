@@ -9,6 +9,8 @@ import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
+import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
@@ -16,6 +18,8 @@ import StudentNotificationCenter from '@/components/dashboard/StudentNotificatio
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
+  const { data: grades } = useSupabaseGrades();
+  const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
   
   const userRole = (profile?.role || 'admin') as UserRole;
@@ -37,15 +41,31 @@ const Dashboard = () => {
   };
 
   const getDashboardContent = () => {
+    // Calculate real student data from database
+    const studentGrades = grades?.filter(g => g.student_id === profile?.id) || [];
+    const studentAttendance = attendance?.filter(a => a.student_id === profile?.id) || [];
+    
+    const averageGrade = studentGrades.length > 0 
+      ? (studentGrades.reduce((sum, grade) => sum + Number(grade.value), 0) / studentGrades.length).toFixed(1)
+      : '0.0';
+    
+    const totalAttendanceDays = studentAttendance.length;
+    const presentDays = studentAttendance.filter(a => a.is_present).length;
+    const attendancePercentage = totalAttendanceDays > 0 
+      ? `${Math.round((presentDays / totalAttendanceDays) * 100)}%`
+      : '0%';
+    
+    const totalAbsences = studentAttendance.filter(a => !a.is_present).length;
+
     switch (userRole) {
       case 'student':
         return {
           title: 'Dashboard do Aluno',
           description: 'Bem-vindo ao seu painel acadêmico',
           cards: [
-            { title: 'Minhas Notas', value: '8.5', description: 'Média geral' },
-            { title: 'Frequência', value: '95%', description: 'Presença nas aulas' },
-            { title: 'Faltas', value: '3', description: 'Total no período' },
+            { title: 'Minhas Notas', value: averageGrade, description: 'Média geral' },
+            { title: 'Frequência', value: attendancePercentage, description: 'Presença nas aulas' },
+            { title: 'Faltas', value: totalAbsences.toString(), description: 'Total no período' },
           ]
         };
       case 'teacher':

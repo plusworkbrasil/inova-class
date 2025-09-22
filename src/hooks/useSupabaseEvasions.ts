@@ -14,6 +14,7 @@ export interface Evasion {
   updated_at: string;
   profiles?: {
     name: string;
+    class_id: string;
   };
 }
 
@@ -32,7 +33,7 @@ export const useSupabaseEvasions = () => {
         .from('evasions')
         .select(`
           *,
-          profiles!evasions_student_id_fkey(name)
+          profiles!evasions_student_id_fkey(name, class_id)
         `)
         .order('created_at', { ascending: false });
 

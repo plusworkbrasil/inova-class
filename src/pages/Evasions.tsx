@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
+import { useRealRecipients } from '@/hooks/useRealRecipients';
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -25,8 +26,9 @@ const Evasions = () => {
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
   const { toast } = useToast();
 
-  // Use Supabase hook
+  // Use Supabase hooks
   const { data: evasions, loading, createEvasion, updateEvasion } = useSupabaseEvasions();
+  const { classes: realClasses } = useRealRecipients();
 
   const handleCreateEvasion = async (data: any) => {
     if (!profile?.id) return;
@@ -111,6 +113,9 @@ const Evasions = () => {
     if (selectedReason && evasion.reason !== selectedReason) {
       return false;
     }
+    if (selectedClass && evasion.profiles?.class_id !== selectedClass) {
+      return false;
+    }
     return true;
   });
 
@@ -131,8 +136,8 @@ const Evasions = () => {
           <h1 className="text-3xl font-bold text-foreground">
             {userRole === 'coordinator' ? 'Acompanhamento de Evasões' : 'Gerenciamento de Evasões'}
           </h1>
-          {userRole === 'secretary' && (
-            <Button className="flex items-center gap-2" onClick={openCreateForm}>
+          {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor') && (
+            <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90" onClick={openCreateForm}>
               <Plus size={16} />
               Registrar Evasão
             </Button>
@@ -204,16 +209,17 @@ const Evasions = () => {
                   className="pl-10"
                 />
               </div>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
+               <Select value={selectedClass} onValueChange={setSelectedClass}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1a">1º Ano A</SelectItem>
-                  <SelectItem value="1b">1º Ano B</SelectItem>
-                  <SelectItem value="2a">2º Ano A</SelectItem>
-                  <SelectItem value="2b">2º Ano B</SelectItem>
-                  <SelectItem value="3a">3º Ano A</SelectItem>
+                  <SelectItem value="">Todas as turmas</SelectItem>
+                  {realClasses.map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.id}>
+                      {classItem.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Select value={selectedReason} onValueChange={setSelectedReason}>

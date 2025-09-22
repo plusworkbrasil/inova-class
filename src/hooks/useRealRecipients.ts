@@ -5,6 +5,7 @@ export interface Student {
   id: string;
   name: string;
   class: string;
+  class_id: string;
   email: string;
 }
 
@@ -30,6 +31,7 @@ export const useRealRecipients = () => {
           id,
           name,
           email,
+          class_id,
           classes(name)
         `)
         .eq('role', 'student');
@@ -54,6 +56,7 @@ export const useRealRecipients = () => {
         id: student.id,
         name: student.name || 'Nome não informado',
         class: (student.classes as any)?.name || 'Sem Turma',
+        class_id: student.class_id || '',
         email: student.email || ''
       })) || [];
 

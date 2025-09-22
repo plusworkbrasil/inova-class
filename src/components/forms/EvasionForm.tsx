@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { useRealRecipients } from '@/hooks/useRealRecipients';
 
 const evasionFormSchema = z.object({
   studentName: z.string().min(1, 'Aluno é obrigatório'),
@@ -34,6 +35,8 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
   initialData,
   mode
 }) => {
+  const { students: realStudents, classes: realClasses } = useRealRecipients();
+  
   const form = useForm<EvasionFormValues>({
     resolver: zodResolver(evasionFormSchema),
     defaultValues: {
@@ -52,13 +55,11 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
     form.reset();
   };
 
-  const mockStudents = [
-    { id: '2024001', name: 'João Silva', class: '1º Ano A' },
-    { id: '2024002', name: 'Maria Santos', class: '1º Ano A' },
-    { id: '2024003', name: 'Pedro Oliveira', class: '2º Ano B' },
-    { id: '2024004', name: 'Ana Costa', class: '2º Ano B' },
-    { id: '2024005', name: 'Carlos Souza', class: '3º Ano A' },
-  ];
+  // Get class name helper
+  const getClassName = (classId: string) => {
+    const classData = realClasses.find(c => c.id === classId);
+    return classData ? classData.name : 'Sem turma';
+  };
 
   const evasionReasons = [
     'Dificuldades financeiras',
@@ -92,14 +93,14 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
                     <FormLabel>Aluno</FormLabel>
                     <Select 
                       onValueChange={(value) => {
-                        const student = mockStudents.find(s => s.name === value);
+                        const student = realStudents.find(s => s.id === value);
                         if (student) {
-                          field.onChange(value);
+                          field.onChange(student.name);
                           form.setValue('studentId', student.id);
-                          form.setValue('class', student.class);
+                          form.setValue('class', getClassName(student.class_id));
                         }
                       }} 
-                      defaultValue={field.value}
+                      defaultValue={realStudents.find(s => s.name === field.value)?.id || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -107,9 +108,9 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {mockStudents.map((student) => (
-                          <SelectItem key={student.id} value={student.name}>
-                            {student.name} - {student.id}
+                        {realStudents.map((student) => (
+                          <SelectItem key={student.id} value={student.id}>
+                            {student.name} - {getClassName(student.class_id)}
                           </SelectItem>
                         ))}
                       </SelectContent>

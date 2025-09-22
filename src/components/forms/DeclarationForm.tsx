@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,15 +9,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { FileUpload } from '@/components/ui/file-upload';
+import { useSupabaseStorage } from '@/hooks/useSupabaseStorage';
 
 const declarationFormSchema = z.object({
   studentName: z.string().min(1, 'Nome do aluno é obrigatório'),
   studentId: z.string().min(1, 'Matrícula é obrigatória'),
   type: z.string().min(1, 'Tipo de declaração é obrigatório'),
   requestedBy: z.string().min(1, 'Solicitante é obrigatório'),
-  purpose: z.string().min(1, 'Finalidade é obrigatória'),
+  purpose: z.string().optional(),
   observations: z.string().optional(),
   urgency: z.string().min(1, 'Urgência é obrigatória'),
+  title: z.string().optional(),
+  description: z.string().optional(),
 });
 
 type DeclarationFormValues = z.infer<typeof declarationFormSchema>;
@@ -25,9 +29,10 @@ type DeclarationFormValues = z.infer<typeof declarationFormSchema>;
 interface DeclarationFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: DeclarationFormValues) => void;
+  onSubmit: (data: DeclarationFormValues & { file?: File; filePath?: string }) => void;
   initialData?: Partial<DeclarationFormValues>;
   mode: 'create' | 'edit';
+  declarationType?: 'request' | 'submit'; // request = solicitar, submit = enviar documento
   userRole?: string;
   currentUser?: {
     id: string;
@@ -42,28 +47,47 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
   onSubmit,
   initialData,
   mode,
+  declarationType = 'request',
   userRole,
   currentUser
 }) => {
   const isStudent = userRole === 'student';
+  const isSubmitMode = declarationType === 'submit';
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { uploadFile, uploading } = useSupabaseStorage();
 
   const form = useForm<DeclarationFormValues>({
     resolver: zodResolver(declarationFormSchema),
     defaultValues: {
       studentName: isStudent ? currentUser?.name || '' : initialData?.studentName || '',
       studentId: isStudent ? currentUser?.studentId || '' : initialData?.studentId || '',
-      type: initialData?.type || '',
+      type: isSubmitMode ? 'Envio de Atestado Médico' : initialData?.type || '',
       requestedBy: isStudent ? 'Aluno' : initialData?.requestedBy || '',
-      purpose: initialData?.purpose || '',
+      purpose: isSubmitMode ? '' : initialData?.purpose || '',
       observations: initialData?.observations || '',
       urgency: initialData?.urgency || 'normal',
+      title: initialData?.title || '',
+      description: initialData?.description || '',
     },
   });
 
-  const handleSubmit = (data: DeclarationFormValues) => {
-    onSubmit(data);
+  const handleSubmit = async (data: DeclarationFormValues) => {
+    let filePath = '';
+    
+    // Upload file if selected
+    if (selectedFile) {
+      const uploadedPath = await uploadFile(selectedFile, 'declarations', 'documents');
+      if (uploadedPath) {
+        filePath = uploadedPath;
+      } else {
+        return; // Upload failed, don't proceed
+      }
+    }
+    
+    onSubmit({ ...data, file: selectedFile || undefined, filePath });
     onOpenChange(false);
     form.reset();
+    setSelectedFile(null);
   };
 
   const mockStudents = [
@@ -74,7 +98,7 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
     { id: '2024005', name: 'Carlos Souza', class: '3º Ano A' },
   ];
 
-  const declarationTypes = [
+  const requestDeclarationTypes = [
     {
       value: 'Declaração de Matrícula',
       label: 'Declaração de Matrícula',
@@ -107,6 +131,26 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
     }
   ];
 
+  const submitDocumentTypes = [
+    {
+      value: 'Envio de Atestado Médico',
+      label: 'Atestado Médico',
+      description: 'Envio de atestado médico para justificar faltas'
+    },
+    {
+      value: 'Envio de Documento Pessoal',
+      label: 'Documento Pessoal',
+      description: 'Envio de documentos pessoais solicitados pela escola'
+    },
+    {
+      value: 'Envio de Comprovante',
+      label: 'Comprovante',
+      description: 'Envio de comprovantes diversos (residência, renda, etc.)'
+    }
+  ];
+
+  const declarationTypes = isSubmitMode ? submitDocumentTypes : requestDeclarationTypes;
+
   const urgencyLevels = [
     { value: 'baixa', label: 'Baixa (até 10 dias)', color: 'text-green-600' },
     { value: 'normal', label: 'Normal (até 5 dias)', color: 'text-blue-600' },
@@ -122,7 +166,10 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Nova Solicitação de Declaração' : 'Editar Solicitação'}
+            {mode === 'create' 
+              ? (isSubmitMode ? 'Enviar Documento' : 'Nova Solicitação de Declaração')
+              : 'Editar Solicitação'
+            }
           </DialogTitle>
         </DialogHeader>
         
@@ -209,20 +256,24 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
               </Card>
             )}
 
-            {/* Tipo de Declaração */}
+            {/* Tipo de Declaração/Documento */}
             <Card>
               <CardContent className="pt-6">
-                <h3 className="text-lg font-medium mb-4">Tipo de Declaração</h3>
+                <h3 className="text-lg font-medium mb-4">
+                  {isSubmitMode ? 'Tipo de Documento' : 'Tipo de Declaração'}
+                </h3>
                 <FormField
                   control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Selecione o tipo</FormLabel>
+                      <FormLabel>
+                        {isSubmitMode ? 'Selecione o tipo de documento' : 'Selecione o tipo'}
+                      </FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Escolha o tipo de declaração" />
+                            <SelectValue placeholder={isSubmitMode ? "Escolha o tipo de documento" : "Escolha o tipo de declaração"} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -249,6 +300,71 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
                 />
               </CardContent>
             </Card>
+
+            {/* Upload de Arquivo - apenas no modo submit */}
+            {isSubmitMode && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Anexar Documento</h3>
+                  <FileUpload
+                    onFileSelect={setSelectedFile}
+                    currentFile={selectedFile}
+                    onRemoveFile={() => setSelectedFile(null)}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    maxSize={10}
+                    disabled={uploading}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Formatos aceitos: PDF, JPG, PNG. Tamanho máximo: 10MB
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Título e Descrição - para modo submit */}
+            {isSubmitMode && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Informações do Documento</h3>
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Título</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Breve título para o documento (ex: Atestado médico - 15/09/2024)" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder="Descreva o conteúdo do documento e sua finalidade..."
+                              className="min-h-[100px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Dados da Solicitação */}
             <Card>
@@ -317,22 +433,24 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
                     />
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="purpose"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Finalidade</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Para que será utilizada a declaração? (ex: matrícula em curso, trabalho, bolsa de estudos)" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {!isSubmitMode && (
+                    <FormField
+                      control={form.control}
+                      name="purpose"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Finalidade</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="Para que será utilizada a declaração? (ex: matrícula em curso, trabalho, bolsa de estudos)" 
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <FormField
                     control={form.control}
@@ -356,14 +474,20 @@ export const DeclarationForm: React.FC<DeclarationFormProps> = ({
             </Card>
 
             <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1">
-                {mode === 'create' ? 'Solicitar Declaração' : 'Salvar Alterações'}
+              <Button type="submit" className="flex-1" disabled={uploading || (isSubmitMode && !selectedFile)}>
+                {uploading 
+                  ? 'Enviando...' 
+                  : mode === 'create' 
+                    ? (isSubmitMode ? 'Enviar Documento' : 'Solicitar Declaração')
+                    : 'Salvar Alterações'
+                }
               </Button>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={() => onOpenChange(false)}
                 className="flex-1"
+                disabled={uploading}
               >
                 Cancelar
               </Button>

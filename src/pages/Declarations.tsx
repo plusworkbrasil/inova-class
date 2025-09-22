@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp } from 'lucide-react';
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
@@ -23,6 +23,7 @@ const Declarations = () => {
   const [selectedType, setSelectedType] = useState('');
   const [isDeclarationFormOpen, setIsDeclarationFormOpen] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<any>(null);
+  const [declarationType, setDeclarationType] = useState<'request' | 'submit'>('request');
   const { toast } = useToast();
 
   // Use Supabase hook
@@ -32,20 +33,24 @@ const Declarations = () => {
     if (!profile) return;
     
     try {
-      await createDeclaration({
+      const declarationData = {
         student_id: userRole === 'student' ? profile.id : data.studentId,
-        type: data.type === 'Declaração de Matrícula' ? 'enrollment_certificate' : 'medical_certificate',
-        title: data.type,
-        description: data.observations,
+        type: data.type,
+        title: data.title || data.type,
+        description: data.description || data.observations,
         purpose: data.purpose,
         urgency: data.urgency,
         subject_id: data.subjectId,
-        status: 'pending'
-      });
+        status: 'pending',
+        file_path: data.filePath || null
+      };
+
+      await createDeclaration(declarationData);
       
+      const actionText = declarationType === 'submit' ? 'enviado' : 'solicitada';
       toast({
-        title: "Declaração solicitada com sucesso!",
-        description: `Solicitação de ${data.type} registrada.`,
+        title: `Documento ${actionText} com sucesso!`,
+        description: `${declarationType === 'submit' ? 'Envio' : 'Solicitação'} de ${data.type} registrada.`,
       });
     } catch (error) {
       // Error handling is done in the hook
@@ -103,7 +108,8 @@ const Declarations = () => {
     setIsDeclarationFormOpen(true);
   };
 
-  const openCreateForm = () => {
+  const openCreateForm = (type: 'request' | 'submit' = 'request') => {
+    setDeclarationType(type);
     setEditingDeclaration(null);
     setIsDeclarationFormOpen(true);
   };
@@ -164,10 +170,29 @@ const Declarations = () => {
              userRole === 'instructor' ? 'Declarações das Minhas Disciplinas' : 
              'Gerenciamento de Declarações'}
           </h1>
-          {userRole !== 'instructor' && (
-            <Button className="flex items-center gap-2" onClick={openCreateForm}>
+          {userRole === 'student' ? (
+            <div className="flex gap-2">
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={() => openCreateForm('request')}
+                variant="default"
+              >
+                <Plus size={16} />
+                Solicitar Declaração
+              </Button>
+              <Button 
+                className="flex items-center gap-2" 
+                onClick={() => openCreateForm('submit')}
+                variant="outline"
+              >
+                <Upload size={16} />
+                Enviar Documento
+              </Button>
+            </div>
+          ) : userRole !== 'instructor' && (
+            <Button className="flex items-center gap-2" onClick={() => openCreateForm('request')}>
               <Plus size={16} />
-              {userRole === 'student' ? 'Solicitar Declaração' : 'Nova Solicitação'}
+              Nova Solicitação
             </Button>
           )}
         </div>
@@ -277,21 +302,41 @@ const Declarations = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Aluno</TableHead>
+                  {userRole !== 'student' && <TableHead>Aluno</TableHead>}
                   <TableHead>Data da Solicitação</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Anexo</TableHead>
                   {(userRole === 'admin' || userRole === 'secretary') && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDeclarations.map((declaration) => (
                   <TableRow key={declaration.id}>
-                    <TableCell className="font-medium">{declaration.title}</TableCell>
-                     <TableCell>{declaration.profiles?.name || 'N/A'}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        {declaration.type?.includes('Envio') ? (
+                          <FileUp className="w-4 h-4 text-blue-500" />
+                        ) : (
+                          <FileText className="w-4 h-4 text-green-500" />
+                        )}
+                        {declaration.title}
+                      </div>
+                    </TableCell>
+                    {userRole !== 'student' && <TableCell>{declaration.profiles?.name || 'N/A'}</TableCell>}
                     <TableCell>
                       {declaration.created_at ? new Date(declaration.created_at).toLocaleDateString('pt-BR') : 'N/A'}
                     </TableCell>
                     <TableCell>{getStatusBadge(declaration.status)}</TableCell>
+                    <TableCell>
+                      {declaration.file_path ? (
+                        <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                          <Download className="w-4 h-4" />
+                          <span className="text-xs">Baixar</span>
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Sem anexo</span>
+                      )}
+                    </TableCell>
                     {(userRole === 'admin' || userRole === 'secretary') && (
                       <TableCell>
                         <div className="flex gap-2">
@@ -337,6 +382,13 @@ const Declarations = () => {
             onSubmit={editingDeclaration ? handleEditDeclaration : handleCreateDeclaration}
             initialData={editingDeclaration}
             mode={editingDeclaration ? 'edit' : 'create'}
+            declarationType={declarationType}
+            userRole={userRole}
+            currentUser={{
+              id: profile?.id || '',
+              name: profile?.name || '',
+              studentId: profile?.student_id || (profile as any)?.auto_student_id?.toString() || ''
+            }}
           />
         )}
       </div>

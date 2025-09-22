@@ -113,7 +113,7 @@ const Evasions = () => {
     if (selectedReason && evasion.reason !== selectedReason) {
       return false;
     }
-    if (selectedClass && evasion.profiles?.class_id !== selectedClass) {
+    if (selectedClass && selectedClass !== 'all' && evasion.profiles?.class_id !== selectedClass) {
       return false;
     }
     return true;
@@ -213,8 +213,8 @@ const Evasions = () => {
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas as turmas</SelectItem>
+                 <SelectContent>
+                   <SelectItem value="all">Todas as turmas</SelectItem>
                   {realClasses.map((classItem) => (
                     <SelectItem key={classItem.id} value={classItem.id}>
                       {classItem.name}

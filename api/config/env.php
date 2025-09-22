@@ -2,14 +2,27 @@
 // Configurações de ambiente para produção cPanel
 // IMPORTANTE: Este arquivo não deve ser versionado (.gitignore)
 
-// Configurações do banco de dados - Use variáveis de ambiente para segurança
-define('DB_HOST', $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?? 'localhost');
-define('DB_NAME', $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? 'cpanel_usuario_escola_db'); 
-define('DB_USER', $_ENV['DB_USER'] ?? getenv('DB_USER') ?? 'cpanel_usuario'); 
-define('DB_PASS', $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?? 'CONFIGURE_DATABASE_PASSWORD'); // ⚠️ CONFIGURE A VARIÁVEL DE AMBIENTE!
+// Configurações do banco de dados - MUST use environment variables
+$db_host = $_ENV['DB_HOST'] ?? getenv('DB_HOST');
+$db_name = $_ENV['DB_NAME'] ?? getenv('DB_NAME');
+$db_user = $_ENV['DB_USER'] ?? getenv('DB_USER');
+$db_pass = $_ENV['DB_PASS'] ?? getenv('DB_PASS');
 
-// Chave JWT - Use variável de ambiente para segurança
-define('JWT_SECRET', $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET') ?? 'CHANGE_THIS_SECRET_KEY_IN_PRODUCTION'); // ⚠️ CONFIGURE A VARIÁVEL DE AMBIENTE!
+if (!$db_host || !$db_name || !$db_user || !$db_pass) {
+    die('CRITICAL SECURITY ERROR: Database credentials not configured in environment variables');
+}
+
+define('DB_HOST', $db_host);
+define('DB_NAME', $db_name);
+define('DB_USER', $db_user);
+define('DB_PASS', $db_pass);
+
+// Chave JWT - MUST use environment variable
+$jwt_secret = $_ENV['JWT_SECRET'] ?? getenv('JWT_SECRET');
+if (!$jwt_secret) {
+    die('CRITICAL SECURITY ERROR: JWT_SECRET not configured in environment variables');
+}
+define('JWT_SECRET', $jwt_secret);
 
 // Configurações gerais
 define('ENVIRONMENT', 'production');

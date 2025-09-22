@@ -10,6 +10,7 @@ import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
+import { useCoordinatorDashboardStats } from '@/hooks/useCoordinatorDashboardStats';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
@@ -20,6 +21,7 @@ const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { stats: instructorStats, loading: instructorStatsLoading } = useInstructorDashboardStats();
+  const { stats: coordinatorStats, loading: coordinatorStatsLoading } = useCoordinatorDashboardStats();
   const { data: grades } = useSupabaseGrades();
   const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
@@ -86,10 +88,12 @@ const Dashboard = () => {
           title: 'Dashboard do Coordenador',
           description: 'Visão geral da coordenação acadêmica',
           cards: [
-            { title: 'Turmas Gerenciadas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas sob coordenação' },
-            { title: 'Instrutores', value: statsLoading ? '...' : stats.totalTeachers.toString(), description: 'Corpo docente' },
-            { title: 'Relatórios', value: '0', description: 'Relatórios mensais' },
-            { title: 'Reuniões', value: '0', description: 'Agendadas esta semana' },
+            { title: 'Turmas Gerenciadas', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalClasses.toString(), description: 'Total de turmas sob coordenação' },
+            { title: 'Instrutores', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalInstructors.toString(), description: 'Total de instrutores ativos' },
+            { title: 'Frequência Geral', value: coordinatorStatsLoading ? '...' : `${coordinatorStats.averageAttendance}%`, description: 'Taxa média de presença' },
+            { title: 'Comunicações', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalCommunications.toString(), description: 'Comunicações enviadas' },
+            { title: 'Evasões Ativas', value: coordinatorStatsLoading ? '...' : coordinatorStats.activeEvasions.toString(), description: 'Casos de evasão em acompanhamento' },
+            { title: 'Relatórios Pendentes', value: coordinatorStatsLoading ? '...' : coordinatorStats.pendingReports.toString(), description: 'Relatórios aguardando processamento' }
           ]
         };
       case 'secretary':
@@ -236,6 +240,7 @@ const Dashboard = () => {
                   <Badge variant="secondary">• Turmas</Badge>
                   <Badge variant="secondary">• Frequência</Badge>
                   <Badge variant="secondary">• Disciplinas</Badge>
+                  <Badge variant="secondary">• Acompanhamento</Badge>
                   <Badge variant="secondary">• Comunicação</Badge>
                   <Badge variant="secondary">• Relatórios</Badge>
                 </>

@@ -21,6 +21,7 @@ import Communications from "./pages/Communications";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentGrades from "./pages/StudentGrades";
 import Equipment from "./pages/Equipment";
+import Security from "./pages/Security";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Notices from "./pages/Notices";
@@ -48,6 +49,7 @@ const App = () => (
           <Route path="/evasions" element={<Evasions />} />
           <Route path="/communications" element={<Communications />} />
           <Route path="/equipment" element={<Equipment />} />
+          <Route path="/security" element={<Security />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/student-dashboard/:studentId" element={<StudentDashboard />} />
           <Route path="/student-grades" element={<StudentGrades />} />

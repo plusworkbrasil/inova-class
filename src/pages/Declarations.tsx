@@ -186,7 +186,7 @@ const Declarations = () => {
                 variant="outline"
               >
                 <Upload size={16} />
-                Enviar Documento
+                Enviar Declaração
               </Button>
             </div>
           ) : userRole !== 'instructor' && (

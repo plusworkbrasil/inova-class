@@ -137,6 +137,13 @@ export const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
+  // Reset avatar when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setAvatarUrl(initialData?.avatar || null);
+    }
+  }, [open, initialData?.avatar]);
+
   const defaultTrigger = (
     <Button variant="outline" className="flex items-center gap-2">
       <Plus size={16} />
@@ -163,7 +170,7 @@ export const UserForm: React.FC<UserFormProps> = ({
               <CardContent className="pt-6">
                 <AvatarUpload
                   currentAvatar={avatarUrl || undefined}
-                  userId={initialData?.id || 'temp'}
+                  userId={mode === 'edit' && initialData?.id ? initialData.id : `temp-${Date.now()}`}
                   userName={form.watch('name') || 'Usuário'}
                   onAvatarChange={handleAvatarChange}
                   size="lg"

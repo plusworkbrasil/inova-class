@@ -28,6 +28,11 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Sync previewUrl with currentAvatar when it changes
+  React.useEffect(() => {
+    setPreviewUrl(currentAvatar || null);
+  }, [currentAvatar]);
+
   const sizeClasses = {
     sm: 'h-16 w-16',
     md: 'h-24 w-24',
@@ -37,6 +42,11 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const uploadAvatar = async (file: File) => {
     try {
       setUploading(true);
+
+      // Don't allow upload for temporary users
+      if (userId.startsWith('temp-')) {
+        throw new Error('Salve o usuário antes de fazer upload da foto');
+      }
 
       // Validate file type
       if (!file.type.startsWith('image/')) {
@@ -99,6 +109,11 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   const removeAvatar = async () => {
     try {
       setUploading(true);
+
+      // Don't allow removal for temporary users
+      if (userId.startsWith('temp-')) {
+        throw new Error('Salve o usuário antes de remover a foto');
+      }
 
       if (currentAvatar) {
         const path = currentAvatar.split('/').pop();
@@ -172,7 +187,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
           variant="outline"
           size="sm"
           onClick={openFileDialog}
-          disabled={uploading}
+          disabled={uploading || userId.startsWith('temp-')}
           className="flex items-center gap-2"
         >
           <Camera className="h-4 w-4" />
@@ -185,7 +200,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
             variant="outline"
             size="sm"
             onClick={removeAvatar}
-            disabled={uploading}
+            disabled={uploading || userId.startsWith('temp-')}
             className="flex items-center gap-2"
           >
             <X className="h-4 w-4" />

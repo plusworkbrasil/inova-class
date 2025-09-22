@@ -19,6 +19,12 @@ interface Profile {
   student_id?: string;
   class_id?: string;
   instructor_subjects?: string[];
+  enrollment_number?: string;
+  phone?: string;
+  street?: string;
+  number?: string;
+  city?: string;
+  state?: string;
 }
 
 export const useSupabaseAuth = () => {

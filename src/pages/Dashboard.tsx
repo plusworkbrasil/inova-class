@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
@@ -18,6 +19,7 @@ import StudentNotificationCenter from '@/components/dashboard/StudentNotificatio
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
+  const { stats: instructorStats, loading: instructorStatsLoading } = useInstructorDashboardStats();
   const { data: grades } = useSupabaseGrades();
   const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
@@ -73,10 +75,10 @@ const Dashboard = () => {
           title: 'Dashboard do Instrutor',
           description: 'Gerencie suas turmas e atividades',
           cards: [
-            { title: 'Turmas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas ativas' },
-            { title: 'Alunos', value: statsLoading ? '...' : stats.totalStudents.toString(), description: 'Total de alunos' },
-            { title: 'Chamadas Pendentes', value: '0', description: 'Aguardando registro' },
-            { title: 'Notas a Lançar', value: '0', description: 'Avaliações pendentes' },
+            { title: 'Minhas Turmas', value: instructorStatsLoading ? '...' : instructorStats.myClasses.toString(), description: 'Turmas que leciono' },
+            { title: 'Meus Alunos', value: instructorStatsLoading ? '...' : instructorStats.myStudents.toString(), description: 'Alunos das minhas turmas' },
+            { title: 'Chamadas Pendentes', value: instructorStatsLoading ? '...' : instructorStats.pendingAttendance.toString(), description: 'Aguardando registro' },
+            { title: 'Notas a Lançar', value: instructorStatsLoading ? '...' : instructorStats.gradesToLaunch.toString(), description: 'Avaliações pendentes' },
           ]
         };
       case 'coordinator':

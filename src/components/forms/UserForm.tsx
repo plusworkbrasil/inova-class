@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Plus, Upload } from 'lucide-react';
@@ -36,8 +37,8 @@ const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
 type UserFormValues = z.infer<ReturnType<typeof createUserFormSchema>>;
 
 interface UserFormProps {
-  onSubmit: (data: UserFormValues & { photo?: string }) => void;
-  initialData?: Partial<UserFormValues>;
+  onSubmit: (data: UserFormValues & { avatar?: string }) => void;
+  initialData?: Partial<UserFormValues & { id?: string; avatar?: string }>;
   mode?: 'create' | 'edit';
   trigger?: React.ReactNode;
 }
@@ -49,7 +50,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   trigger
 }) => {
   const [open, setOpen] = React.useState(false);
-  const [photoPreview, setPhotoPreview] = React.useState<string>('');
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(initialData?.avatar || null);
   const [isLoadingCep, setIsLoadingCep] = React.useState(false);
   const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   
@@ -73,15 +74,8 @@ export const UserForm: React.FC<UserFormProps> = ({
     },
   });
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleAvatarChange = (newAvatarUrl: string | null) => {
+    setAvatarUrl(newAvatarUrl);
   };
 
   const formatPhone = (value: string) => {
@@ -135,11 +129,11 @@ export const UserForm: React.FC<UserFormProps> = ({
   };
 
   const handleSubmit = (data: UserFormValues) => {
-    onSubmit({ ...data, photo: photoPreview });
+    onSubmit({ ...data, avatar: avatarUrl || undefined });
     setOpen(false);
     if (mode === 'create') {
       form.reset();
-      setPhotoPreview('');
+      setAvatarUrl(null);
     }
   };
 
@@ -164,34 +158,17 @@ export const UserForm: React.FC<UserFormProps> = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Foto do Usuário */}
+            {/* Upload de Avatar */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex flex-col items-center gap-4">
-                  <Avatar className="w-32 h-32">
-                    <AvatarImage src={photoPreview} />
-                    <AvatarFallback className="text-lg">
-                      <Upload size={32} />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <Label htmlFor="photo" className="cursor-pointer">
-                      <Button type="button" variant="outline" size="sm" asChild>
-                        <span>
-                          <Upload size={16} className="mr-2" />
-                          Escolher Foto
-                        </span>
-                      </Button>
-                    </Label>
-                    <Input
-                      id="photo"
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                  </div>
-                </div>
+                <AvatarUpload
+                  currentAvatar={avatarUrl || undefined}
+                  userId={initialData?.id || 'temp'}
+                  userName={form.watch('name') || 'Usuário'}
+                  onAvatarChange={handleAvatarChange}
+                  size="lg"
+                  className="mx-auto"
+                />
               </CardContent>
             </Card>
 

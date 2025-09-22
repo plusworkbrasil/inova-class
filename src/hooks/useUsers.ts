@@ -17,7 +17,7 @@ export interface User {
   state?: string;
   cpf?: string;
   full_name?: string;
-  photo?: string;
+  avatar?: string;
   parent_name?: string;
   escolaridade?: string;
   guardian_name?: string;
@@ -97,7 +97,7 @@ export const useUsers = () => {
               class_id: userData.class_id,
               cpf: userData.cpf,
               full_name: userData.full_name,
-              photo: userData.photo,
+              avatar: userData.avatar,
               parent_name: userData.parent_name,
               escolaridade: userData.escolaridade,
               guardian_name: userData.guardian_name,

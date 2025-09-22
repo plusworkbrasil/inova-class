@@ -55,6 +55,7 @@ const Users = () => {
       neighborhood: data.neighborhood,
       city: data.city,
       state: data.state,
+      avatar: data.avatar,
     });
   };
 
@@ -76,7 +77,7 @@ const Users = () => {
       state: studentData.state,
       cpf: studentData.cpf,
       full_name: studentData.fullName,
-      photo: studentData.photo,
+      avatar: studentData.avatar,
       parent_name: studentData.parentName,
       escolaridade: studentData.escolaridade,
       guardian_name: studentData.guardianName,
@@ -104,6 +105,7 @@ const Users = () => {
       neighborhood: userData.neighborhood,
       city: userData.city,
       state: userData.state,
+      avatar: userData.avatar,
     });
   };
 

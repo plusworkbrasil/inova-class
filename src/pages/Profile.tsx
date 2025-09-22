@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useCommunications } from '@/hooks/useCommunications';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -8,13 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle } from 'lucide-react';
+import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle, User } from 'lucide-react';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { UserRole } from '@/types/user';
 
 const Profile = () => {
   const { user, profile, isAuthenticated } = useAuth();
   const { data: communications, loading: commLoading } = useCommunications();
+  const { data: classes } = useSupabaseClasses();
   
   // Fallback para quando não temos profile ainda
   const userRole = (profile?.role as UserRole) || 'student';
@@ -38,7 +40,7 @@ const Profile = () => {
     address: profile?.street && profile?.city ? 
       `${profile.street}${profile.number ? `, ${profile.number}` : ''} - ${profile.city}, ${profile.state || ''}` :
       'Endereço não informado',
-    enrollment: profile?.enrollment_number || profile?.student_id || 'Não informado',
+    enrollment: profile?.enrollment_number || profile?.student_id || (profile as any)?.auto_student_id || 'Não informado',
     course: 'Curso não informado', // Este campo não existe na tabela profiles ainda
     semester: 'Semestre não informado', // Este campo não existe na tabela profiles ainda
     entryDate: profile?.enrollment_date || profile?.created_at || new Date().toISOString(),
@@ -46,7 +48,14 @@ const Profile = () => {
     cep: profile?.cep || '',
     city: profile?.city || '',
     state: profile?.state || '',
-    avatar: profile?.avatar || ''
+    avatar: profile?.avatar || '',
+    class_id: profile?.class_id || '',
+    class_name: classes?.find(c => c.id === profile?.class_id)?.name || '',
+    cpf: (profile as any)?.cpf || '',
+    rg: (profile as any)?.rg || '',
+    birth_date: (profile as any)?.birth_date || '',
+    parent_name: (profile as any)?.parent_name || '',
+    parent_phone: (profile as any)?.parent_phone || ''
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -171,7 +180,9 @@ const Profile = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Matrícula</label>
+                  <label className="text-sm font-medium text-muted-foreground">
+                    {userRole === 'student' ? 'Matrícula' : 'Identificação'}
+                  </label>
                   <p className="text-sm font-semibold">{profileData.enrollment}</p>
                 </div>
                 <div>
@@ -185,26 +196,57 @@ const Profile = () => {
               </div>
               <Separator />
               <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{profileData.course}</p>
-                    <p className="text-xs text-muted-foreground">Curso</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">{profileData.semester}</p>
-                    <p className="text-xs text-muted-foreground">Período Atual</p>
-                  </div>
-                </div>
+                {userRole === 'student' && (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">{profileData.course}</p>
+                        <p className="text-xs text-muted-foreground">Curso</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium">{profileData.semester}</p>
+                        <p className="text-xs text-muted-foreground">Período Atual</p>
+                      </div>
+                    </div>
+                    {profileData.class_name && (
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{profileData.class_name}</p>
+                          <p className="text-xs text-muted-foreground">Turma</p>
+                        </div>
+                      </div>
+                    )}
+                    {profileData.parent_name && (
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{profileData.parent_name}</p>
+                          <p className="text-xs text-muted-foreground">Responsável</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
                 {profileData.cep && (
                   <div className="flex items-center space-x-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <div>
                       <p className="text-sm font-medium">{profileData.cep} - {profileData.city}/{profileData.state}</p>
                       <p className="text-xs text-muted-foreground">CEP</p>
+                    </div>
+                  </div>
+                )}
+                {profileData.cpf && (
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm font-medium">{profileData.cpf}</p>
+                      <p className="text-xs text-muted-foreground">CPF</p>
                     </div>
                   </div>
                 )}

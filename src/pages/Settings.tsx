@@ -414,7 +414,7 @@ const Settings = () => {
                         <SelectValue placeholder="Filtrar por ação" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todas as ações</SelectItem>
+                        <SelectItem value="all">Todas as ações</SelectItem>
                         <SelectItem value="VIEW">Visualizar</SelectItem>
                         <SelectItem value="VIEW_MEDICAL">Visualizar Dados Médicos</SelectItem>
                         <SelectItem value="VIEW_PERSONAL">Visualizar Dados Pessoais</SelectItem>

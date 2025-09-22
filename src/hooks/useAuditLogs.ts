@@ -49,7 +49,7 @@ export const useAuditLogs = () => {
         query = query.or(`profiles.name.ilike.%${userFilter}%,profiles.email.ilike.%${userFilter}%`);
       }
 
-      if (actionFilter) {
+      if (actionFilter && actionFilter !== 'all') {
         query = query.eq('action', actionFilter);
       }
 

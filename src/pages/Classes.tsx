@@ -14,6 +14,7 @@ import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useRealClassData } from '@/hooks/useRealClassData';
 
 const Classes = () => {
   const { profile } = useAuth();
@@ -30,6 +31,7 @@ const Classes = () => {
   const [selectedClassForDialog, setSelectedClassForDialog] = useState<any>(null);
   
   const { data: classes, loading, createClass, updateClass, deleteClass } = useSupabaseClasses();
+  const { stats: classStats } = useRealClassData();
 
   const handleCreateClass = async (data: any) => {
     try {
@@ -142,7 +144,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Alunos</p>
-                  <p className="text-3xl font-bold text-info">-</p>
+                  <p className="text-3xl font-bold text-info">{classStats.totalStudents}</p>
                 </div>
                 <Users className="h-8 w-8 text-info" />
               </div>
@@ -154,7 +156,7 @@ const Classes = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Média por Turma</p>
-                  <p className="text-3xl font-bold text-warning">-</p>
+                  <p className="text-3xl font-bold text-warning">{classStats.averagePerClass}</p>
                 </div>
                 <Users className="h-8 w-8 text-warning" />
               </div>

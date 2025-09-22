@@ -23,21 +23,12 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useCommunications } from '@/hooks/useCommunications';
+import { useCommunicationsStats } from '@/hooks/useCommunicationsStats';
+import { useRealRecipients } from '@/hooks/useRealRecipients';
 
 
-const mockStudents = [
-  { id: '1', name: 'João Silva', class: '1º Ano A', phone: '11999999999', email: 'joao@email.com' },
-  { id: '2', name: 'Maria Santos', class: '1º Ano A', phone: '11888888888', email: 'maria@email.com' },
-  { id: '3', name: 'Pedro Oliveira', class: '2º Ano B', phone: '11777777777', email: 'pedro@email.com' },
-  { id: '4', name: 'Ana Costa', class: '2º Ano B', phone: '11666666666', email: 'ana@email.com' },
-];
-
-const mockClasses = [
-  { id: '1a', name: '1º Ano A', students: 25 },
-  { id: '1b', name: '1º Ano B', students: 23 },
-  { id: '2a', name: '2º Ano A', students: 28 },
-  { id: '2b', name: '2º Ano B', students: 26 },
-];
+// Real data hooks will replace mock data
+const { students: realStudents, classes: realClasses } = useRealRecipients();
 
 const mockCommunications = [
   {
@@ -76,7 +67,8 @@ const Communications = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { data: communications, loading, error, createCommunication, refetch } = useCommunications();
+  const { data: communications, loading, error, createCommunication, deleteCommunication, refetch } = useCommunications();
+  const { stats: commStats } = useCommunicationsStats();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('userRole') as UserRole;
@@ -100,9 +92,9 @@ const Communications = () => {
     if (checked) {
       setSelectedClasses([...selectedClasses, classId]);
       // Adicionar todos os alunos da turma
-      const classStudents = mockStudents
+      const classStudents = realStudents
         .filter(student => {
-          const selectedClass = mockClasses.find(c => c.id === classId);
+          const selectedClass = realClasses.find(c => c.id === classId);
           return student.class === selectedClass?.name;
         })
         .map(student => student.id);
@@ -111,9 +103,9 @@ const Communications = () => {
     } else {
       setSelectedClasses(selectedClasses.filter(id => id !== classId));
       // Remover alunos da turma
-      const classStudents = mockStudents
+      const classStudents = realStudents
         .filter(student => {
-          const deselectedClass = mockClasses.find(c => c.id === classId);
+          const deselectedClass = realClasses.find(c => c.id === classId);
           return student.class === deselectedClass?.name;
         })
         .map(student => student.id);
@@ -196,7 +188,7 @@ const Communications = () => {
     }
   };
 
-  const filteredStudents = mockStudents.filter(student =>
+  const filteredStudents = realStudents.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.class.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -214,7 +206,7 @@ const Communications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total de Emails Enviados</p>
-                  <p className="text-3xl font-bold text-blue-600">1,234</p>
+                  <p className="text-3xl font-bold text-blue-600">{commStats.totalEmails}</p>
                 </div>
                 <Mail className="h-8 w-8 text-blue-600" />
               </div>
@@ -226,7 +218,7 @@ const Communications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">WhatsApp Enviados</p>
-                  <p className="text-3xl font-bold text-green-600">987</p>
+                  <p className="text-3xl font-bold text-green-600">{commStats.totalWhatsapp}</p>
                 </div>
                 <MessageCircle className="h-8 w-8 text-green-600" />
               </div>
@@ -238,7 +230,7 @@ const Communications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Informativos Este Mês</p>
-                  <p className="text-3xl font-bold text-primary">45</p>
+                  <p className="text-3xl font-bold text-primary">{commStats.thisMonthCommunications}</p>
                 </div>
                 <Users className="h-8 w-8 text-primary" />
               </div>
@@ -250,7 +242,7 @@ const Communications = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Taxa de Entrega</p>
-                  <p className="text-3xl font-bold text-success">98%</p>
+                  <p className="text-3xl font-bold text-success">{commStats.deliveryRate}%</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-success" />
               </div>
@@ -346,7 +338,7 @@ const Communications = () => {
                     </TabsList>
                     
                     <TabsContent value="classes" className="space-y-2">
-                      {mockClasses.map((classItem) => (
+                      {realClasses.map((classItem) => (
                         <div key={classItem.id} className="flex items-center space-x-2">
                           <Checkbox 
                             id={classItem.id}
@@ -425,7 +417,15 @@ const Communications = () => {
                         <TableCell>{new Date(comm.created_at).toLocaleString('pt-BR')}</TableCell>
                         <TableCell>{getStatusBadge(comm.is_published ? 'sent' : 'draft')}</TableCell>
                         <TableCell>-</TableCell>
-                        <TableCell>-</TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => deleteCommunication(comm.id)}
+                          >
+                            Excluir
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

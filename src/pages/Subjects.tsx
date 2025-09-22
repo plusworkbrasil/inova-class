@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useRealClassData } from '@/hooks/useRealClassData';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -31,6 +32,7 @@ const Subjects = () => {
   const { data: subjects, loading, createSubject, updateSubject, deleteSubject } = useSupabaseSubjects();
   const { users } = useUsers();
   const { data: classes } = useSupabaseClasses();
+  const { stats: classStats } = useRealClassData();
 
   // Helper functions to get names from IDs
   const getTeacherName = (teacherId: string | null) => {
@@ -143,7 +145,7 @@ const Subjects = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -168,24 +170,13 @@ const Subjects = () => {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Classes Cobertas</p>
-                  <p className="text-3xl font-bold text-info">-</p>
-                </div>
-                <Clock className="h-8 w-8 text-info" />
-              </div>
-            </CardContent>
-          </Card>
           
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Instrutores</p>
-                  <p className="text-3xl font-bold text-warning">-</p>
+                  <p className="text-3xl font-bold text-warning">{classStats.totalInstructors}</p>
                 </div>
                 <User className="h-8 w-8 text-warning" />
               </div>

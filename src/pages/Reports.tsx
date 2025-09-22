@@ -12,12 +12,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import html2pdf from 'html2pdf.js';
+import { useReportsData } from '@/hooks/useReportsData';
 
 const Reports = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: reportsData, loading: reportsLoading } = useReportsData();
 
   useEffect(() => {
     // Recuperar dados do usuário do localStorage
@@ -30,7 +32,8 @@ const Reports = () => {
     }
   }, []);
   
-  const attendanceData = [
+  // Use real data or fallback to mock data
+  const attendanceData = reportsData.attendanceByMonth.length > 0 ? reportsData.attendanceByMonth : [
     { month: 'Jan', presente: 85, falta: 15 },
     { month: 'Fev', presente: 88, falta: 12 },
     { month: 'Mar', presente: 82, falta: 18 },
@@ -39,7 +42,7 @@ const Reports = () => {
     { month: 'Jun', presente: 89, falta: 11 },
   ];
 
-  const gradeData = [
+  const gradeData = reportsData.gradesBySubject.length > 0 ? reportsData.gradesBySubject : [
     { subject: 'Matemática', average: 7.5 },
     { subject: 'Português', average: 8.2 },
     { subject: 'História', average: 7.8 },
@@ -47,21 +50,21 @@ const Reports = () => {
     { subject: 'Ciências', average: 7.3 },
   ];
 
-  const classDistribution = [
+  const classDistribution = reportsData.classDistribution.length > 0 ? reportsData.classDistribution : [
     { name: '1º Ano A', value: 28, color: '#8884d8' },
     { name: '2º Ano B', value: 32, color: '#82ca9d' },
     { name: '3º Ano A', value: 25, color: '#ffc658' },
     { name: '1º Ano C', value: 20, color: '#ff7c7c' },
   ];
 
-  const topAbsentStudents = [
+  const topAbsentStudents = reportsData.topAbsentStudents.length > 0 ? reportsData.topAbsentStudents : [
     { name: 'João Silva', class: '1º Ano A', absences: 8, percentage: 20 },
     { name: 'Maria Santos', class: '2º Ano B', absences: 7, percentage: 17.5 },
     { name: 'Pedro Costa', class: '1º Ano A', absences: 6, percentage: 15 },
     { name: 'Ana Oliveira', class: '3º Ano A', absences: 5, percentage: 12.5 },
   ];
 
-  const evasionData = [
+  const evasionData = reportsData.evasionData.length > 0 ? reportsData.evasionData : [
     { name: 'Dificuldades financeiras', value: 35, color: '#ff6b6b' },
     { name: 'Problemas familiares', value: 20, color: '#4ecdc4' },
     { name: 'Mudança de cidade/estado', value: 15, color: '#45b7d1' },
@@ -396,6 +399,17 @@ const Reports = () => {
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
+            <div className="p-4 border-t">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/evasions')}
+                className="w-full"
+              >
+                <ExternalLink size={14} className="mr-2" />
+                Ver Lista Completa de Alunos por Turma
+              </Button>
+            </div>
           </Card>
 
           <Card>
@@ -422,6 +436,17 @@ const Reports = () => {
                 </PieChart>
               </ResponsiveContainer>
             </CardContent>
+            <div className="p-4 border-t">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/evasions')}
+                className="w-full"
+              >
+                <ExternalLink size={14} className="mr-2" />
+                Ver Lista Completa de Evasões
+              </Button>
+            </div>
           </Card>
 
           <Card>

@@ -38,6 +38,7 @@ const menuItems = {
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+    { icon: UserX, label: 'Evasões', path: '/evasions' },
     { icon: FileText, label: 'Comunicação', path: '/communications' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
     { icon: Settings, label: 'Configurações', path: '/settings' },

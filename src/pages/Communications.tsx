@@ -27,8 +27,6 @@ import { useCommunicationsStats } from '@/hooks/useCommunicationsStats';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
 
 
-// Real data hooks will replace mock data
-const { students: realStudents, classes: realClasses } = useRealRecipients();
 
 const mockCommunications = [
   {
@@ -69,6 +67,7 @@ const Communications = () => {
   const { toast } = useToast();
   const { data: communications, loading, error, createCommunication, deleteCommunication, refetch } = useCommunications();
   const { stats: commStats } = useCommunicationsStats();
+  const { students: realStudents, classes: realClasses } = useRealRecipients();
 
   useEffect(() => {
     const savedRole = localStorage.getItem('userRole') as UserRole;

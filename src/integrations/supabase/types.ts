@@ -777,6 +777,18 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      detect_suspicious_activity: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          alert_type: string
+          description: string
+          last_occurrence: string
+          occurrences: number
+          severity: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_instructor_students: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -822,6 +834,17 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
           status: string
           student_id: string
+        }[]
+      }
+      get_security_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          failed_access_attempts: number
+          medical_access_count: number
+          recent_admin_actions: number
+          sensitive_actions: number
+          total_logs: number
+          unique_users: number
         }[]
       }
       get_student_basic_info_for_instructor: {

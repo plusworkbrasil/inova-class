@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, AlertTriangle, Eye, Search, Filter } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Shield, AlertTriangle, Eye, Search, Filter, Users, Database, Activity, TrendingUp } from 'lucide-react';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useSecurityMetrics } from '@/hooks/useSecurityMetrics';
 import { translateAction, translateTable, getActionBadgeVariant } from '@/lib/auditMappings';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +19,7 @@ import { toast } from 'sonner';
 export default function Security() {
   const { profile } = useAuth();
   const { logs, loading, totalCount, fetchLogs } = useAuditLogs();
+  const { metrics, alerts, loading: metricsLoading, fetchSecurityMetrics } = useSecurityMetrics();
   const [currentPage, setCurrentPage] = useState(1);
   const [userFilter, setUserFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('');
@@ -28,7 +31,17 @@ export default function Security() {
       return;
     }
     fetchLogs(currentPage, pageSize, userFilter, actionFilter);
+    fetchSecurityMetrics();
   }, [currentPage, userFilter, actionFilter, profile?.role]);
+
+  const getSeverityBadgeVariant = (severity: string) => {
+    switch (severity) {
+      case 'HIGH': return 'destructive';
+      case 'MEDIUM': return 'default';
+      case 'LOW': return 'secondary';
+      default: return 'outline';
+    }
+  };
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -78,53 +91,119 @@ export default function Security() {
           </div>
         </div>
 
-        {/* Security Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Security Alerts */}
+        {alerts.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Alertas de Segurança
+            </h2>
+            {alerts.map((alert, index) => (
+              <Alert key={index} variant={alert.severity === 'HIGH' ? 'destructive' : 'default'}>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle className="flex items-center gap-2">
+                  {alert.description}
+                  <Badge variant={getSeverityBadgeVariant(alert.severity)}>
+                    {alert.severity}
+                  </Badge>
+                </AlertTitle>
+                <AlertDescription>
+                  Usuário: {alert.user_name} | Ocorrências: {alert.occurrences} | 
+                  Última: {new Date(alert.last_occurrence).toLocaleString('pt-BR')}
+                </AlertDescription>
+              </Alert>
+            ))}
+          </div>
+        )}
+
+        {/* Enhanced Security Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total de Logs
-              </CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total de Logs</CardTitle>
+              <Database className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalCount}</div>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? '...' : (metrics?.total_logs || 0)}
+              </div>
               <p className="text-xs text-muted-foreground">
-                registros de auditoria
+                Últimos 30 dias
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Ações Sensíveis
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Ações Sensíveis</CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {logs.filter(log => log.action.includes('MEDICAL') || log.action.includes('PERSONAL')).length}
+                {metricsLoading ? '...' : (metrics?.sensitive_actions || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
-                acessos a dados médicos/pessoais
+                Dados pessoais/médicos
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Usuários Ativos
-              </CardTitle>
+              <CardTitle className="text-sm font-medium">Acesso Médico</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? '...' : (metrics?.medical_access_count || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Acessos a dados médicos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Falhas</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? '...' : (metrics?.failed_access_attempts || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tentativas falhadas
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Usuários Únicos</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {metricsLoading ? '...' : (metrics?.unique_users || 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Usuários ativos
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ações Admin</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {new Set(logs.map(log => log.user_id)).size}
+                {metricsLoading ? '...' : (metrics?.recent_admin_actions || 0)}
               </div>
               <p className="text-xs text-muted-foreground">
-                usuários com atividade
+                Últimas 24h
               </p>
             </CardContent>
           </Card>

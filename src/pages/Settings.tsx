@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,100 +12,38 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2 } from 'lucide-react';
 import { useSettings } from '@/hooks/useSettings';
-import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
 import { useAuth } from '@/hooks/useAuth';
+import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
+import { translateAction, translateTable, getActionBadgeVariant } from '@/lib/auditMappings';
+
+const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('pt-BR');
+};
 
 const Settings = () => {
   const { settings, loading, saving, updateSettings, saveSettings } = useSettings();
   const { profile } = useAuth();
+  const { logs: auditLogs, loading: logsLoading, fetchLogs } = useAuditLogs();
+  
+  const [userFilter, setUserFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
 
-  // Mock data para logs de auditoria
-  const auditLogs = [
-    {
-      id: 1,
-      timestamp: new Date('2024-01-15T10:30:00'),
-      user: 'Admin',
-      action: 'CRIAR',
-      entity: 'Usuário',
-      entityName: 'João Silva',
-      details: 'Criou novo usuário com perfil Instrutor',
-      ip: '192.168.1.100'
-    },
-    {
-      id: 2,
-      timestamp: new Date('2024-01-15T09:15:00'),
-      user: 'Admin',
-      action: 'EDITAR',
-      entity: 'Turma',
-      entityName: '1º Ano A',
-      details: 'Alterou coordenador da turma',
-      ip: '192.168.1.100'
-    },
-    {
-      id: 3,
-      timestamp: new Date('2024-01-15T08:45:00'),
-      user: 'Coordenador Maria',
-      action: 'DELETAR',
-      entity: 'Disciplina',
-      entityName: 'Educação Física',
-      details: 'Removeu disciplina do sistema',
-      ip: '192.168.1.105'
-    },
-    {
-      id: 4,
-      timestamp: new Date('2024-01-14T16:20:00'),
-      user: 'Admin',
-      action: 'CRIAR',
-      entity: 'Disciplina',
-      entityName: 'Matemática Avançada',
-      details: 'Criou nova disciplina',
-      ip: '192.168.1.100'
-    },
-    {
-      id: 5,
-      timestamp: new Date('2024-01-14T14:10:00'),
-      user: 'Secretaria Pedro',
-      action: 'EDITAR',
-      entity: 'Usuário',
-      entityName: 'Ana Costa',
-      details: 'Atualizou informações de contato',
-      ip: '192.168.1.102'
-    },
-    {
-      id: 6,
-      timestamp: new Date('2024-01-14T11:30:00'),
-      user: 'Admin',
-      action: 'CONFIGURAR',
-      entity: 'Sistema',
-      entityName: 'Configurações Gerais',
-      details: 'Alterou configurações de notificação',
-      ip: '192.168.1.100'
-    },
-  ];
-
-  const getActionBadgeVariant = (action: string) => {
-    switch (action) {
-      case 'CRIAR': return 'default';
-      case 'EDITAR': return 'secondary';
-      case 'DELETAR': return 'destructive';
-      case 'CONFIGURAR': return 'outline';
-      default: return 'outline';
-    }
+  const handleSaveSettings = async () => {
+    await saveSettings(settings);
   };
 
-  const formatDateTime = (date: Date) => {
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleFilterChange = () => {
+    setCurrentPage(0);
+    fetchLogs(0, 50, userFilter, actionFilter);
   };
 
-  const handleSaveSettings = () => {
-    saveSettings(settings);
-  };
+  useEffect(() => {
+    const timeoutId = setTimeout(handleFilterChange, 500);
+    return () => clearTimeout(timeoutId);
+  }, [userFilter, actionFilter]);
 
   if (loading) {
     return (
@@ -423,7 +362,7 @@ const Settings = () => {
                   <div className="space-y-0.5">
                     <Label>Logs de Auditoria</Label>
                     <p className="text-sm text-muted-foreground">
-                      Registrar todas as ações dos usuários
+                      Registrar todas as ações do sistema
                     </p>
                   </div>
                   <Switch 
@@ -432,21 +371,21 @@ const Settings = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="session_timeout">Timeout de Sessão (minutos)</Label>
+                  <Label htmlFor="session_timeout">Timeout da Sessão (minutos)</Label>
                   <Input 
                     id="session_timeout" 
-                    value={settings.security.session_timeout.toString()}
-                    onChange={(e) => updateSettings('security', 'session_timeout', parseInt(e.target.value) || 30)}
-                    type="number" 
+                    type="number"
+                    value={settings.security.session_timeout}
+                    onChange={(e) => updateSettings('security', 'session_timeout', parseInt(e.target.value))}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login_attempts">Máximo de Tentativas de Login</Label>
                   <Input 
                     id="login_attempts" 
-                    value={settings.security.login_attempts.toString()}
-                    onChange={(e) => updateSettings('security', 'login_attempts', parseInt(e.target.value) || 5)}
-                    type="number" 
+                    type="number"
+                    value={settings.security.login_attempts}
+                    onChange={(e) => updateSettings('security', 'login_attempts', parseInt(e.target.value))}
                   />
                 </div>
               </CardContent>
@@ -457,52 +396,117 @@ const Settings = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Logs de Auditoria</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Histórico completo de ações realizadas no sistema
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex gap-4">
-                    <Input placeholder="Filtrar por usuário..." className="max-w-sm" />
-                    <Select defaultValue="all">
-                      <SelectTrigger className="max-w-[150px]">
-                        <SelectValue />
+                    <Input 
+                      placeholder="Filtrar por usuário..." 
+                      className="max-w-sm"
+                      value={userFilter}
+                      onChange={(e) => setUserFilter(e.target.value)}
+                    />
+                    <Select value={actionFilter} onValueChange={setActionFilter}>
+                      <SelectTrigger className="max-w-sm">
+                        <SelectValue placeholder="Filtrar por ação" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">Todas as ações</SelectItem>
-                        <SelectItem value="CRIAR">Criar</SelectItem>
-                        <SelectItem value="EDITAR">Editar</SelectItem>
-                        <SelectItem value="DELETAR">Deletar</SelectItem>
+                        <SelectItem value="">Todas as ações</SelectItem>
+                        <SelectItem value="VIEW">Visualizar</SelectItem>
+                        <SelectItem value="VIEW_MEDICAL">Visualizar Dados Médicos</SelectItem>
+                        <SelectItem value="VIEW_PERSONAL">Visualizar Dados Pessoais</SelectItem>
+                        <SelectItem value="UPDATE">Atualizar</SelectItem>
+                        <SelectItem value="CREATE">Criar</SelectItem>
+                        <SelectItem value="DELETE">Deletar</SelectItem>
+                        <SelectItem value="LOGIN">Login</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Usuário</TableHead>
-                        <TableHead>Ação</TableHead>
-                        <TableHead>Entidade</TableHead>
-                        <TableHead>Detalhes</TableHead>
-                        <TableHead>IP</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {auditLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDateTime(log.timestamp)}</TableCell>
-                          <TableCell>{log.user}</TableCell>
-                          <TableCell>
-                            <Badge variant={getActionBadgeVariant(log.action) as any}>
-                              {log.action}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{log.entity}: {log.entityName}</TableCell>
-                          <TableCell>{log.details}</TableCell>
-                          <TableCell className="font-mono text-sm">{log.ip}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  {logsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Usuário</TableHead>
+                            <TableHead>Ação</TableHead>
+                            <TableHead>Recurso</TableHead>
+                            <TableHead>Data/Hora</TableHead>
+                            <TableHead>IP</TableHead>
+                            <TableHead>Campos Acessados</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {auditLogs.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                                Nenhum log encontrado
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            auditLogs.map((log) => (
+                              <TableRow key={log.id}>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <div className="font-medium">{log.user_name}</div>
+                                    <div className="text-sm text-muted-foreground">{log.user_email}</div>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={getActionBadgeVariant(log.action)}>
+                                    {translateAction(log.action)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="space-y-1">
+                                    <div>{translateTable(log.table_name)}</div>
+                                    {log.record_id && (
+                                      <div className="text-xs text-muted-foreground font-mono">
+                                        ID: {log.record_id.slice(0, 8)}...
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{formatDateTime(log.created_at)}</TableCell>
+                                <TableCell>
+                                  {log.ip_address ? (
+                                    <span className="font-mono text-sm">{log.ip_address}</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {log.accessed_fields && log.accessed_fields.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                      {log.accessed_fields.slice(0, 3).map((field, index) => (
+                                        <Badge key={index} variant="outline" className="text-xs">
+                                          {field}
+                                        </Badge>
+                                      ))}
+                                      {log.accessed_fields.length > 3 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          +{log.accessed_fields.length - 3}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted-foreground">-</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

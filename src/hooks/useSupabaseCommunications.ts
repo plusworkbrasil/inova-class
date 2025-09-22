@@ -139,6 +139,7 @@ export const useCommunications = () => {
     }
   };
 
+
   useEffect(() => {
     fetchCommunications();
   }, []);

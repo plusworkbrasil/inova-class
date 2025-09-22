@@ -798,6 +798,19 @@ export type Database = {
           student_number: string
         }[]
       }
+      get_safe_student_profile: {
+        Args: { target_student_id: string }
+        Returns: {
+          class_id: string
+          email: string
+          enrollment_number: string
+          id: string
+          name: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          student_id: string
+        }[]
+      }
       get_student_basic_info_for_instructor: {
         Args: { target_student_id: string }
         Returns: {
@@ -828,6 +841,17 @@ export type Database = {
           p_action: string
           p_record_id: string
           p_table_name: string
+        }
+        Returns: undefined
+      }
+      log_sensitive_access_enhanced: {
+        Args: {
+          p_accessed_fields: string[]
+          p_action: string
+          p_ip_address?: unknown
+          p_record_id: string
+          p_table_name: string
+          p_user_agent?: string
         }
         Returns: undefined
       }

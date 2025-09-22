@@ -1,10 +1,23 @@
 <?php
 class Database {
-    private $host = 'localhost';
-    private $db_name = 'escola_db';
-    private $username = 'root'; // XAMPP padrão
-    private $password = '';     // XAMPP padrão (sem senha)
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
     private $conn;
+
+    public function __construct() {
+        // Security Fix: Use environment variables or secure defaults
+        $this->host = $_ENV['DB_HOST'] ?? getenv('DB_HOST') ?? 'localhost';
+        $this->db_name = $_ENV['DB_NAME'] ?? getenv('DB_NAME') ?? 'escola_db';
+        $this->username = $_ENV['DB_USER'] ?? getenv('DB_USER') ?? 'root';
+        $this->password = $_ENV['DB_PASS'] ?? getenv('DB_PASS') ?? '';
+        
+        // Warn if using default credentials
+        if ($this->username === 'root' && $this->password === '') {
+            error_log('WARNING: Using default database credentials. Set DB_HOST, DB_NAME, DB_USER, DB_PASS environment variables for production.');
+        }
+    }
 
     public function getConnection() {
         $this->conn = null;

@@ -67,6 +67,10 @@ export const SecureDataAccess = ({ userId, children }: SecureDataAccessProps) =>
     if (!profile?.id || !accessedFields.length) return;
     
     try {
+      // Get IP address and user agent for enhanced logging
+      const ipAddress = null; // Would need server-side implementation for real IP
+      const userAgent = navigator.userAgent;
+      
       // Enhanced logging for medical data access
       const medicalFields = accessedFields.filter(field => 
         ['medical_info', 'allergies', 'medical_conditions', 'medications', 'blood_type', 'health_insurance'].includes(field)
@@ -74,21 +78,25 @@ export const SecureDataAccess = ({ userId, children }: SecureDataAccessProps) =>
 
       // Enhanced logging for medical data access
       if (medicalFields.length > 0) {
-        // Log medical data access using existing function
-        await supabase.rpc('log_sensitive_access', {
+        // Log medical data access using enhanced function
+        await supabase.rpc('log_sensitive_access_enhanced', {
           p_action: 'VIEW_MEDICAL',
           p_table_name: 'profiles',
           p_record_id: userId,
-          p_accessed_fields: medicalFields
+          p_accessed_fields: medicalFields,
+          p_ip_address: ipAddress,
+          p_user_agent: userAgent
         });
       }
 
-      // Log all access
-      await supabase.rpc('log_sensitive_access', {
+      // Log all access with enhanced logging
+      await supabase.rpc('log_sensitive_access_enhanced', {
         p_action: 'VIEW',
         p_table_name: 'profiles',
         p_record_id: userId,
-        p_accessed_fields: accessedFields
+        p_accessed_fields: accessedFields,
+        p_ip_address: ipAddress,
+        p_user_agent: userAgent
       });
     } catch (error) {
       console.error('Failed to log sensitive data access:', error);

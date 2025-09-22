@@ -46,42 +46,79 @@ export const SecureProfileView = ({ userId, className }: SecureProfileViewProps)
       try {
         setLoading(true);
         
-        // Use existing secure data access pattern
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (error) throw error;
-
-        if (data) {
-          // Check permissions and filter sensitive data
-          const canViewPersonal = await supabase.rpc('can_access_personal_data', {
-            target_user_id: userId
+        // Use role-based secure data access
+        if (currentUser.role === 'instructor') {
+          // Instructors can only access limited academic data via secure RPC
+          const { data, error } = await supabase.rpc('get_instructor_viewable_student_data', {
+            target_student_id: userId
           });
           
-          const canViewMedical = await supabase.rpc('can_access_medical_data', {
-            target_user_id: userId
-          });
-
-          // Filter data based on permissions
-          const filteredData = {
-            ...data,
-            cpf: canViewPersonal.data ? data.cpf : null,
-            rg: canViewPersonal.data ? data.rg : null,
-            birth_date: canViewPersonal.data ? data.birth_date : null,
-            medical_info: canViewMedical.data ? data.medical_info : null,
-            allergies: canViewMedical.data ? data.allergies : null,
-            medical_conditions: canViewMedical.data ? data.medical_conditions : null,
-            medications: canViewMedical.data ? data.medications : null,
-            blood_type: canViewMedical.data ? data.blood_type : null,
-            health_insurance: canViewMedical.data ? data.health_insurance : null,
-          };
-
-          setProfileData(filteredData);
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            // Convert RPC result to expected format
+            const studentData = data[0];
+            setProfileData({
+              id: studentData.id,
+              name: studentData.name,
+              email: studentData.email,
+              role: studentData.role,
+              student_id: studentData.student_id,
+              enrollment_number: studentData.enrollment_number,
+              status: studentData.status,
+              class_id: studentData.class_id,
+              // No access to sensitive data for instructors
+              cpf: null,
+              rg: null,
+              birth_date: null,
+              medical_info: null,
+              allergies: null,
+              medical_conditions: null,
+              medications: null,
+              blood_type: null,
+              health_insurance: null,
+            });
+          } else {
+            setError('Perfil não encontrado ou sem permissão de acesso');
+          }
         } else {
-          setError('Perfil não encontrado ou sem permissão de acesso');
+          // Admins, secretaries, and users viewing their own profile
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+          if (error) throw error;
+
+          if (data) {
+            // Check permissions and filter sensitive data
+            const canViewPersonal = await supabase.rpc('can_access_personal_data', {
+              target_user_id: userId
+            });
+            
+            const canViewMedical = await supabase.rpc('can_access_medical_data', {
+              target_user_id: userId
+            });
+
+            // Filter data based on permissions
+            const filteredData = {
+              ...data,
+              cpf: canViewPersonal.data ? data.cpf : null,
+              rg: canViewPersonal.data ? data.rg : null,
+              birth_date: canViewPersonal.data ? data.birth_date : null,
+              medical_info: canViewMedical.data ? data.medical_info : null,
+              allergies: canViewMedical.data ? data.allergies : null,
+              medical_conditions: canViewMedical.data ? data.medical_conditions : null,
+              medications: canViewMedical.data ? data.medications : null,
+              blood_type: canViewMedical.data ? data.blood_type : null,
+              health_insurance: canViewMedical.data ? data.health_insurance : null,
+            };
+
+            setProfileData(filteredData);
+          } else {
+            setError('Perfil não encontrado ou sem permissão de acesso');
+          }
         }
       } catch (err) {
         console.error('Error fetching secure profile:', err);

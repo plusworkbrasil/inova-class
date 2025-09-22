@@ -10,144 +10,121 @@ import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from '
 import { GradeForm } from '@/components/forms/GradeForm';
 import { BatchGradeForm } from '@/components/forms/BatchGradeForm';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
+import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { UserRole } from '@/types/user';
 
-// Mock do instrutor atual
-const currentInstructor = {
-  id: 'teacher001',
-  name: 'Inst. Carlos Silva',
-  subjects: ['Matemática', 'Física'],
-  classes: ['1º Ano A', '2º Ano B', '3º Ano A']
-};
-
-// Mock de dados das turmas e alunos do instrutor
-const mockClassStudents = {
-  '1º Ano A': [
-    { id: '2024001', name: 'João Silva' },
-    { id: '2024002', name: 'Maria Santos' },
-    { id: '2024003', name: 'Pedro Oliveira' },
-    { id: '2024004', name: 'Ana Costa' },
-  ],
-  '2º Ano B': [
-    { id: '2024005', name: 'Carlos Souza' },
-    { id: '2024006', name: 'Lucia Ferreira' },
-    { id: '2024007', name: 'Rafael Lima' },
-  ],
-  '3º Ano A': [
-    { id: '2024008', name: 'Fernanda Silva' },
-    { id: '2024009', name: 'Gabriel Santos' },
-    { id: '2024010', name: 'Isabella Costa' },
-  ]
-};
-
-const mockGradesData = [
-  {
-    id: 1,
-    studentName: 'João Silva',
-    studentId: '2024001',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    grade: 8.5,
-    maxGrade: 10,
-    type: 'Prova',
-    date: '2024-01-15',
-    teacher: 'Inst. Carlos Silva'
-  },
-  {
-    id: 2,
-    studentName: 'Maria Santos',
-    studentId: '2024002',
-    class: '1º Ano A',
-    subject: 'Matemática',
-    grade: 7.2,
-    maxGrade: 10,
-    type: 'Trabalho',
-    date: '2024-01-14',
-    teacher: 'Inst. Carlos Silva'
-  },
-];
-
 const TeacherGrades = () => {
-  const [userRole, setUserRole] = useState<UserRole>('teacher');
-  const [userName, setUserName] = useState('Instrutor');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
-  const [grades, setGrades] = useState(mockGradesData);
   const [batchGradeMode, setBatchGradeMode] = useState(false);
   const [selectedClassForBatch, setSelectedClassForBatch] = useState('');
   const [selectedSubjectForBatch, setSelectedSubjectForBatch] = useState('');
   const { toast } = useToast();
+  
+  // Hooks para dados reais
+  const { profile, loading: authLoading } = useAuth();
+  const { data: grades, createGrade, updateGrade, refetch } = useSupabaseGrades();
+  const { data: subjects } = useSupabaseSubjects();
+  const { data: classes } = useSupabaseClasses();
 
-  useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
+  // Filtrar disciplinas do instrutor
+  const instructorSubjects = subjects?.filter(subject => 
+    subject.teacher_id === profile?.id || 
+    profile?.instructor_subjects?.includes(subject.name)
+  ) || [];
+
+  // Filtrar turmas relacionadas às disciplinas do instrutor
+  const instructorClasses = classes?.filter(classItem => 
+    instructorSubjects.some(subject => subject.class_id === classItem.id)
+  ) || [];
+
+  // Filtrar notas das disciplinas do instrutor
+  const instructorGrades = grades?.filter(grade => 
+    instructorSubjects.some(subject => subject.id === grade.subject_id)
+  ) || [];
+
+  const handleCreateGrade = async (data: any) => {
+    try {
+      await createGrade({
+        student_id: data.studentId,
+        subject_id: data.subjectId,
+        value: data.grade,
+        max_value: data.maxGrade,
+        date: data.date,
+        teacher_id: profile?.id || '',
+        type: data.type,
+        observations: data.observations || ''
+      });
+      toast({
+        title: "Nota lançada com sucesso!",
+        description: `Nota ${data.grade} registrada com sucesso.`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao lançar nota.",
+      });
     }
-  }, []);
-
-  const handleCreateGrade = (data: any) => {
-    const newGrade = {
-      id: grades.length + 1,
-      studentName: data.studentName,
-      studentId: data.studentId,
-      class: data.class,
-      subject: data.subject,
-      grade: data.grade,
-      maxGrade: data.maxGrade,
-      type: data.type,
-      date: data.date,
-      teacher: currentInstructor.name,
-    };
-    setGrades([newGrade, ...grades]);
-    toast({
-      title: "Nota lançada com sucesso!",
-      description: `Nota ${data.grade} registrada para ${data.studentName}.`,
-    });
   };
 
-  const handleEditGrade = (gradeData: any) => {
-    const updatedGrades = grades.map(g => 
-      g.id === editingGrade.id 
-        ? { ...g, ...gradeData }
-        : g
-    );
-    setGrades(updatedGrades);
-    setEditingGrade(null);
-    toast({
-      title: "Nota atualizada com sucesso!",
-      description: `Nota de ${gradeData.studentName} foi atualizada.`,
-    });
+  const handleEditGrade = async (gradeData: any) => {
+    try {
+      await updateGrade(editingGrade.id, {
+        value: gradeData.grade,
+        max_value: gradeData.maxGrade,
+        date: gradeData.date,
+        type: gradeData.type,
+        observations: gradeData.observations || ''
+      });
+      setEditingGrade(null);
+      toast({
+        title: "Nota atualizada com sucesso!",
+        description: "Nota foi atualizada.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar nota.",
+      });
+    }
   };
 
-  const handleBatchGradesSubmit = (gradesData: any[]) => {
-    const newGrades = gradesData.map((data, index) => ({
-      id: grades.length + index + 1,
-      studentName: data.studentName,
-      studentId: data.studentId,
-      class: data.class,
-      subject: data.subject,
-      grade: data.grade,
-      maxGrade: data.maxGrade,
-      type: data.type,
-      date: data.date,
-      teacher: data.teacher,
-    }));
-    
-    setGrades([...newGrades, ...grades]);
-    setBatchGradeMode(false);
-    setSelectedClassForBatch('');
-    setSelectedSubjectForBatch('');
-    toast({
-      title: "Notas lançadas com sucesso!",
-      description: `${gradesData.length} notas foram registradas.`,
-    });
+  const handleBatchGradesSubmit = async (gradesData: any[]) => {
+    try {
+      for (const gradeData of gradesData) {
+        await createGrade({
+          student_id: gradeData.studentId,
+          subject_id: gradeData.subjectId,
+          value: gradeData.grade,
+          max_value: gradeData.maxGrade,
+          date: gradeData.date,
+          teacher_id: profile?.id || '',
+          type: gradeData.type,
+          observations: gradeData.observations || ''
+        });
+      }
+      setBatchGradeMode(false);
+      setSelectedClassForBatch('');
+      setSelectedSubjectForBatch('');
+      toast({
+        title: "Notas lançadas com sucesso!",
+        description: `${gradesData.length} notas foram registradas.`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao lançar notas em lote.",
+      });
+    }
   };
 
   const openEditForm = (grade: any) => {
@@ -183,21 +160,32 @@ const TeacherGrades = () => {
     }
   };
 
-  // Filtrar notas apenas das disciplinas do instrutor
-  const teacherGrades = grades.filter(grade => 
-    currentInstructor.subjects.includes(grade.subject) &&
-    currentInstructor.classes.includes(grade.class)
-  );
+  // Calcular estatísticas com dados reais
+  const totalGrades = instructorGrades.length;
+  const averageGrade = totalGrades > 0 ? 
+    instructorGrades.reduce((sum, grade) => sum + Number(grade.value), 0) / totalGrades : 0;
+  const failingGrades = instructorGrades.filter(grade => (Number(grade.value) / Number(grade.max_value)) * 100 < 60).length;
+  const subjectsCount = instructorSubjects.length;
 
-  // Calcular estatísticas
-  const totalGrades = teacherGrades.length;
-  const averageGrade = teacherGrades.length > 0 ? 
-    teacherGrades.reduce((sum, grade) => sum + grade.grade, 0) / totalGrades : 0;
-  const failingGrades = teacherGrades.filter(grade => (grade.grade / grade.maxGrade) * 100 < 60).length;
-  const subjectsCount = currentInstructor.subjects.length;
+  // Filtrar dados baseado na busca e filtros
+  const filteredGrades = instructorGrades.filter(grade => {
+    const subject = instructorSubjects.find(s => s.id === grade.subject_id);
+    const matchesSearch = searchTerm === '' || 
+      grade.student_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesClass = selectedClass === '' || 
+      (subject && instructorClasses.find(c => c.id === subject.class_id)?.name === selectedClass);
+    const matchesSubject = selectedSubject === '' || 
+      (subject && subject.name === selectedSubject);
+    
+    return matchesSearch && matchesClass && matchesSubject;
+  });
+
+  if (authLoading) {
+    return <div>Carregando...</div>;
+  }
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout userRole={profile?.role || 'teacher'} userName={profile?.name || 'Instrutor'} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>
@@ -269,34 +257,37 @@ const TeacherGrades = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentInstructor.subjects.map(subject => (
-                <div key={subject} className="space-y-3">
-                  <h4 className="font-semibold text-lg text-primary">{subject}</h4>
-                  <div className="space-y-2">
-                    {currentInstructor.classes.map(className => (
-                      <div key={`${subject}-${className}`} className="flex items-center justify-between p-3 border rounded-lg bg-card">
-                        <div>
-                          <p className="font-medium">{className}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {mockClassStudents[className as keyof typeof mockClassStudents]?.length || 0} alunos
-                          </p>
+              {instructorSubjects.map(subject => {
+                const subjectClass = instructorClasses.find(c => c.id === subject.class_id);
+                return (
+                  <div key={subject.id} className="space-y-3">
+                    <h4 className="font-semibold text-lg text-primary">{subject.name}</h4>
+                    <div className="space-y-2">
+                      {subjectClass && (
+                        <div className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                          <div>
+                            <p className="font-medium">{subjectClass.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {subjectClass.student_count || 0} alunos
+                            </p>
+                          </div>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              setSelectedClassForBatch(subjectClass.id);
+                              setSelectedSubjectForBatch(subject.id);
+                              setBatchGradeMode(true);
+                              setIsGradeFormOpen(true);
+                            }}
+                          >
+                            Lançar Notas
+                          </Button>
                         </div>
-                        <Button 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedClassForBatch(className);
-                            setSelectedSubjectForBatch(subject);
-                            setBatchGradeMode(true);
-                            setIsGradeFormOpen(true);
-                          }}
-                        >
-                          Lançar Notas
-                        </Button>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -310,16 +301,16 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Disciplinas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {currentInstructor.subjects.map(subject => (
-                    <Badge key={subject} variant="secondary">{subject}</Badge>
+                  {instructorSubjects.map(subject => (
+                    <Badge key={subject.id} variant="secondary">{subject.name}</Badge>
                   ))}
                 </div>
               </div>
               <div>
                 <h4 className="font-medium mb-2">Turmas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {currentInstructor.classes.map(className => (
-                    <Badge key={className} variant="outline">{className}</Badge>
+                  {instructorClasses.map(classItem => (
+                    <Badge key={classItem.id} variant="outline">{classItem.name}</Badge>
                   ))}
                 </div>
               </div>
@@ -347,9 +338,9 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentInstructor.classes.map((className) => (
-                    <SelectItem key={className} value={className}>
-                      {className}
+                  {instructorClasses.map((classItem) => (
+                    <SelectItem key={classItem.id} value={classItem.name}>
+                      {classItem.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -359,9 +350,9 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentInstructor.subjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
-                      {subject}
+                  {instructorSubjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.name}>
+                      {subject.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -389,34 +380,38 @@ const TeacherGrades = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {teacherGrades.map((grade) => (
-                  <TableRow key={grade.id}>
-                    <TableCell className="font-medium">{grade.studentName}</TableCell>
-                    <TableCell>{grade.studentId}</TableCell>
-                    <TableCell>{grade.class}</TableCell>
-                    <TableCell>{grade.subject}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(grade.type)}`}>
-                        {grade.type}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getGradeBadgeVariant(grade.grade, grade.maxGrade)}>
-                        {grade.grade}/{grade.maxGrade}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => openEditForm(grade)}
-                      >
-                        <Edit size={14} />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredGrades.map((grade) => {
+                  const subject = instructorSubjects.find(s => s.id === grade.subject_id);
+                  const classItem = instructorClasses.find(c => c.id === subject?.class_id);
+                  return (
+                    <TableRow key={grade.id}>
+                      <TableCell className="font-medium">Aluno {grade.student_id}</TableCell>
+                      <TableCell>{grade.student_id}</TableCell>
+                      <TableCell>{classItem?.name || 'N/A'}</TableCell>
+                      <TableCell>{subject?.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(grade.type)}`}>
+                          {grade.type}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getGradeBadgeVariant(Number(grade.value), Number(grade.max_value))}>
+                          {grade.value}/{grade.max_value}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{new Date(grade.date).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openEditForm(grade)}
+                        >
+                          <Edit size={14} />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
@@ -436,8 +431,8 @@ const TeacherGrades = () => {
             onSubmit={handleBatchGradesSubmit}
             selectedClass={selectedClassForBatch}
             selectedSubject={selectedSubjectForBatch}
-            currentUser={currentInstructor}
-            students={mockClassStudents[selectedClassForBatch as keyof typeof mockClassStudents] || []}
+            currentUser={profile}
+            students={[]}
           />
         ) : (
           <GradeForm
@@ -447,7 +442,7 @@ const TeacherGrades = () => {
             initialData={editingGrade}
             mode={editingGrade ? 'edit' : 'create'}
             userRole="teacher"
-            currentUser={currentInstructor}
+            currentUser={profile}
           />
         )}
       </div>

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, Check, X } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 const attendanceFormSchema = z.object({
@@ -37,6 +38,13 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const [loadingStudents, setLoadingStudents] = useState(false);
   const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
+  const { profile } = useAuth();
+
+  // Filtrar disciplinas apenas do instrutor logado
+  const instructorSubjects = subjects?.filter(subject => 
+    subject.teacher_id === profile?.id || 
+    profile?.instructor_subjects?.includes(subject.name)
+  ) || [];
   
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),
@@ -159,7 +167,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {subjects.map((subject) => (
+                        {instructorSubjects.map((subject) => (
                           <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
                           </SelectItem>

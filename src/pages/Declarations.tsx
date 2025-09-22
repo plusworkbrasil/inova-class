@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp } from 'lucide-react';
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
+import { StudentDeclarationForm } from '@/components/forms/StudentDeclarationForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
@@ -170,26 +171,16 @@ const Declarations = () => {
              userRole === 'instructor' ? 'Declarações das Minhas Disciplinas' : 
              'Gerenciamento de Declarações'}
           </h1>
-          {userRole === 'student' ? (
-            <div className="flex gap-2">
-              <Button 
-                className="flex items-center gap-2" 
-                onClick={() => openCreateForm('request')}
-                variant="default"
-              >
-                <Plus size={16} />
-                Solicitar Declaração
-              </Button>
-              <Button 
-                className="flex items-center gap-2" 
-                onClick={() => openCreateForm('submit')}
-                variant="outline"
-              >
-                <Upload size={16} />
-                Enviar Declaração
-              </Button>
-            </div>
-          ) : userRole !== 'instructor' && (
+           {userRole === 'student' ? (
+             <Button 
+               className="flex items-center gap-2" 
+               onClick={() => openCreateForm('request')}
+               variant="default"
+             >
+               <Plus size={16} />
+               Nova Solicitação
+             </Button>
+           ) : userRole !== 'instructor' && (
             <Button className="flex items-center gap-2" onClick={() => openCreateForm('request')}>
               <Plus size={16} />
               Nova Solicitação
@@ -375,7 +366,18 @@ const Declarations = () => {
           </CardContent>
         </Card>
         
-        {userRole !== 'instructor' && (
+        {userRole === 'student' ? (
+          <StudentDeclarationForm
+            open={isDeclarationFormOpen}
+            onOpenChange={setIsDeclarationFormOpen}
+            onSubmit={handleCreateDeclaration}
+            currentUser={{
+              id: profile?.id || '',
+              name: profile?.name || '',
+              studentId: profile?.student_id || (profile as any)?.auto_student_id?.toString() || ''
+            }}
+          />
+        ) : userRole !== 'instructor' && (
           <DeclarationForm
             open={isDeclarationFormOpen}
             onOpenChange={setIsDeclarationFormOpen}

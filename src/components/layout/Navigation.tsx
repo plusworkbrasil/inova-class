@@ -42,7 +42,6 @@ const menuItems = {
     { icon: UserX, label: 'Evasões', path: '/evasions' },
     { icon: FileText, label: 'Comunicação', path: '/communications' },
     { icon: FileText, label: 'Relatórios', path: '/reports' },
-    { icon: Shield, label: 'Segurança', path: '/security' },
     { icon: Settings, label: 'Configurações', path: '/settings' },
   ],
   coordinator: [

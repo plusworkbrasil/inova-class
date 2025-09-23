@@ -205,7 +205,7 @@ export const useUsers = () => {
   const deleteUser = async (id: string) => {
     try {
       // Call edge function with admin privileges validation
-      const { data, error } = await supabase.functions.invoke('delete-user', {
+      const { data, error } = await supabase.functions.invoke('delete-user-cascade', {
         body: { userId: id }
       });
 

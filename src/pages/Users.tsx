@@ -13,6 +13,7 @@ import { InviteStudentForm } from '@/components/forms/InviteStudentForm';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserDetailsDialog } from '@/components/ui/user-details-dialog';
 import { PasswordUpdateDialog } from '@/components/ui/password-update-dialog';
+import { BulkUserDelete } from '@/components/ui/bulk-user-delete';
 import { roleTranslations } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
@@ -168,6 +169,7 @@ const Users = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Usuários</h1>
           <div className="flex gap-2">
+            <BulkUserDelete />
             <InviteStudentForm onSubmit={handleInviteStudent} />
             <StudentForm onSubmit={handleCreateStudent} />
             <UserForm onSubmit={handleCreateUser} />

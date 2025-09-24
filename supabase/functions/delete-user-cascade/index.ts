@@ -44,9 +44,12 @@ serve(async (req) => {
       }
     )
 
-    // Validate caller
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    // Validate caller using JWT
+    const jwt = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser(jwt)
+    
     if (userError || !user) {
+      console.error('Auth validation error:', userError)
       throw new Error('Invalid or expired token')
     }
 

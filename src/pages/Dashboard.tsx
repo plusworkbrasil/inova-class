@@ -16,6 +16,8 @@ import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import StudentNotifications from '@/components/dashboard/StudentNotifications';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
+import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
 
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
@@ -43,6 +45,15 @@ const Dashboard = () => {
   const handleLogout = () => {
     navigate('/auth');
   };
+
+  // Para admin, mostrar o AdminDashboard completo
+  if (userRole === 'admin') {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <AdminDashboard />
+      </Layout>
+    );
+  }
 
   const getDashboardContent = () => {
     // Calculate real student data from database
@@ -73,6 +84,7 @@ const Dashboard = () => {
           ]
         };
       case 'teacher':
+      case 'instructor':
         return {
           title: 'Dashboard do Instrutor',
           description: 'Gerencie suas turmas e atividades',
@@ -120,14 +132,9 @@ const Dashboard = () => {
         };
       default:
         return {
-          title: 'Dashboard do Administrador',
-          description: 'Visão geral completa do sistema',
-          cards: [
-            { title: 'Total de Usuários', value: statsLoading ? '...' : stats.totalUsers.toString(), description: 'Usuários ativos' },
-            { title: 'Turmas', value: statsLoading ? '...' : stats.totalClasses.toString(), description: 'Turmas ativas' },
-            { title: 'Disciplinas', value: statsLoading ? '...' : stats.totalSubjects.toString(), description: 'Disciplinas oferecidas' },
-            { title: 'Frequência Geral', value: stats.attendanceRate, description: 'Taxa de presença dos alunos' },
-          ]
+          title: 'Dashboard',
+          description: 'Visão geral do sistema',
+          cards: []
         };
     }
   };
@@ -194,77 +201,94 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LayoutDashboard size={20} />
-              Funcionalidades Disponíveis
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {userRole === 'admin' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Usuários</Badge>
-                  <Badge variant="secondary">• Turmas</Badge>
-                  <Badge variant="secondary">• Disciplinas</Badge>
-                  <Badge variant="secondary">• Frequência</Badge>
-                  <Badge variant="secondary">• Comunicação</Badge>
-                  <Badge variant="secondary">• Relatórios</Badge>
-                  <Badge variant="secondary">• Configurações</Badge>
-                </>
-              )}
-              {userRole === 'teacher' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Chamada</Badge>
-                  <Badge variant="secondary">• Notas</Badge>
-                  <Badge variant="secondary">• Declarações</Badge>
-                </>
-              )}
-              {userRole === 'student' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Meu Perfil</Badge>
-                  <Badge variant="secondary">• Frequência</Badge>
-                  <Badge variant="secondary">• Declarações</Badge>
-                </>
-              )}
-              {userRole === 'coordinator' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Turmas</Badge>
-                  <Badge variant="secondary">• Frequência</Badge>
-                  <Badge variant="secondary">• Disciplinas</Badge>
-                  <Badge variant="secondary">• Acompanhamento</Badge>
-                  <Badge variant="secondary">• Comunicação</Badge>
-                  <Badge variant="secondary">• Relatórios</Badge>
-                </>
-              )}
-              {userRole === 'secretary' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Frequência</Badge>
-                  <Badge variant="secondary">• Declarações</Badge>
-                  <Badge variant="secondary">• Notas</Badge>
-                  <Badge variant="secondary">• Comunicação</Badge>
-                </>
-              )}
-              {userRole === 'tutor' && (
-                <>
-                  <Badge variant="secondary">• Dashboard</Badge>
-                  <Badge variant="secondary">• Frequência</Badge>
-                  <Badge variant="secondary">• Declarações</Badge>
-                  <Badge variant="secondary">• Comunicação</Badge>
-                </>
-              )}
+        {/* Birthday Card for Secretary */}
+        {userRole === 'secretary' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <LayoutDashboard size={20} />
+                    Funcionalidades Disponíveis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Badge variant="secondary">• Dashboard</Badge>
+                    <Badge variant="secondary">• Usuários</Badge>
+                    <Badge variant="secondary">• Turmas</Badge>
+                    <Badge variant="secondary">• Disciplinas</Badge>
+                    <Badge variant="secondary">• Equipamentos</Badge>
+                    <Badge variant="secondary">• Frequência</Badge>
+                    <Badge variant="secondary">• Declarações</Badge>
+                    <Badge variant="secondary">• Notas</Badge>
+                    <Badge variant="secondary">• Comunicação</Badge>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <BirthdayCard />
+            </div>
+          </div>
+        )}
+
+        {/* Original Funcionalidades Card for other roles */}
+        {userRole !== 'secretary' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <LayoutDashboard size={20} />
+                Funcionalidades Disponíveis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {(userRole === 'teacher' || userRole === 'instructor') && (
+                  <>
+                    <Badge variant="secondary">• Dashboard</Badge>
+                    <Badge variant="secondary">• Chamada</Badge>
+                    <Badge variant="secondary">• Notas</Badge>
+                    <Badge variant="secondary">• Declarações</Badge>
+                  </>
+                )}
+                {userRole === 'student' && (
+                  <>
+                    <Badge variant="secondary">• Dashboard</Badge>
+                    <Badge variant="secondary">• Meu Perfil</Badge>
+                    <Badge variant="secondary">• Frequência</Badge>
+                    <Badge variant="secondary">• Declarações</Badge>
+                  </>
+                )}
+                {userRole === 'coordinator' && (
+                  <>
+                    <Badge variant="secondary">• Dashboard</Badge>
+                    <Badge variant="secondary">• Turmas</Badge>
+                    <Badge variant="secondary">• Frequência</Badge>
+                    <Badge variant="secondary">• Disciplinas</Badge>
+                    <Badge variant="secondary">• Acompanhamento</Badge>
+                    <Badge variant="secondary">• Comunicação</Badge>
+                    <Badge variant="secondary">• Relatórios</Badge>
+                  </>
+                )}
+                {userRole === 'tutor' && (
+                  <>
+                    <Badge variant="secondary">• Dashboard</Badge>
+                    <Badge variant="secondary">• Frequência</Badge>
+                    <Badge variant="secondary">• Declarações</Badge>
+                    <Badge variant="secondary">• Comunicação</Badge>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Módulo de Avisos Completo para Alunos */}
         {userRole === 'student' && (

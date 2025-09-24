@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatsCard from './StatsCard';
+import { BirthdayCard } from './BirthdayCard';
 import { 
   Users, 
   GraduationCap, 
@@ -101,74 +102,84 @@ const AdminDashboard = () => {
         />
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Performance Chart */}
-        <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2 text-primary" />
-              Gráfico de Desempenho
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={performanceData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis yAxisId="notas" orientation="left" domain={[0, 10]} />
-                <YAxis yAxisId="faltas" orientation="right" />
-                <Tooltip />
-                <Line 
-                  yAxisId="notas" 
-                  type="monotone" 
-                  dataKey="notas" 
-                  stroke="#3B82F6" 
-                  strokeWidth={3}
-                  name="Média de Notas"
-                />
-                <Line 
-                  yAxisId="faltas" 
-                  type="monotone" 
-                  dataKey="faltas" 
-                  stroke="#EF4444" 
-                  strokeWidth={3}
-                  name="Faltas"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+      {/* Birthday Card and Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Performance Chart */}
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <TrendingUp className="w-5 h-5 mr-2 text-primary" />
+                  Gráfico de Desempenho
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={performanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis yAxisId="notas" orientation="left" domain={[0, 10]} />
+                    <YAxis yAxisId="faltas" orientation="right" />
+                    <Tooltip />
+                    <Line 
+                      yAxisId="notas" 
+                      type="monotone" 
+                      dataKey="notas" 
+                      stroke="#3B82F6" 
+                      strokeWidth={3}
+                      name="Média de Notas"
+                    />
+                    <Line 
+                      yAxisId="faltas" 
+                      type="monotone" 
+                      dataKey="faltas" 
+                      stroke="#EF4444" 
+                      strokeWidth={3}
+                      name="Faltas"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
 
-        {/* Class Distribution Chart */}
-        <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <GraduationCap className="w-5 h-5 mr-2 text-primary" />
-              Alunos por Turma
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={classDistribution}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="students"
-                  label={({ name, students }) => `${name}: ${students}`}
-                >
-                  {classDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+            {/* Class Distribution Chart */}
+            <Card className="shadow-[var(--shadow-card)]">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <GraduationCap className="w-5 h-5 mr-2 text-primary" />
+                  Alunos por Turma
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={classDistribution}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="students"
+                      label={({ name, students }) => `${name}: ${students}`}
+                    >
+                      {classDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        
+        {/* Birthday Card */}
+        <div>
+          <BirthdayCard />
+        </div>
       </div>
 
       {/* Tables Row */}

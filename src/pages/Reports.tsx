@@ -59,12 +59,8 @@ const Reports = () => {
     { name: '1º Ano C', value: 20, color: '#ff7c7c' },
   ];
 
-  const topAbsentStudents = reportsData.topAbsentStudents.length > 0 ? reportsData.topAbsentStudents : [
-    { name: 'João Silva', class: '1º Ano A', absences: 8, percentage: 20 },
-    { name: 'Maria Santos', class: '2º Ano B', absences: 7, percentage: 17.5 },
-    { name: 'Pedro Costa', class: '1º Ano A', absences: 6, percentage: 15 },
-    { name: 'Ana Oliveira', class: '3º Ano A', absences: 5, percentage: 12.5 },
-  ];
+  // Use dados reais do banco de dados
+  const topAbsentStudents = reportsData.topAbsentStudents;
 
   const evasionData = reportsData.evasionData.length > 0 ? reportsData.evasionData : [
     { name: 'Dificuldades financeiras', value: 35, color: '#ff6b6b' },
@@ -532,24 +528,41 @@ const Reports = () => {
                   </TableRow>
                 </TableHeader>
                  <TableBody>
-                   {topAbsentStudents.map((student, index) => (
-                     <TableRow key={index}>
-                       <TableCell className="font-medium">
-                         <button
-                           onClick={() => handleStudentClick(student.name)}
-                           className="text-primary hover:text-primary/80 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
-                         >
-                           {student.name}
-                           <ExternalLink size={12} />
-                         </button>
+                   {reportsLoading ? (
+                     <TableRow>
+                       <TableCell colSpan={4} className="text-center py-6">
+                         <div className="flex items-center justify-center">
+                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                           <span className="ml-2">Carregando dados...</span>
+                         </div>
                        </TableCell>
-                       <TableCell>{student.class}</TableCell>
-                       <TableCell>
-                         <Badge variant="destructive">{student.absences}</Badge>
-                       </TableCell>
-                       <TableCell>{student.percentage}%</TableCell>
                      </TableRow>
-                   ))}
+                   ) : topAbsentStudents.length > 0 ? (
+                     topAbsentStudents.map((student, index) => (
+                       <TableRow key={index}>
+                         <TableCell className="font-medium">
+                           <button
+                             onClick={() => handleStudentClick(student.name)}
+                             className="text-primary hover:text-primary/80 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+                           >
+                             {student.name}
+                             <ExternalLink size={12} />
+                           </button>
+                         </TableCell>
+                         <TableCell>{student.class}</TableCell>
+                         <TableCell>
+                           <Badge variant="destructive">{student.absences}</Badge>
+                         </TableCell>
+                         <TableCell>{student.percentage}%</TableCell>
+                       </TableRow>
+                     ))
+                   ) : (
+                     <TableRow>
+                       <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                         Nenhum dado de faltas encontrado no sistema
+                       </TableCell>
+                     </TableRow>
+                   )}
                 </TableBody>
               </Table>
             </CardContent>

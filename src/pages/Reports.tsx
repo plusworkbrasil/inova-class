@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import html2pdf from 'html2pdf.js';
 import { useReportsData } from '@/hooks/useReportsData';
+import { useReportsMetrics } from '@/hooks/useReportsMetrics';
 
 const Reports = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
@@ -20,6 +21,7 @@ const Reports = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: reportsData, loading: reportsLoading } = useReportsData();
+  const { metrics, loading: metricsLoading } = useReportsMetrics();
 
   useEffect(() => {
     // Recuperar dados do usuário do localStorage
@@ -292,10 +294,10 @@ const Reports = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total de Relatórios</p>
-                  <p className="text-3xl font-bold text-primary">24</p>
+                  <p className="text-sm font-medium text-muted-foreground">Alunos Matriculados</p>
+                  <p className="text-3xl font-bold text-primary">{metricsLoading ? '...' : metrics.studentsEnrolled}</p>
                 </div>
-                <FileText className="h-8 w-8 text-primary" />
+                <Users className="h-8 w-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -304,8 +306,8 @@ const Reports = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Frequência Média</p>
-                  <p className="text-3xl font-bold text-success">87%</p>
+                  <p className="text-sm font-medium text-muted-foreground">Alunos Frequentando</p>
+                  <p className="text-3xl font-bold text-success">{metricsLoading ? '...' : metrics.studentsAttending}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-success" />
               </div>
@@ -316,10 +318,10 @@ const Reports = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Média Geral</p>
-                  <p className="text-3xl font-bold text-info">7.8</p>
+                  <p className="text-sm font-medium text-muted-foreground">Alunos Evadidos</p>
+                  <p className="text-3xl font-bold text-destructive">{metricsLoading ? '...' : metrics.studentsEvaded}</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-info" />
+                <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
             </CardContent>
           </Card>
@@ -328,10 +330,62 @@ const Reports = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Alunos em Risco</p>
-                  <p className="text-3xl font-bold text-warning">12</p>
+                  <p className="text-sm font-medium text-muted-foreground">Média de Frequência</p>
+                  <p className="text-3xl font-bold text-info">{metricsLoading ? '...' : `${metrics.averageAttendanceRate}%`}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-info" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Média Geral das Turmas</p>
+                  <p className="text-3xl font-bold text-primary">{metricsLoading ? '...' : metrics.generalGradeAverage}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Média de Alunos por Turma</p>
+                  <p className="text-3xl font-bold text-success">{metricsLoading ? '...' : metrics.averageStudentsPerClass}</p>
+                </div>
+                <Users className="h-8 w-8 text-success" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Turma com Menos Alunos</p>
+                  <p className="text-2xl font-bold text-warning">{metricsLoading ? '...' : metrics.classWithFewerStudents.name}</p>
+                  <p className="text-sm text-muted-foreground">({metricsLoading ? '...' : metrics.classWithFewerStudents.count} alunos)</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-warning" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Turma com Mais Alunos</p>
+                  <p className="text-2xl font-bold text-info">{metricsLoading ? '...' : metrics.classWithMoreStudents.name}</p>
+                  <p className="text-sm text-muted-foreground">({metricsLoading ? '...' : metrics.classWithMoreStudents.count} alunos)</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-info" />
               </div>
             </CardContent>
           </Card>

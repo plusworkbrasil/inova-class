@@ -76,11 +76,17 @@ const Equipment = () => {
 
   const handleSubmit = async (formData: EquipmentFormData) => {
     try {
+      // Convert empty string to null for responsible_id
+      const cleanedData = {
+        ...formData,
+        responsible_id: formData.responsible_id === "" ? null : formData.responsible_id
+      };
+
       if (editingEquipment) {
-        await updateEquipment(editingEquipment.id, formData);
+        await updateEquipment(editingEquipment.id, cleanedData);
         setEditingEquipment(null);
       } else {
-        await createEquipment(formData as any);
+        await createEquipment(cleanedData as any);
         setIsCreateDialogOpen(false);
       }
       form.reset();

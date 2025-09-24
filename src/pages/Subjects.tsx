@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Edit, Trash2, BookOpen, Clock, User } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar } from 'lucide-react';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
@@ -49,7 +49,7 @@ const Subjects = () => {
 
   const handleCreateSubject = async (data: any) => {
     try {
-      await createSubject({
+      const subjectData: any = {
         name: data.name,
         code: data.code,
         teacher_id: data.teacher_id,
@@ -57,7 +57,16 @@ const Subjects = () => {
         workload: data.workload,
         description: data.description,
         status: data.status,
-      });
+      };
+
+      if (data.start_date) {
+        subjectData.start_date = data.start_date.toISOString().split('T')[0];
+      }
+      if (data.end_date) {
+        subjectData.end_date = data.end_date.toISOString().split('T')[0];
+      }
+
+      await createSubject(subjectData);
       
       toast({
         title: "Disciplina criada com sucesso!",
@@ -72,7 +81,7 @@ const Subjects = () => {
     if (!editingSubject) return;
     
     try {
-      await updateSubject(editingSubject.id, {
+      const updateData: any = {
         name: subjectData.name,
         code: subjectData.code,
         teacher_id: subjectData.teacher_id,
@@ -80,7 +89,16 @@ const Subjects = () => {
         workload: subjectData.workload,
         description: subjectData.description,
         status: subjectData.status,
-      });
+      };
+
+      if (subjectData.start_date) {
+        updateData.start_date = subjectData.start_date.toISOString().split('T')[0];
+      }
+      if (subjectData.end_date) {
+        updateData.end_date = subjectData.end_date.toISOString().split('T')[0];
+      }
+
+      await updateSubject(editingSubject.id, updateData);
       
       setEditingSubject(null);
       toast({
@@ -214,7 +232,8 @@ const Subjects = () => {
                 <TableRow>
                   <TableHead>Disciplina</TableHead>
                   <TableHead>Instrutor</TableHead>
-                  <TableHead>Turma</TableHead>
+                  <TableHead>Turmas</TableHead>
+                  <TableHead>Período</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Ações</TableHead>
                 </TableRow>
@@ -222,12 +241,45 @@ const Subjects = () => {
               <TableBody>
                 {filteredSubjects.map((subject) => (
                   <TableRow key={subject.id}>
-                     <TableCell className="font-medium">{subject.name}</TableCell>
+                     <TableCell className="font-medium">
+                       <div>
+                         <p className="font-medium">{subject.name}</p>
+                         {subject.code && (
+                           <p className="text-sm text-muted-foreground">{subject.code}</p>
+                         )}
+                       </div>
+                     </TableCell>
                      <TableCell>{getTeacherName(subject.teacher_id)}</TableCell>
                      <TableCell>
-                       <Badge variant="outline" className="text-xs">
-                         {getClassName(subject.class_id)}
-                       </Badge>
+                       <div className="space-y-1">
+                         <Badge variant="outline" className="text-xs">
+                           {getClassName(subject.class_id)}
+                         </Badge>
+                         {subject.class_id && (
+                           <div className="text-xs text-muted-foreground">
+                             <Clock className="w-3 h-3 inline mr-1" />
+                             {subject.workload}h
+                           </div>
+                         )}
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       <div className="space-y-1">
+                         {(subject as any).start_date && (
+                           <div className="text-xs flex items-center">
+                             <Calendar className="w-3 h-3 mr-1" />
+                             {new Date((subject as any).start_date).toLocaleDateString('pt-BR')}
+                           </div>
+                         )}
+                         {(subject as any).end_date && (
+                           <div className="text-xs text-muted-foreground">
+                             até {new Date((subject as any).end_date).toLocaleDateString('pt-BR')}
+                           </div>
+                         )}
+                         {!(subject as any).start_date && !(subject as any).end_date && (
+                           <span className="text-xs text-muted-foreground">Não definido</span>
+                         )}
+                       </div>
                      </TableCell>
                      <TableCell>
                        <Badge variant={subject.status === 'ativo' ? 'default' : 'secondary'}>

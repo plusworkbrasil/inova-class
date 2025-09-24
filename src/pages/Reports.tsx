@@ -34,42 +34,12 @@ const Reports = () => {
     }
   }, []);
   
-  // Use real data or fallback to mock data
-  const attendanceData = reportsData.attendanceByMonth.length > 0 ? reportsData.attendanceByMonth : [
-    { month: 'Jan', presente: 85, falta: 15 },
-    { month: 'Fev', presente: 88, falta: 12 },
-    { month: 'Mar', presente: 82, falta: 18 },
-    { month: 'Abr', presente: 90, falta: 10 },
-    { month: 'Mai', presente: 87, falta: 13 },
-    { month: 'Jun', presente: 89, falta: 11 },
-  ];
-
-  const gradeData = reportsData.gradesBySubject.length > 0 ? reportsData.gradesBySubject : [
-    { subject: 'Matemática', average: 7.5 },
-    { subject: 'Português', average: 8.2 },
-    { subject: 'História', average: 7.8 },
-    { subject: 'Geografia', average: 8.0 },
-    { subject: 'Ciências', average: 7.3 },
-  ];
-
-  const classDistribution = reportsData.classDistribution.length > 0 ? reportsData.classDistribution : [
-    { name: '1º Ano A', value: 28, color: '#8884d8' },
-    { name: '2º Ano B', value: 32, color: '#82ca9d' },
-    { name: '3º Ano A', value: 25, color: '#ffc658' },
-    { name: '1º Ano C', value: 20, color: '#ff7c7c' },
-  ];
-
   // Use dados reais do banco de dados
+  const attendanceData = reportsData.attendanceByMonth;
+  const gradeData = reportsData.gradesBySubject;
+  const classDistribution = reportsData.classDistribution;
   const topAbsentStudents = reportsData.topAbsentStudents;
-
-  const evasionData = reportsData.evasionData.length > 0 ? reportsData.evasionData : [
-    { name: 'Dificuldades financeiras', value: 35, color: '#ff6b6b' },
-    { name: 'Problemas familiares', value: 20, color: '#4ecdc4' },
-    { name: 'Mudança de cidade/estado', value: 15, color: '#45b7d1' },
-    { name: 'Falta de interesse no curso', value: 12, color: '#96ceb4' },
-    { name: 'Problemas de saúde', value: 8, color: '#feca57' },
-    { name: 'Outros', value: 10, color: '#fd9644' },
-  ];
+  const evasionData = reportsData.evasionData;
 
   const generateCSV = (data: any[], filename: string) => {
     const headers = Object.keys(data[0]).join(',');
@@ -393,16 +363,27 @@ const Reports = () => {
               <CardTitle>Frequência por Mês</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={attendanceData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="presente" fill="hsl(var(--success))" />
-                  <Bar dataKey="falta" fill="hsl(var(--destructive))" />
-                </BarChart>
-              </ResponsiveContainer>
+              {reportsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2">Carregando dados...</span>
+                </div>
+              ) : attendanceData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={attendanceData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="presente" fill="hsl(var(--success))" />
+                    <Bar dataKey="falta" fill="hsl(var(--destructive))" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                  Nenhum dado de frequência encontrado
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -411,15 +392,26 @@ const Reports = () => {
               <CardTitle>Média de Notas por Disciplina</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={gradeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="subject" />
-                  <YAxis domain={[0, 10]} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="average" stroke="hsl(var(--primary))" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
+              {reportsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2">Carregando dados...</span>
+                </div>
+              ) : gradeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={gradeData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="subject" />
+                    <YAxis domain={[0, 10]} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="average" stroke="hsl(var(--primary))" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                  Nenhum dado de notas encontrado
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -430,24 +422,35 @@ const Reports = () => {
               <CardTitle>Distribuição de Alunos por Turma</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={classDistribution}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label
-                  >
-                    {classDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {reportsLoading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                  <span className="ml-2">Carregando dados...</span>
+                </div>
+              ) : classDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={classDistribution}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label
+                    >
+                      {classDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                  Nenhum dado de distribuição de turmas encontrado
+                </div>
+              )}
             </CardContent>
             <div className="p-4 border-t">
               <Button 

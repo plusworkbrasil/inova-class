@@ -158,6 +158,11 @@ export const useUsers = () => {
         Object.entries(updates).filter(([_, value]) => value !== undefined)
       );
 
+      // Compatibilidade: manter 'photo' sincronizado com 'avatar'
+      if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'avatar') && !Object.prototype.hasOwnProperty.call(cleanUpdates, 'photo')) {
+        (cleanUpdates as any).photo = (cleanUpdates as any).avatar ?? null;
+      }
+
       console.log('Updating user with data:', cleanUpdates);
 
       const { data, error } = await supabase

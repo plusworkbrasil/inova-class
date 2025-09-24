@@ -50,7 +50,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   trigger
 }) => {
   const [open, setOpen] = React.useState(false);
-  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(initialData?.avatar || null);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(initialData?.avatar || (initialData as any)?.photo || null);
   const [isLoadingCep, setIsLoadingCep] = React.useState(false);
   const { data: classes, loading: loadingClasses } = useSupabaseClasses();
   
@@ -140,7 +140,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   // Reset avatar when dialog opens
   React.useEffect(() => {
     if (open) {
-      setAvatarUrl(initialData?.avatar || null);
+      setAvatarUrl(initialData?.avatar || (initialData as any)?.photo || null);
     }
   }, [open, initialData?.avatar]);
 

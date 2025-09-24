@@ -40,12 +40,6 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
   const { profile } = useAuth();
 
-  // Filtrar disciplinas apenas do instrutor logado
-  const instructorSubjects = subjects?.filter(subject => 
-    subject.teacher_id === profile?.id || 
-    profile?.instructor_subjects?.includes(subject.name)
-  ) || [];
-  
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),
     defaultValues: {
@@ -54,6 +48,20 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       date: new Date().toISOString().split('T')[0],
     },
   });
+
+  // Filtrar disciplinas pela turma selecionada
+  const selectedClassId = form.watch('classId');
+  const classSubjects = subjects?.filter(subject => {
+    // Para admin/secretary: mostrar todas as disciplinas da turma
+    if (profile?.role === 'admin' || profile?.role === 'secretary') {
+      return subject.class_id === selectedClassId;
+    }
+    // Para instructors: apenas disciplinas que eles ministram na turma selecionada
+    return subject.class_id === selectedClassId && (
+      subject.teacher_id === profile?.id || 
+      profile?.instructor_subjects?.includes(subject.name)
+    );
+  }) || [];
 
   // Buscar alunos da turma selecionada
   const fetchStudentsFromClass = async (classId: string) => {
@@ -81,6 +89,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     const classId = form.watch('classId');
     if (classId) {
       fetchStudentsFromClass(classId);
+      // Reset subject selection when class changes
+      form.setValue('subjectId', '');
     } else {
       setStudents([]);
     }
@@ -135,7 +145,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Turma</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione a turma" />
@@ -160,14 +170,24 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Disciplina</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={!selectedClassId || classSubjects.length === 0}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a disciplina" />
+                          <SelectValue placeholder={
+                            !selectedClassId 
+                              ? "Selecione uma turma primeiro" 
+                              : classSubjects.length === 0 
+                                ? "Nenhuma disciplina disponível"
+                                : "Selecione a disciplina"
+                          } />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {instructorSubjects.map((subject) => (
+                        {classSubjects.map((subject) => (
                           <SelectItem key={subject.id} value={subject.id}>
                             {subject.name}
                           </SelectItem>

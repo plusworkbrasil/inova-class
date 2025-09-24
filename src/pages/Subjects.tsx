@@ -15,6 +15,7 @@ import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
+import { cn } from '@/lib/utils';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -45,6 +46,34 @@ const Subjects = () => {
     if (!classId) return 'Sem turma';
     const classItem = classes.find(cls => cls.id === classId);
     return classItem?.name || 'Não encontrada';
+  };
+
+  // Função para agrupar disciplinas por turma
+  const getSubjectsByClass = () => {
+    const subjectsByClass: Record<string, any[]> = {};
+    
+    filteredSubjects.forEach(subject => {
+      const className = getClassName(subject.class_id);
+      if (!subjectsByClass[className]) {
+        subjectsByClass[className] = [];
+      }
+      subjectsByClass[className].push(subject);
+    });
+    
+    return subjectsByClass;
+  };
+
+  // Função para verificar se a disciplina está ativa no momento
+  const isSubjectActive = (subject: any) => {
+    const now = new Date();
+    const startDate = (subject as any).start_date ? new Date((subject as any).start_date) : null;
+    const endDate = (subject as any).end_date ? new Date((subject as any).end_date) : null;
+    
+    if (!startDate && !endDate) return subject.status === 'ativo';
+    if (!startDate) return now <= endDate && subject.status === 'ativo';
+    if (!endDate) return now >= startDate && subject.status === 'ativo';
+    
+    return now >= startDate && now <= endDate && subject.status === 'ativo';
   };
 
   const handleCreateSubject = async (data: any) => {
@@ -181,13 +210,12 @@ const Subjects = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Disciplinas Ativas</p>
-                  <p className="text-3xl font-bold text-success">{subjects.length}</p>
+                  <p className="text-3xl font-bold text-success">{subjects.filter(s => s.status === 'ativo').length}</p>
                 </div>
                 <BookOpen className="h-8 w-8 text-success" />
               </div>
             </CardContent>
           </Card>
-          
           
           <Card>
             <CardContent className="p-6">
@@ -201,6 +229,111 @@ const Subjects = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Disciplinas por Curso/Turma
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Object.entries(getSubjectsByClass()).map(([className, classSubjects]) => (
+                <div key={className} className="border rounded-lg p-4 bg-card">
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Badge variant="outline" className="text-sm">
+                      {className}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      ({classSubjects.length} disciplina{classSubjects.length !== 1 ? 's' : ''})
+                    </span>
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {classSubjects.map((subject) => (
+                      <div 
+                        key={subject.id} 
+                        className={cn(
+                          "border rounded-md p-3 bg-background transition-colors",
+                          isSubjectActive(subject) 
+                            ? "border-success bg-success/5" 
+                            : "border-border"
+                        )}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-medium text-sm">{subject.name}</h4>
+                          <Badge 
+                            variant={isSubjectActive(subject) ? "default" : "secondary"}
+                          >
+                            {isSubjectActive(subject) ? "Ativo" : "Inativo"}
+                          </Badge>
+                        </div>
+                        
+                        {subject.code && (
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Código: {subject.code}
+                          </p>
+                        )}
+                        
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-1">
+                            <User className="w-3 h-3" />
+                            <span>{getTeacherName(subject.teacher_id)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{subject.workload}h de carga horária</span>
+                          </div>
+                          
+                          <div className="space-y-1 mt-2">
+                            {(subject as any).start_date && (
+                              <div className="flex items-center gap-1 text-success">
+                                <Calendar className="w-3 h-3" />
+                                <span>
+                                  Início: {new Date((subject as any).start_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {(subject as any).end_date && (
+                              <div className="flex items-center gap-1 text-warning">
+                                <Calendar className="w-3 h-3" />
+                                <span>
+                                  Término: {new Date((subject as any).end_date).toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {!(subject as any).start_date && !(subject as any).end_date && (
+                              <div className="text-muted-foreground">
+                                Período não definido
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {classSubjects.length === 0 && (
+                    <p className="text-muted-foreground text-sm text-center py-4">
+                      Nenhuma disciplina encontrada para esta turma
+                    </p>
+                  )}
+                </div>
+              ))}
+              
+              {Object.keys(getSubjectsByClass()).length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Nenhuma disciplina cadastrada ainda</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

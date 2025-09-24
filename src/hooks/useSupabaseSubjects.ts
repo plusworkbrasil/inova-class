@@ -28,7 +28,19 @@ export const useSupabaseSubjects = () => {
       
       const { data: subjects, error } = await supabase
         .from('subjects')
-        .select('*')
+        .select(`
+          id,
+          name,
+          code,
+          teacher_id,
+          class_id,
+          workload,
+          description,
+          status,
+          created_at,
+          updated_at
+        `)
+        .eq('status', 'ativo')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

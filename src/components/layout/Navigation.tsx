@@ -95,6 +95,14 @@ const menuItems = {
     label: 'Usuários',
     path: '/users'
   }, {
+    icon: GraduationCap,
+    label: 'Turmas',
+    path: '/classes'
+  }, {
+    icon: BookOpen,
+    label: 'Disciplinas',
+    path: '/subjects'
+  }, {
     icon: Monitor,
     label: 'Equipamentos',
     path: '/equipment'

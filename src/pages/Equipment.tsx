@@ -17,6 +17,8 @@ import { Plus, Search, Edit, Trash2, Loader2, Users } from 'lucide-react';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { EquipmentAllocationDialog } from '@/components/ui/equipment-allocation-dialog';
 import { EquipmentAllocationsView } from '@/components/ui/equipment-allocations-view';
+import Layout from '@/components/layout/Layout';
+import { useAuth } from '@/hooks/useAuth';
 
 const equipmentSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -37,6 +39,7 @@ const equipmentSchema = z.object({
 type EquipmentFormData = z.infer<typeof equipmentSchema>;
 
 const Equipment = () => {
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState<any | null>(null);
@@ -44,6 +47,9 @@ const Equipment = () => {
   const [selectedEquipmentForAllocation, setSelectedEquipmentForAllocation] = useState<any | null>(null);
   
   const { data, loading, createEquipment, updateEquipment, deleteEquipment } = useEquipment();
+
+  const userRole = profile?.role || 'admin';
+  const userName = profile?.name || 'Usuário';
 
   const form = useForm<EquipmentFormData>({
     resolver: zodResolver(equipmentSchema),
@@ -159,23 +165,33 @@ const Equipment = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center min-h-[200px]">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle>Gerenciamento de Equipamentos</CardTitle>
-              <CardDescription>
-                Gerencie os equipamentos e suas alocações
-              </CardDescription>
-            </div>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
+      <div className="space-y-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Equipamentos</h1>
+            <p className="text-muted-foreground">Gerencie os equipamentos e suas alocações</p>
+          </div>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Equipamentos</CardTitle>
+                <CardDescription>
+                  Cadastre e gerencie equipamentos do sistema
+                </CardDescription>
+              </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -631,7 +647,8 @@ const Equipment = () => {
         onOpenChange={setAllocationDialogOpen}
         selectedEquipment={selectedEquipmentForAllocation}
       />
-    </div>
+      </div>
+    </Layout>
   );
 };
 

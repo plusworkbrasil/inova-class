@@ -287,11 +287,13 @@ export type Database = {
         Row: {
           brand: string | null
           created_at: string
+          description: string | null
           id: string
           location: string | null
           model: string | null
           name: string
           observations: string | null
+          patrimonio: string | null
           purchase_date: string | null
           responsible_id: string | null
           serial_number: string | null
@@ -303,11 +305,13 @@ export type Database = {
         Insert: {
           brand?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           location?: string | null
           model?: string | null
           name: string
           observations?: string | null
+          patrimonio?: string | null
           purchase_date?: string | null
           responsible_id?: string | null
           serial_number?: string | null
@@ -319,11 +323,13 @@ export type Database = {
         Update: {
           brand?: string | null
           created_at?: string
+          description?: string | null
           id?: string
           location?: string | null
           model?: string | null
           name?: string
           observations?: string | null
+          patrimonio?: string | null
           purchase_date?: string | null
           responsible_id?: string | null
           serial_number?: string | null
@@ -333,6 +339,73 @@ export type Database = {
           warranty_date?: string | null
         }
         Relationships: []
+      }
+      equipment_allocations: {
+        Row: {
+          allocated_at: string
+          allocated_by: string
+          created_at: string
+          date: string
+          equipment_id: string
+          id: string
+          observations: string | null
+          returned_at: string | null
+          shift: Database["public"]["Enums"]["shift_type"]
+          status: Database["public"]["Enums"]["allocation_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_at?: string
+          allocated_by: string
+          created_at?: string
+          date?: string
+          equipment_id: string
+          id?: string
+          observations?: string | null
+          returned_at?: string | null
+          shift: Database["public"]["Enums"]["shift_type"]
+          status?: Database["public"]["Enums"]["allocation_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_at?: string
+          allocated_by?: string
+          created_at?: string
+          date?: string
+          equipment_id?: string
+          id?: string
+          observations?: string | null
+          returned_at?: string | null
+          shift?: Database["public"]["Enums"]["shift_type"]
+          status?: Database["public"]["Enums"]["allocation_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_allocations_allocated_by_fkey"
+            columns: ["allocated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_allocations_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_allocations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       evasions: {
         Row: {
@@ -906,6 +979,7 @@ export type Database = {
       }
     }
     Enums: {
+      allocation_status: "ativo" | "finalizado" | "cancelado"
       app_role:
         | "admin"
         | "secretary"
@@ -914,6 +988,7 @@ export type Database = {
         | "teacher"
         | "coordinator"
         | "tutor"
+      shift_type: "manha" | "tarde" | "noite"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1041,6 +1116,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      allocation_status: ["ativo", "finalizado", "cancelado"],
       app_role: [
         "admin",
         "secretary",
@@ -1050,6 +1126,7 @@ export const Constants = {
         "coordinator",
         "tutor",
       ],
+      shift_type: ["manha", "tarde", "noite"],
     },
   },
 } as const

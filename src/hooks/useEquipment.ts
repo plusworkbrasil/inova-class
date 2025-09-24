@@ -6,6 +6,8 @@ export interface Equipment {
   id: string;
   name: string;
   type: string;
+  patrimonio?: string;
+  description?: string;
   brand?: string;
   model?: string;
   serial_number?: string;

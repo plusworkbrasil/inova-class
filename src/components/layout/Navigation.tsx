@@ -37,6 +37,7 @@ const menuItems = {
     { icon: Users, label: 'Usuários', path: '/users' },
     { icon: GraduationCap, label: 'Turmas', path: '/classes' },
     { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+    { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
     { icon: UserX, label: 'Evasões', path: '/evasions' },
@@ -55,6 +56,7 @@ const menuItems = {
   ],
   secretary: [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
     { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
     { icon: BookOpen, label: 'Notas', path: '/grades' },
     { icon: FileText, label: 'Declarações', path: '/declarations' },

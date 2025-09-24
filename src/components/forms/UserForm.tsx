@@ -129,7 +129,7 @@ export const UserForm: React.FC<UserFormProps> = ({
   };
 
   const handleSubmit = (data: UserFormValues) => {
-    onSubmit({ ...data, avatar: avatarUrl || undefined });
+    onSubmit({ ...data, avatar: avatarUrl === null ? null : avatarUrl });
     setOpen(false);
     if (mode === 'create') {
       form.reset();

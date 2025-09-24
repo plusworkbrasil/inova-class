@@ -94,7 +94,7 @@ export const useUsers = () => {
               neighborhood: userData.neighborhood,
               city: userData.city,
               state: userData.state,
-              class_id: userData.class_id,
+              class_id: userData.class_id && userData.class_id !== "" ? userData.class_id : null,
               cpf: userData.cpf,
               full_name: userData.full_name,
               avatar: userData.avatar,
@@ -161,6 +161,11 @@ export const useUsers = () => {
       // Compatibilidade: manter 'photo' sincronizado com 'avatar'
       if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'avatar') && !Object.prototype.hasOwnProperty.call(cleanUpdates, 'photo')) {
         (cleanUpdates as any).photo = (cleanUpdates as any).avatar ?? null;
+      }
+
+      // Normalizar strings vazias para null em campos específicos (ex.: UUID)
+      if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'class_id') && (cleanUpdates as any).class_id === '') {
+        (cleanUpdates as any).class_id = null;
       }
 
       console.log('Updating user with data:', cleanUpdates);

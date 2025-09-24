@@ -91,6 +91,10 @@ const menuItems = {
     label: 'Dashboard',
     path: '/'
   }, {
+    icon: Users,
+    label: 'Usuários',
+    path: '/users'
+  }, {
     icon: Monitor,
     label: 'Equipamentos',
     path: '/equipment'

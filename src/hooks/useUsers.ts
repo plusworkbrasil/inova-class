@@ -152,9 +152,10 @@ export const useUsers = () => {
 
   const updateUser = async (id: string, updates: Partial<User>) => {
     try {
-      // Remove campos undefined/null para evitar problemas
+      // Remove apenas campos undefined para evitar problemas
+      // Mantém null para permitir limpeza de campos como avatar
       const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== null)
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
       );
 
       console.log('Updating user with data:', cleanUpdates);

@@ -237,7 +237,10 @@ const Users = () => {
                         </Button>
                         <UserForm 
                           onSubmit={(userData) => handleEditUser(userData, user.id)}
-                          initialData={user}
+                          initialData={{
+                            ...user,
+                            birth_date: user.birth_date ? new Date(user.birth_date) : undefined
+                          } as any}
                           mode="edit"
                           trigger={
                             <Button variant="outline" size="sm">

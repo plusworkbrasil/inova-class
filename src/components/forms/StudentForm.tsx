@@ -40,8 +40,13 @@ const studentSchema = z.object({
 
 type StudentFormData = z.infer<typeof studentSchema>;
 
+type StudentSubmissionData = Omit<StudentFormData, 'birth_date'> & {
+  birth_date?: string;
+  photo?: string;
+};
+
 interface StudentFormProps {
-  onSubmit?: (data: StudentFormData & { photo?: string; birth_date?: Date }) => void;
+  onSubmit?: (data: StudentSubmissionData) => void;
   trigger?: React.ReactNode;
 }
 
@@ -144,7 +149,12 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
   };
 
   const handleSubmit = (data: StudentFormData) => {
-    onSubmit?.({ ...data, photo: photoPreview });
+    const submissionData = {
+      ...data,
+      photo: photoPreview,
+      birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : undefined
+    };
+    onSubmit?.(submissionData);
     setOpen(false);
     form.reset();
     setPhotoPreview('');

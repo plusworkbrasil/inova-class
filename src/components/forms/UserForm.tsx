@@ -42,9 +42,14 @@ const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
 
 type UserFormValues = z.infer<ReturnType<typeof createUserFormSchema>>;
 
+type UserSubmissionData = Omit<UserFormValues, 'birth_date'> & {
+  birth_date?: string;
+  avatar?: string;
+};
+
 interface UserFormProps {
-  onSubmit: (data: UserFormValues & { avatar?: string; birth_date?: Date }) => void;
-  initialData?: Partial<UserFormValues & { id?: string; avatar?: string; birth_date?: Date }>;
+  onSubmit: (data: UserSubmissionData) => void;
+  initialData?: Partial<UserFormValues & { id?: string; avatar?: string; birth_date?: string }>;
   mode?: 'create' | 'edit';
   trigger?: React.ReactNode;
 }
@@ -136,7 +141,12 @@ export const UserForm: React.FC<UserFormProps> = ({
   };
 
   const handleSubmit = (data: UserFormValues) => {
-    onSubmit({ ...data, avatar: avatarUrl === null ? null : avatarUrl });
+    const submissionData = {
+      ...data,
+      avatar: avatarUrl === null ? null : avatarUrl,
+      birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : undefined
+    };
+    onSubmit(submissionData);
     setOpen(false);
     if (mode === 'create') {
       form.reset();

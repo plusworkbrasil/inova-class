@@ -856,6 +856,10 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: boolean
       }
+      can_access_sensitive_fields: {
+        Args: { target_user_id: string }
+        Returns: boolean
+      }
       detect_suspicious_activity: {
         Args: Record<PropertyKey, never>
         Returns: {

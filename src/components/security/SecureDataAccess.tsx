@@ -69,21 +69,39 @@ export const SecureDataAccess = ({ userId, children }: SecureDataAccessProps) =>
     if (!profile?.id || !accessedFields.length) return;
     
     try {
-      // Filter medical fields for specific logging
-      const medicalFields = accessedFields.filter(field => 
-        ['medical_info', 'allergies', 'medical_conditions', 'medications', 'blood_type', 'health_insurance'].includes(field)
-      );
-
-      // Use enhanced audit logging with IP capture
-      if (medicalFields.length > 0) {
-        await logEnhancedAudit('VIEW_MEDICAL', 'profiles', userId, medicalFields);
+      // Enhanced security: Check if user has permission to access these fields
+      const hasPermission = await supabase.rpc('can_access_sensitive_fields', {
+        target_user_id: userId
+      });
+      
+      if (!hasPermission.data) {
+        // Log unauthorized access attempt
+        await logEnhancedAudit('UNAUTHORIZED_ACCESS_ATTEMPT', 'profiles', userId, accessedFields);
+        throw new Error('Unauthorized access to sensitive data');
       }
 
-      // Log all field access
-      await logEnhancedAudit('VIEW_PROFILE', 'profiles', userId, accessedFields);
+      // Filter sensitive fields for enhanced logging
+      const sensitiveFields = accessedFields.filter(field => 
+        ['cpf', 'rg', 'medical_info', 'allergies', 'medical_conditions', 'medications', 'blood_type', 'health_insurance', 'phone', 'emergency_contact_phone', 'guardian_phone', 'parent_phone'].includes(field)
+      );
+
+      // Use enhanced audit logging with IP capture for sensitive fields
+      if (sensitiveFields.length > 0) {
+        await logEnhancedAudit('VIEW_SENSITIVE_DATA', 'profiles', userId, sensitiveFields);
+      }
+
+      // Log all field access with regular priority
+      if (accessedFields.length !== sensitiveFields.length) {
+        const regularFields = accessedFields.filter(field => !sensitiveFields.includes(field));
+        await logEnhancedAudit('VIEW_PROFILE', 'profiles', userId, regularFields);
+      }
       
     } catch (error) {
       console.error('Failed to log sensitive data access:', error);
+      // Re-throw security errors
+      if (error instanceof Error && error.message.includes('Unauthorized')) {
+        throw error;
+      }
     }
   }, [profile?.id, userId, logEnhancedAudit]);
 

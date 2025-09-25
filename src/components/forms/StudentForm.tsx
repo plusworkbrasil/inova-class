@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,10 +11,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Plus } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { cn } from '@/lib/utils';
 
 const studentSchema = z.object({
   fullName: z.string().min(2, 'Nome completo é obrigatório'),
@@ -21,6 +26,7 @@ const studentSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   class_id: z.string().optional(),
+  birth_date: z.date().optional(),
   parentName: z.string().min(2, 'Nome dos pais é obrigatório'),
   escolaridade: z.string().min(1, 'Escolaridade é obrigatória'),
   cep: z.string().regex(/^\d{5}-\d{3}$/, 'CEP deve ter o formato 00000-000'),
@@ -35,7 +41,7 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 interface StudentFormProps {
-  onSubmit?: (data: StudentFormData & { photo?: string }) => void;
+  onSubmit?: (data: StudentFormData & { photo?: string; birth_date?: Date }) => void;
   trigger?: React.ReactNode;
 }
 
@@ -54,6 +60,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       email: '',
       password: '',
       class_id: '',
+      birth_date: undefined,
       parentName: '',
       escolaridade: '',
       cep: '',
@@ -297,6 +304,45 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="birth_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

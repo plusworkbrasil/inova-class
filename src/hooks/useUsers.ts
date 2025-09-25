@@ -8,6 +8,7 @@ export interface User {
   email: string;
   role: 'admin' | 'secretary' | 'instructor' | 'student' | 'teacher' | 'coordinator' | 'tutor';
   phone?: string;
+  birth_date?: Date | string;
   cep?: string;
   street?: string;
   number?: string;
@@ -87,6 +88,7 @@ export const useUsers = () => {
               name: userData.name,
               role: userData.role,
               phone: userData.phone,
+              birth_date: userData.birth_date,
               cep: userData.cep,
               street: userData.street,
               number: userData.number,

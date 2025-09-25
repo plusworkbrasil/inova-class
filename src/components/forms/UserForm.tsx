@@ -2,11 +2,15 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { AvatarUpload } from '@/components/ui/avatar-upload';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Upload } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { cn } from '@/lib/utils';
 
 const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -24,6 +29,7 @@ const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   role: z.string().min(1, 'Perfil é obrigatório'),
   class_id: z.string().optional(),
   phone: z.string().optional(),
+  birth_date: z.date().optional(),
   status: z.string().min(1, 'Status é obrigatório'),
   cep: z.string().optional().refine((val) => !val || /^\d{5}-\d{3}$/.test(val), 'CEP deve ter o formato 00000-000'),
   street: z.string().optional(),
@@ -37,8 +43,8 @@ const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
 type UserFormValues = z.infer<ReturnType<typeof createUserFormSchema>>;
 
 interface UserFormProps {
-  onSubmit: (data: UserFormValues & { avatar?: string }) => void;
-  initialData?: Partial<UserFormValues & { id?: string; avatar?: string }>;
+  onSubmit: (data: UserFormValues & { avatar?: string; birth_date?: Date }) => void;
+  initialData?: Partial<UserFormValues & { id?: string; avatar?: string; birth_date?: Date }>;
   mode?: 'create' | 'edit';
   trigger?: React.ReactNode;
 }
@@ -63,6 +69,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       role: initialData?.role || '',
       class_id: initialData?.class_id || '',
       phone: initialData?.phone || '',
+      birth_date: initialData?.birth_date ? new Date(initialData.birth_date) : undefined,
       status: initialData?.status || 'ativo',
       cep: initialData?.cep || '',
       street: initialData?.street || '',
@@ -243,6 +250,45 @@ export const UserForm: React.FC<UserFormProps> = ({
                         maxLength={15}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="birth_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className={cn("p-3 pointer-events-auto")}
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

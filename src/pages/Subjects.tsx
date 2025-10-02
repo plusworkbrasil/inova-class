@@ -258,11 +258,14 @@ const Subjects = () => {
                           "border rounded-md p-3 bg-background transition-colors",
                           isSubjectActive(subject) 
                             ? "border-success bg-success/5" 
-                            : "border-border"
+                            : "border-border opacity-60 grayscale"
                         )}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-medium text-sm">{subject.name}</h4>
+                          <h4 className={cn(
+                            "font-medium text-sm",
+                            !isSubjectActive(subject) && "text-muted-foreground"
+                          )}>{subject.name}</h4>
                           <Badge 
                             variant={isSubjectActive(subject) ? "default" : "secondary"}
                           >
@@ -373,7 +376,12 @@ const Subjects = () => {
               </TableHeader>
               <TableBody>
                 {filteredSubjects.map((subject) => (
-                  <TableRow key={subject.id}>
+                  <TableRow 
+                    key={subject.id}
+                    className={cn(
+                      !isSubjectActive(subject) && "opacity-60 text-muted-foreground"
+                    )}
+                  >
                      <TableCell className="font-medium">
                        <div>
                          <p className="font-medium">{subject.name}</p>

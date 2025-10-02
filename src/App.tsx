@@ -25,6 +25,7 @@ import Security from "./pages/Security";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Notices from "./pages/Notices";
+import InstructorSubjects from "./pages/InstructorSubjects";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/student-grades" element={<StudentGrades />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notices" element={<Notices />} />
+          <Route path="/instructor-subjects" element={<InstructorSubjects />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

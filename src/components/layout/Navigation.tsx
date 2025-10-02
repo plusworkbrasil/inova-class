@@ -166,8 +166,12 @@ const menuItems = {
     label: 'Dashboard',
     path: '/'
   }, {
+    icon: BookOpen,
+    label: 'Minhas Disciplinas',
+    path: '/instructor-subjects'
+  }, {
     icon: ClipboardCheck,
-    label: 'Chamada',
+    label: 'Frequência',
     path: '/attendance'
   }, {
     icon: BookOpen,

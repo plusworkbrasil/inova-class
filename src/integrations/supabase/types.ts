@@ -883,6 +883,17 @@ export type Database = {
           student_id: string
         }[]
       }
+      get_instructor_subjects: {
+        Args: { instructor_id: string }
+        Returns: {
+          class_id: string
+          class_name: string
+          id: string
+          name: string
+          student_count: number
+          teacher_id: string
+        }[]
+      }
       get_instructor_viewable_student_data: {
         Args: { target_student_id: string }
         Returns: {
@@ -945,6 +956,10 @@ export type Database = {
       get_user_role: {
         Args: { user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      instructor_can_access_subject: {
+        Args: { instructor_id: string; subject_id: string }
+        Returns: boolean
       }
       instructor_can_view_student: {
         Args: { target_student_id: string }

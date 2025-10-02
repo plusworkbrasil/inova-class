@@ -11,6 +11,8 @@ export interface Subject {
   workload?: number;
   description?: string;
   status: string;
+  start_date?: string;
+  end_date?: string;
   created_at: string;
   updated_at: string;
 }
@@ -37,10 +39,11 @@ export const useSupabaseSubjects = () => {
           workload,
           description,
           status,
+          start_date,
+          end_date,
           created_at,
           updated_at
         `)
-        .eq('status', 'ativo')
         .order('created_at', { ascending: false });
 
       if (error) throw error;

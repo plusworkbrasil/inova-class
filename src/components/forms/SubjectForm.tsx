@@ -58,7 +58,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
 
   // Filter users to only show instructors/teachers
   const availableTeachers = users.filter(user => 
-    user.role === 'instructor' || user.role === 'teacher'
+    user.role === 'instructor'
   );
 
   const form = useForm<SubjectFormValues>({

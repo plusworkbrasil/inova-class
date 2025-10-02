@@ -111,7 +111,6 @@ export const BirthdayCard: React.FC = () => {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'student': return '👨‍🎓';
-      case 'teacher': 
       case 'instructor': return '👨‍🏫';
       case 'admin': return '👨‍💼';
       case 'secretary': return '👩‍💼';
@@ -195,7 +194,7 @@ export const BirthdayCard: React.FC = () => {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {person.role === 'student' ? 'Aluno' : 
-                       person.role === 'teacher' || person.role === 'instructor' ? 'Instrutor' :
+                       person.role === 'instructor' ? 'Instrutor' :
                        person.role === 'admin' ? 'Administrador' :
                        person.role === 'secretary' ? 'Secretaria' :
                        person.role === 'coordinator' ? 'Coordenador' :

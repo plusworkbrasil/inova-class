@@ -140,7 +140,7 @@ const Users = () => {
     switch (role) {
       case 'admin': return 'destructive';
       case 'coordinator': return 'default';
-      case 'teacher': return 'secondary';
+      case 'instructor': return 'secondary';
       case 'secretary': return 'outline';
       case 'tutor': return 'secondary';
       case 'student': return 'outline';

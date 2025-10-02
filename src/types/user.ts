@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'secretary' | 'instructor' | 'student' | 'teacher' | 'coordinator' | 'tutor';
+export type UserRole = 'admin' | 'secretary' | 'instructor' | 'student' | 'coordinator' | 'tutor';
 
 export interface User {
   id: string;
@@ -41,7 +41,7 @@ export interface Student extends User {
 }
 
 export interface Teacher extends User {
-  role: 'teacher';
+  role: 'instructor';
   teacherId: string;
   subjects: string[];
   classes: string[];

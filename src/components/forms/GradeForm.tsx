@@ -70,7 +70,7 @@ export const GradeForm: React.FC<GradeFormProps> = ({
   const students = users.filter(user => user.role === 'student');
 
   // Filtrar professores/instrutores
-  const teachers = users.filter(user => ['teacher', 'instructor'].includes(user.role));
+  const teachers = users.filter(user => user.role === 'instructor');
 
   // Encontrar a turma do estudante selecionado
   const getStudentClass = (studentId: string) => {

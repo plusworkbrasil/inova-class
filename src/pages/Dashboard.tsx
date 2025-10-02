@@ -83,7 +83,6 @@ const Dashboard = () => {
             { title: 'Faltas', value: totalAbsences.toString(), description: 'Total no período' },
           ]
         };
-      case 'teacher':
       case 'instructor':
         return {
           title: 'Dashboard do Instrutor',
@@ -250,7 +249,7 @@ const Dashboard = () => {
                 Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {(userRole === 'teacher' || userRole === 'instructor') && (
+                {userRole === 'instructor' && (
                   <>
                     <Badge variant="secondary">• Dashboard</Badge>
                     <Badge variant="secondary">• Chamada</Badge>

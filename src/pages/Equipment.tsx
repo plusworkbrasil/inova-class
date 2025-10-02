@@ -48,7 +48,8 @@ const Equipment = () => {
   
   const { data, loading, createEquipment, updateEquipment, deleteEquipment } = useEquipment();
 
-  const userRole = profile?.role || 'admin';
+  // Map database role to application role (handle legacy 'teacher' role)
+  const userRole = (profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'admin';
   const userName = profile?.name || 'Usuário';
 
   const form = useForm<EquipmentFormData>({

@@ -36,7 +36,7 @@ const Grades = () => {
   const [editingGrade, setEditingGrade] = useState<any>(null);
 
   // Verificar permissões de acesso
-  const canManageGrades = ['admin', 'secretary', 'instructor', 'teacher'].includes(userRole);
+  const canManageGrades = ['admin', 'secretary', 'instructor'].includes(userRole);
 
   if (!canManageGrades) {
     return (

@@ -5,7 +5,6 @@ export const roleTranslations: Record<UserRole, string> = {
   coordinator: 'Coordenador',
   secretary: 'Secretaria',
   tutor: 'Tutor',
-  teacher: 'Instrutor',
   student: 'Aluno',
   instructor: 'Instrutor'
 };

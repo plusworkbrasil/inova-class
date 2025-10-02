@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -64,22 +64,51 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectFormSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      code: initialData?.code || '',
-      teacher_id: initialData?.teacher_id || '',
-      class_id: initialData?.class_id || '',
-      workload: initialData?.workload || 40,
-      description: initialData?.description || '',
-      status: initialData?.status || 'ativo',
-      start_date: initialData?.start_date ? new Date(initialData.start_date) : undefined,
-      end_date: initialData?.end_date ? new Date(initialData.end_date) : undefined,
+      name: '',
+      code: '',
+      teacher_id: '',
+      class_id: '',
+      workload: 40,
+      description: '',
+      status: 'ativo',
+      start_date: undefined,
+      end_date: undefined,
     },
   });
+
+  // Atualizar formulário quando initialData mudar (modo edição)
+  useEffect(() => {
+    if (open && initialData) {
+      form.reset({
+        name: initialData.name || '',
+        code: initialData.code || '',
+        teacher_id: initialData.teacher_id || '',
+        class_id: initialData.class_id || '',
+        workload: initialData.workload || 40,
+        description: initialData.description || '',
+        status: initialData.status || 'ativo',
+        start_date: initialData.start_date ? new Date(initialData.start_date) : undefined,
+        end_date: initialData.end_date ? new Date(initialData.end_date) : undefined,
+      });
+    } else if (open && !initialData) {
+      // Resetar para valores padrão quando criar novo
+      form.reset({
+        name: '',
+        code: '',
+        teacher_id: '',
+        class_id: '',
+        workload: 40,
+        description: '',
+        status: 'ativo',
+        start_date: undefined,
+        end_date: undefined,
+      });
+    }
+  }, [open, initialData, form]);
 
   const handleSubmit = (data: SubjectFormValues) => {
     onSubmit(data);
     onOpenChange(false);
-    form.reset();
   };
 
 
@@ -131,7 +160,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Instrutor</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione o instrutor" />
@@ -276,7 +305,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Turma</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione a turma" />
@@ -301,7 +330,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o status" />

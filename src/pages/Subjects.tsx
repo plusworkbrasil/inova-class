@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
@@ -74,6 +76,19 @@ const Subjects = () => {
     if (!endDate) return now >= startDate && subject.status === 'ativo';
     
     return now >= startDate && now <= endDate && subject.status === 'ativo';
+  };
+
+  // Função para verificar se a disciplina termina em 5 dias ou menos
+  const isSubjectEndingSoon = (subject: any) => {
+    if (!isSubjectActive(subject)) return false;
+    
+    const endDate = (subject as any).end_date ? new Date((subject as any).end_date) : null;
+    if (!endDate) return false;
+    
+    const now = new Date();
+    const daysUntilEnd = differenceInDays(endDate, now);
+    
+    return daysUntilEnd >= 0 && daysUntilEnd <= 5;
   };
 
   const handleCreateSubject = async (data: any) => {
@@ -262,10 +277,24 @@ const Subjects = () => {
                         )}
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className={cn(
-                            "font-medium text-sm",
-                            !isSubjectActive(subject) && "text-muted-foreground"
-                          )}>{subject.name}</h4>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className={cn(
+                              "font-medium text-sm",
+                              !isSubjectActive(subject) && "text-muted-foreground"
+                            )}>{subject.name}</h4>
+                            {isSubjectEndingSoon(subject) && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Disciplina termina em {differenceInDays(new Date((subject as any).end_date), new Date())} dia(s)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                           <Badge 
                             variant={isSubjectActive(subject) ? "default" : "secondary"}
                           >
@@ -423,9 +452,23 @@ const Subjects = () => {
                        </div>
                      </TableCell>
                      <TableCell>
-                       <Badge variant={subject.status === 'ativo' ? 'default' : 'secondary'}>
-                         {subject.status === 'ativo' ? 'Ativo' : 'Inativo'}
-                       </Badge>
+                       <div className="flex items-center gap-2">
+                         <Badge variant={subject.status === 'ativo' ? 'default' : 'secondary'}>
+                           {subject.status === 'ativo' ? 'Ativo' : 'Inativo'}
+                         </Badge>
+                         {isSubjectEndingSoon(subject) && (
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger>
+                                 <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
+                               </TooltipTrigger>
+                               <TooltipContent>
+                                 <p>Termina em {differenceInDays(new Date((subject as any).end_date), new Date())} dia(s)</p>
+                               </TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         )}
+                       </div>
                      </TableCell>
                     <TableCell>
                       <div className="flex gap-2">

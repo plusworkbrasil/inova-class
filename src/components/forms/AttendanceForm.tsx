@@ -14,6 +14,7 @@ import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getTodayInBrasilia, toBrasiliaDate } from '@/lib/utils';
+import { useInstructorClasses } from '@/hooks/useInstructorClasses';
 
 const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
@@ -37,9 +38,15 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
   const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string}>>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const { data: classes, loading: loadingClasses } = useSupabaseClasses();
-  const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
   const { profile } = useAuth();
+  
+  // Usar hook apropriado baseado no role
+  const { data: allClasses } = useSupabaseClasses();
+  const { classes: instructorClasses } = useInstructorClasses();
+  const { data: subjects } = useSupabaseSubjects();
+  
+  // Selecionar turmas baseado no role do usuário
+  const classes = profile?.role === 'instructor' ? instructorClasses : allClasses;
 
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),

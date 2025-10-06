@@ -15,6 +15,7 @@ import { UserRole } from '@/types/user';
 import { useSupabaseAttendance, type Attendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
+import { toBrasiliaDate } from '@/lib/utils';
 
 
 const Attendance = () => {
@@ -40,13 +41,16 @@ const Attendance = () => {
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
+      // Converter a data para o timezone de Brasília antes de salvar
+      const brasiliaDate = toBrasiliaDate(data.date);
+      
       // Criar registros de frequência no banco de dados
       for (const student of data.attendance) {
         await createAttendance({
           student_id: student.studentId,
           class_id: data.classId,
           subject_id: data.subjectId,
-          date: data.date,
+          date: brasiliaDate,
           is_present: student.isPresent,
           justification: student.isPresent ? null : 'Falta não justificada'
         });

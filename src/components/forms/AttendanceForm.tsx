@@ -13,6 +13,7 @@ import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { getTodayInBrasilia, toBrasiliaDate } from '@/lib/utils';
 
 const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
@@ -45,7 +46,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     defaultValues: {
       classId: '',
       subjectId: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayInBrasilia(),
     },
   });
 
@@ -106,6 +107,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const handleSubmit = (data: AttendanceFormValues) => {
     const attendanceData = {
       ...data,
+      date: toBrasiliaDate(data.date), // Converter data para timezone de Brasília
       attendance: students.map(student => ({
         studentId: student.id,
         studentName: student.name,
@@ -115,7 +117,11 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     
     onSubmit(attendanceData);
     onOpenChange(false);
-    form.reset();
+    form.reset({
+      classId: '',
+      subjectId: '',
+      date: getTodayInBrasilia(),
+    });
     setStudentAttendance({});
     setStudents([]);
   };

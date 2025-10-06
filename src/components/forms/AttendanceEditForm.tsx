@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Save, X } from "lucide-react";
 import { Attendance } from "@/hooks/useSupabaseAttendance";
 import { useForm } from "react-hook-form";
+import { toBrasiliaDate } from "@/lib/utils";
 
 interface AttendanceEditFormProps {
   open: boolean;
@@ -40,10 +41,13 @@ export function AttendanceEditForm({ open, onOpenChange, attendance, onSave }: A
     
     setLoading(true);
     try {
+      // Converter data para timezone de Brasília
+      const brasiliaDate = toBrasiliaDate(data.date);
+      
       await onSave(attendance.id, {
         is_present: data.is_present,
         justification: data.is_present ? null : (data.justification || 'Falta não justificada'),
-        date: data.date
+        date: brasiliaDate
       });
       onOpenChange(false);
       reset();

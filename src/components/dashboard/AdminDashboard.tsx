@@ -6,7 +6,9 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
 import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const {
     stats,
     loading: statsLoading
@@ -23,7 +25,14 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground mt-1">Visão geral do sistema acadêmico</p>
         </div>
         <div className="flex space-x-2 mt-4 md:mt-0">
-          
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/class-timeline')}
+            className="flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            Visão de Turmas
+          </Button>
         </div>
       </div>
 

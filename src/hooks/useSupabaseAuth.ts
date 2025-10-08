@@ -15,7 +15,6 @@ interface Profile {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'secretary' | 'instructor' | 'student' | 'teacher' | 'coordinator' | 'tutor';
   student_id?: string;
   class_id?: string;
   instructor_subjects?: string[];
@@ -34,7 +33,7 @@ interface Profile {
 
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<(Profile & { role?: string }) | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -50,7 +49,18 @@ export const useSupabaseAuth = () => {
         throw error;
       }
 
-      return data;
+      if (!data) return null;
+
+      // Fetch role from user_roles table using RPC
+      const { data: roleData, error: roleError } = await supabase
+        .rpc('get_user_role', { user_id: userId });
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+      }
+
+      // Merge profile with role
+      return { ...data, role: roleData || 'student' };
     } catch (err: any) {
       console.error('Error fetching profile:', err);
       return null;

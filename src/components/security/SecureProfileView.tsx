@@ -10,7 +10,7 @@ interface SecureProfileData {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role?: string;
   phone?: string;
   avatar?: string;
   cpf?: string;

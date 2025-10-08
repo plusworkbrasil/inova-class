@@ -41,16 +41,25 @@ export const BirthdayCard: React.FC = () => {
 
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, name, avatar, birth_date, role')
+        .select('id, name, avatar, birth_date')
         .not('birth_date', 'is', null);
 
       if (error) throw error;
+
+      // Fetch roles for all profiles
+      const profilesWithRoles = await Promise.all(
+        (profiles || []).map(async (profile) => {
+          const { data: roleData } = await supabase
+            .rpc('get_user_role', { user_id: profile.id });
+          return { ...profile, role: roleData || 'student' };
+        })
+      );
 
       // Filter people with birthdays this week
       const currentYear = today.getFullYear();
       const weekBirthdays: BirthdayPerson[] = [];
 
-      profiles?.forEach(person => {
+      profilesWithRoles?.forEach(person => {
         if (person.birth_date) {
           const birthDate = new Date(person.birth_date);
           const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());

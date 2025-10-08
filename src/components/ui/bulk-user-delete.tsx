@@ -56,14 +56,19 @@ export const BulkUserDelete = () => {
 
       const { data: profiles, error } = await supabase
         .from('profiles')
-        .select('id, email, name, role')
+        .select('id, email, name')
         .in('email', emails);
 
       if (error) throw error;
 
-      // Check for users with related data
+      // Fetch roles and check for users with related data
       const usersWithData = await Promise.all(
-        profiles?.map(async (profile) => {
+        (profiles || []).map(async (profile) => {
+          // Fetch role
+          const { data: roleData } = await supabase
+            .rpc('get_user_role', { user_id: profile.id });
+          
+          // Check for related data
           const [attendance, grades, evasions, declarations] = await Promise.all([
             supabase.from('attendance').select('id', { count: 'exact' }).eq('student_id', profile.id),
             supabase.from('grades').select('id', { count: 'exact' }).eq('student_id', profile.id),
@@ -79,9 +84,10 @@ export const BulkUserDelete = () => {
 
           return {
             ...profile,
+            role: roleData || 'student',
             hasData
           };
-        }) || []
+        })
       );
 
       setUsers(usersWithData);

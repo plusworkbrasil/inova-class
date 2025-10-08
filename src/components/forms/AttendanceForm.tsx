@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, Check, X, CheckCheck, XCircle, RotateCcw } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Calendar, Users, Check, X, CheckCheck, XCircle, RotateCcw, FileText } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +22,7 @@ const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
   subjectId: z.string().min(1, 'Disciplina é obrigatória'),
   date: z.string().min(1, 'Data é obrigatória'),
+  dailyActivity: z.string().optional(),
 });
 
 type AttendanceFormValues = z.infer<typeof attendanceFormSchema>;
@@ -134,7 +137,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const handleSubmit = (data: AttendanceFormValues) => {
     const attendanceData = {
       ...data,
-      date: toBrasiliaDate(data.date), // Converter data para timezone de Brasília
+      date: toBrasiliaDate(data.date),
+      dailyActivity: data.dailyActivity,
       attendance: students.map(student => ({
         studentId: student.id,
         studentName: student.name,
@@ -148,6 +152,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       classId: '',
       subjectId: '',
       date: getTodayInBrasilia(),
+      dailyActivity: '',
     });
     setStudentAttendance({});
     setStudents([]);

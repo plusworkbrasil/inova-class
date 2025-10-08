@@ -12,10 +12,24 @@ export interface Attendance {
   justification?: string;
   created_at: string;
   updated_at: string;
+  daily_activity?: string;
   // Joined data
   student_name?: string;
   class_name?: string;
   subject_name?: string;
+}
+
+export interface GroupedAttendance {
+  date: string;
+  subject_id: string;
+  subject_name?: string;
+  class_id: string;
+  class_name?: string;
+  daily_activity?: string;
+  total_students: number;
+  present_count: number;
+  absent_count: number;
+  records: Attendance[];
 }
 
 export const useSupabaseAttendance = () => {
@@ -134,6 +148,83 @@ export const useSupabaseAttendance = () => {
     }
   };
 
+  const createBatchAttendance = async (
+    attendanceRecords: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>[],
+    dailyActivity?: string
+  ) => {
+    try {
+      const recordsWithActivity = attendanceRecords.map(record => ({
+        ...record,
+        daily_activity: dailyActivity || null
+      }));
+
+      const { error } = await supabase
+        .from('attendance')
+        .insert(recordsWithActivity);
+
+      if (error) throw error;
+
+      await fetchAttendance();
+      return { success: true };
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const checkDuplicateAttendance = async (
+    classId: string,
+    subjectId: string,
+    date: string
+  ): Promise<boolean> => {
+    try {
+      const { data: existingRecords, error } = await supabase
+        .from('attendance')
+        .select('id')
+        .eq('class_id', classId)
+        .eq('subject_id', subjectId)
+        .eq('date', date)
+        .limit(1);
+
+      if (error) throw error;
+      return (existingRecords && existingRecords.length > 0) || false;
+    } catch (err: any) {
+      console.error('Error checking duplicate attendance:', err);
+      return false;
+    }
+  };
+
+  const getGroupedAttendance = (): GroupedAttendance[] => {
+    const grouped = data.reduce((acc, record) => {
+      const key = `${record.date}-${record.subject_id}-${record.class_id}`;
+      if (!acc[key]) {
+        acc[key] = {
+          date: record.date,
+          subject_id: record.subject_id,
+          subject_name: record.subject_name,
+          class_id: record.class_id,
+          class_name: record.class_name,
+          daily_activity: record.daily_activity,
+          total_students: 0,
+          present_count: 0,
+          absent_count: 0,
+          records: []
+        };
+      }
+      acc[key].total_students++;
+      if (record.is_present) {
+        acc[key].present_count++;
+      } else {
+        acc[key].absent_count++;
+      }
+      acc[key].records.push(record);
+      return acc;
+    }, {} as Record<string, GroupedAttendance>);
+
+    return Object.values(grouped).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  };
+
   useEffect(() => {
     fetchAttendance();
   }, []);
@@ -145,6 +236,9 @@ export const useSupabaseAttendance = () => {
     refetch: fetchAttendance,
     createAttendance,
     updateAttendance,
-    deleteAttendance
+    deleteAttendance,
+    createBatchAttendance,
+    checkDuplicateAttendance,
+    getGroupedAttendance
   };
 };

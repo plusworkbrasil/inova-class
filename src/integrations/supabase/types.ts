@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           class_id: string
           created_at: string
+          daily_activity: string | null
           date: string
           id: string
           is_present: boolean
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           class_id: string
           created_at?: string
+          daily_activity?: string | null
           date: string
           id?: string
           is_present: boolean
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           class_id?: string
           created_at?: string
+          daily_activity?: string | null
           date?: string
           id?: string
           is_present?: boolean

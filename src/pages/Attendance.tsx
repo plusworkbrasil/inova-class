@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, UserX, Calendar, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, FileText } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
 import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
+import { AttendanceGroupDetailsDialog } from '@/components/ui/attendance-group-details-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
-import { useSupabaseAttendance, type Attendance } from '@/hooks/useSupabaseAttendance';
+import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
 import { toBrasiliaDate } from '@/lib/utils';
@@ -26,10 +27,21 @@ const Attendance = () => {
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [groupDetailsOpen, setGroupDetailsOpen] = useState(false);
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupedAttendance | null>(null);
   const { toast } = useToast();
   const { user, profile } = useAuth();
-  const { data: attendanceData, loading: attendanceLoading, createAttendance, updateAttendance, refetch } = useSupabaseAttendance();
+  const { 
+    data: attendanceData, 
+    loading: attendanceLoading, 
+    createAttendance, 
+    updateAttendance, 
+    refetch,
+    createBatchAttendance,
+    checkDuplicateAttendance,
+    getGroupedAttendance
+  } = useSupabaseAttendance();
   const { data: classes } = useSupabaseClasses();
 
   useEffect(() => {
@@ -41,27 +53,43 @@ const Attendance = () => {
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
-      // Converter a data para o timezone de Brasília antes de salvar
       const brasiliaDate = toBrasiliaDate(data.date);
       
-      // Criar registros de frequência no banco de dados
-      for (const student of data.attendance) {
-        await createAttendance({
-          student_id: student.studentId,
-          class_id: data.classId,
-          subject_id: data.subjectId,
-          date: brasiliaDate,
-          is_present: student.isPresent,
-          justification: student.isPresent ? null : 'Falta não justificada'
+      // Verificar duplicação
+      const isDuplicate = await checkDuplicateAttendance(
+        data.classId,
+        data.subjectId,
+        brasiliaDate
+      );
+      
+      if (isDuplicate) {
+        toast({
+          variant: "destructive",
+          title: "Chamada já registrada!",
+          description: "Já existe uma chamada registrada para esta turma, disciplina e data. Use 'Alterar Chamada' para modificar.",
         });
+        return;
       }
       
+      // Preparar registros em lote
+      const attendanceRecords = data.attendance.map((student: any) => ({
+        student_id: student.studentId,
+        class_id: data.classId,
+        subject_id: data.subjectId,
+        date: brasiliaDate,
+        is_present: student.isPresent,
+        justification: student.isPresent ? null : 'Falta não justificada'
+      }));
+      
+      // Salvar em lote
+      await createBatchAttendance(attendanceRecords, data.dailyActivity);
+      
       toast({
-        title: "Chamada registrada com sucesso!",
+        title: "✅ Chamada registrada com sucesso!",
         description: `Frequência registrada para ${data.attendance.length} alunos.`,
       });
       
-      // Atualizar dados
+      setIsAttendanceFormOpen(false);
       refetch();
     } catch (error) {
       toast({
@@ -89,12 +117,27 @@ const Attendance = () => {
         title: "Frequência atualizada!",
         description: "O registro foi atualizado com sucesso.",
       });
+      setEditDialogOpen(false);
+      setGroupDetailsOpen(false);
+      refetch();
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro ao atualizar",
         description: "Ocorreu um erro ao atualizar a frequência.",
       });
+    }
+  };
+
+  const handleViewGroupDetails = (group: GroupedAttendance) => {
+    setSelectedGroup(group);
+    setGroupDetailsOpen(true);
+  };
+
+  const handleEditFromGroup = (attendanceId: string) => {
+    const attendance = attendanceData.find(a => a.id === attendanceId);
+    if (attendance) {
+      handleEditAttendance(attendance);
     }
   };
 
@@ -174,6 +217,7 @@ const Attendance = () => {
   };
 
   const filteredRecords = getFilteredData();
+  const groupedRecords = userRole !== 'student' ? getGroupedAttendance() : [];
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -300,75 +344,127 @@ const Attendance = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {userRole !== 'student' && <TableHead>Aluno</TableHead>}
-                  <TableHead>Turma</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Disciplina</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Justificativa</TableHead>
-                  {userRole !== 'student' && <TableHead>Ações</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {attendanceLoading ? (
+            {userRole === 'student' ? (
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={userRole === 'student' ? 5 : 6} className="text-center">
-                      Carregando registros de frequência...
-                    </TableCell>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Disciplina</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Justificativa</TableHead>
                   </TableRow>
-                ) : filteredRecords.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={userRole === 'student' ? 5 : 6} className="text-center">
-                      Nenhum registro de frequência encontrado.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredRecords.map((record) => (
-                    <TableRow key={record.id}>
-                     {userRole !== 'student' && <TableCell className="font-medium">{record.student_name || 'Aluno não encontrado'}</TableCell>}
-                      <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
-                      <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
-                      <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
-                      <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
-                      <TableCell>
-                        {record.justification ? (
-                          <Badge variant="outline" title={record.justification}>
-                            Com justificativa
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline">-</Badge>
-                        )}
+                </TableHeader>
+                <TableBody>
+                  {attendanceLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">
+                        Carregando registros de frequência...
                       </TableCell>
-                      {userRole !== 'student' && (
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              title="Visualizar chamada"
-                              onClick={() => handleViewAttendance(record)}
-                            >
-                              <Search size={14} />
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              title="Editar"
-                              onClick={() => handleEditAttendance(record)}
-                            >
-                              <Edit size={14} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : filteredRecords.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center">
+                        Nenhum registro de frequência encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredRecords.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
+                        <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
+                        <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
+                        <TableCell>
+                          {record.justification ? (
+                            <Badge variant="outline" title={record.justification}>
+                              Com justificativa
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline">-</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Turma</TableHead>
+                    <TableHead>Disciplina</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Presentes</TableHead>
+                    <TableHead>Ausentes</TableHead>
+                    <TableHead>Atividade</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {attendanceLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center">
+                        Carregando registros de frequência...
+                      </TableCell>
+                    </TableRow>
+                  ) : groupedRecords.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center">
+                        Nenhum registro de frequência encontrado.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    groupedRecords.map((group) => (
+                      <TableRow key={`${group.date}-${group.subject_id}-${group.class_id}`}>
+                        <TableCell>{new Date(group.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{group.class_name}</TableCell>
+                        <TableCell>{group.subject_name}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{group.total_students}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="default" className="bg-green-600">
+                            {group.present_count}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="destructive">
+                            {group.absent_count}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {group.daily_activity ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleViewGroupDetails(group)}
+                            >
+                              <FileText size={14} className="mr-1" />
+                              Ver
+                            </Button>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleViewGroupDetails(group)}
+                          >
+                            <Users size={14} className="mr-1" />
+                            Ver Alunos
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
         
@@ -391,6 +487,13 @@ const Attendance = () => {
               onOpenChange={setEditDialogOpen}
               attendance={selectedAttendance}
               onSave={handleUpdateAttendance}
+            />
+            
+            <AttendanceGroupDetailsDialog
+              open={groupDetailsOpen}
+              onOpenChange={setGroupDetailsOpen}
+              group={selectedGroup}
+              onEdit={handleEditFromGroup}
             />
           </>
         )}

@@ -32,10 +32,14 @@ const Dashboard = () => {
   const userName = profile?.name || 'Admin';
 
   useEffect(() => {
-    // Só redireciona se não estiver carregando E não estiver autenticado
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth', { replace: true });
-    }
+    const checkAuth = async () => {
+      // Só redireciona se não estiver carregando E não estiver autenticado
+      if (!authLoading && !isAuthenticated) {
+        navigate('/auth', { replace: true });
+      }
+    };
+    
+    checkAuth();
   }, [authLoading, isAuthenticated, navigate]);
 
   const handleChangeUser = () => {

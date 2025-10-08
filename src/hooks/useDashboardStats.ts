@@ -33,6 +33,15 @@ export const useDashboardStats = () => {
       setLoading(true);
       setError(null);
 
+      // Verificar se há sessão ativa antes de buscar dados
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.warn('No active session, skipping stats fetch');
+        setLoading(false);
+        return;
+      }
+
       let totalUsers = 0;
       let totalStudents = 0;
       let totalTeachers = 0;
@@ -163,6 +172,12 @@ export const useDashboardStats = () => {
       });
     } catch (err: any) {
       console.warn('Error fetching dashboard stats:', err);
+      
+      // Detectar erros de autenticação e limpar sessão
+      if (err?.code === 'PGRST301' || err?.message?.includes('JWT') || err?.message?.includes('session')) {
+        console.warn('Auth error detected, clearing session');
+        await supabase.auth.signOut();
+      }
     } finally {
       setLoading(false);
     }

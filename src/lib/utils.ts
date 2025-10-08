@@ -10,6 +10,12 @@ export function cn(...inputs: ClassValue[]) {
  * e retorna no formato YYYY-MM-DD para armazenamento no banco
  */
 export function toBrasiliaDate(date: Date | string): string {
+  // Se já for string no formato YYYY-MM-DD (de input date), retornar diretamente
+  // para evitar problemas com interpretação UTC
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
   // Formatar a data no timezone de Brasília
@@ -29,5 +35,12 @@ export function toBrasiliaDate(date: Date | string): string {
  * Retorna a data atual no timezone de Brasília no formato YYYY-MM-DD
  */
 export function getTodayInBrasilia(): string {
-  return toBrasiliaDate(new Date());
+  const now = new Date();
+  const brasiliaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+  
+  const year = brasiliaDate.getFullYear();
+  const month = String(brasiliaDate.getMonth() + 1).padStart(2, '0');
+  const day = String(brasiliaDate.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
 }

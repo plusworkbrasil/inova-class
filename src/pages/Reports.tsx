@@ -23,7 +23,16 @@ const Reports = () => {
   const { data: reportsData, loading: reportsLoading } = useReportsData();
   const { metrics, loading: metricsLoading } = useReportsMetrics();
 
-  // Removed localStorage role storage for security
+  useEffect(() => {
+    // Recuperar dados do usuário do localStorage
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
   
   // Use dados reais do banco de dados
   const attendanceData = reportsData.attendanceByMonth;

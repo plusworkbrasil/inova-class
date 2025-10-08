@@ -44,20 +44,11 @@ export const useUsers = () => {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false});
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // Fetch roles for all users
-      const usersWithRoles = await Promise.all(
-        (data || []).map(async (user) => {
-          const { data: roleData } = await supabase
-            .rpc('get_user_role', { user_id: user.id });
-          return { ...user, role: roleData || 'student' };
-        })
-      );
-      
-      setUsers(usersWithRoles as User[]);
+      setUsers(data || []);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching users:', err);

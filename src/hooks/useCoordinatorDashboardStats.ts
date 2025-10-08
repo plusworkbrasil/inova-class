@@ -40,15 +40,13 @@ export const useCoordinatorDashboardStats = () => {
 
       if (classesError) throw classesError;
 
-      // Buscar total de instrutores - using user_roles table
-      const { data: instructorRoles, error: instructorsError } = await supabase
-        .from('user_roles')
-        .select('user_id')
+      // Buscar total de instrutores
+      const { data: instructors, error: instructorsError } = await supabase
+        .from('profiles')
+        .select('id')
         .eq('role', 'instructor');
 
       if (instructorsError) throw instructorsError;
-      
-      const instructors = instructorRoles || [];
 
       // Calcular frequência média
       const { data: attendanceData, error: attendanceError } = await supabase

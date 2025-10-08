@@ -186,8 +186,8 @@ const TeacherGrades = () => {
 
   return (
     <Layout 
-      userRole={((profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'instructor') as UserRole}
-      userName={profile?.name || 'Instrutor'}
+      userRole={(profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'instructor'} 
+      userName={profile?.name || 'Instrutor'} 
       userAvatar=""
     >
       <div className="space-y-6">

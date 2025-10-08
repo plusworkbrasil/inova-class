@@ -43,24 +43,14 @@ export const useInstructorDashboardStats = () => {
       // Count unique classes
       const myClasses = classIds.length;
 
-      // Count students in instructor's classes - join with user_roles
-      const { data: studentProfiles, error: studentsError } = await supabase
+      // Count students in instructor's classes
+      const { count: studentsCount, error: studentsError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('*', { count: 'exact', head: true })
+        .eq('role', 'student')
         .in('class_id', classIds.length > 0 ? classIds : ['00000000-0000-0000-0000-000000000000']);
 
       if (studentsError) throw studentsError;
-
-      // Filter students by role using user_roles
-      let studentsCount = 0;
-      if (studentProfiles && studentProfiles.length > 0) {
-        const { count } = await supabase
-          .from('user_roles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'student')
-          .in('user_id', studentProfiles.map(p => p.id));
-        studentsCount = count || 0;
-      }
 
       // Calculate pending attendance (classes without attendance records in last 7 days)
       const sevenDaysAgo = new Date();

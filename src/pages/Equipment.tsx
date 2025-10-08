@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { UserRole } from '@/types/user';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -50,7 +49,7 @@ const Equipment = () => {
   const { data, loading, createEquipment, updateEquipment, deleteEquipment } = useEquipment();
 
   // Map database role to application role (handle legacy 'teacher' role)
-  const userRole = ((profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'admin') as UserRole;
+  const userRole = (profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'admin';
   const userName = profile?.name || 'Usuário';
 
   const form = useForm<EquipmentFormData>({

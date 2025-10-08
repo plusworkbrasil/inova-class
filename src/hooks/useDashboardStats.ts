@@ -40,17 +40,17 @@ export const useDashboardStats = () => {
 
       if (usersError) throw usersError;
 
-      // Buscar total de estudantes - using user_roles table
+      // Buscar total de estudantes
       const { count: totalStudents, error: studentsError } = await supabase
-        .from('user_roles')
+        .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('role', 'student');
 
       if (studentsError) throw studentsError;
 
-      // Buscar total de professores/instrutores - using user_roles table
+      // Buscar total de professores/instrutores
       const { count: totalTeachers, error: teachersError } = await supabase
-        .from('user_roles')
+        .from('profiles')
         .select('*', { count: 'exact', head: true })
         .in('role', ['teacher', 'instructor']);
 

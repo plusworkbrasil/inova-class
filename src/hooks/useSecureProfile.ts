@@ -52,10 +52,6 @@ export const useSecureProfile = (userId?: string) => {
       if (fetchError) throw fetchError;
 
       if (data) {
-        // Fetch role
-        const { data: roleData } = await supabase
-          .rpc('get_user_role', { user_id: targetUserId });
-
         // Check permissions and filter sensitive data
         const canViewPersonal = await supabase.rpc('can_access_personal_data', {
           target_user_id: targetUserId
@@ -68,7 +64,6 @@ export const useSecureProfile = (userId?: string) => {
         // Filter data based on permissions
         const filteredData = {
           ...data,
-          role: roleData || 'student',
           cpf: canViewPersonal.data ? data.cpf : null,
           rg: canViewPersonal.data ? data.rg : null,
           birth_date: canViewPersonal.data ? data.birth_date : null,

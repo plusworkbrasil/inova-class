@@ -35,7 +35,13 @@ const Notices = () => {
     expires_at: ''
   });
 
-  // Removed localStorage role storage for security
+  useEffect(() => {
+    const storedRole = localStorage.getItem('user_role') as UserRole;
+    const storedName = localStorage.getItem('user_name');
+    
+    if (storedRole) setUserRole(storedRole);
+    if (storedName) setUserName(storedName);
+  }, []);
 
   // Filtrar apenas avisos da secretaria (baseado no role do autor atual)
   const secretaryNotices = communications?.filter(comm => 

@@ -69,7 +69,15 @@ const Communications = () => {
   const { stats: commStats } = useCommunicationsStats();
   const { students: realStudents, classes: realClasses } = useRealRecipients();
 
-  // Removed localStorage role storage for security
+  useEffect(() => {
+    const savedRole = localStorage.getItem('userRole') as UserRole;
+    const savedName = localStorage.getItem('userName');
+    
+    if (savedRole && savedName) {
+      setUserRole(savedRole);
+      setUserName(savedName);
+    }
+  }, []);
 
   const handleStudentSelection = (studentId: string, checked: boolean) => {
     if (checked) {

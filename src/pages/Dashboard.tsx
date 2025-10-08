@@ -152,16 +152,19 @@ const Dashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">{content.title}</h1>
             <p className="text-muted-foreground">{content.description}</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleChangeUser} className="flex items-center gap-2">
-              <RefreshCw size={16} />
-              Trocar Usuário
-            </Button>
-            <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-              <LogOut size={16} />
-              Sair
-            </Button>
-          </div>
+          {/* Ocultar botões em desktop para instructor e student */}
+          {!['instructor', 'student'].includes(userRole) && (
+            <div className="hidden md:flex gap-2">
+              <Button variant="outline" onClick={handleChangeUser} className="flex items-center gap-2">
+                <RefreshCw size={16} />
+                Trocar Usuário
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+                <LogOut size={16} />
+                Sair
+              </Button>
+            </div>
+          )}
         </div>
 
         <Card className="border-2 border-primary/20">

@@ -37,6 +37,7 @@ const Attendance = () => {
     loading: attendanceLoading, 
     createAttendance, 
     updateAttendance, 
+    deleteBatchAttendance,
     refetch,
     createBatchAttendance,
     checkDuplicateAttendance,
@@ -132,6 +133,17 @@ const Attendance = () => {
   const handleViewGroupDetails = (group: GroupedAttendance) => {
     setSelectedGroup(group);
     setGroupDetailsOpen(true);
+  };
+
+  const handleDeleteGroup = async (group: GroupedAttendance) => {
+    try {
+      const recordIds = group.records.map(r => r.id);
+      await deleteBatchAttendance(recordIds);
+      setGroupDetailsOpen(false);
+      refetch();
+    } catch (error) {
+      console.error('Error deleting attendance group:', error);
+    }
   };
 
   const handleEditFromGroup = (attendanceId: string) => {
@@ -494,6 +506,8 @@ const Attendance = () => {
               onOpenChange={setGroupDetailsOpen}
               group={selectedGroup}
               onEdit={handleEditFromGroup}
+              onDelete={handleDeleteGroup}
+              userRole={profile?.role}
             />
           </>
         )}

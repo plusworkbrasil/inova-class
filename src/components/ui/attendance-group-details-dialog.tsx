@@ -1,34 +1,60 @@
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, X, Edit, FileText } from 'lucide-react';
+import { Check, X, Edit, FileText, Trash2 } from 'lucide-react';
 import { GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatDateBR } from '@/lib/utils';
+import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 
 interface AttendanceGroupDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   group: GroupedAttendance | null;
   onEdit?: (attendanceId: string) => void;
+  onDelete?: (group: GroupedAttendance) => void;
+  userRole?: string;
 }
 
 export const AttendanceGroupDetailsDialog = ({
   open,
   onOpenChange,
   group,
-  onEdit
+  onEdit,
+  onDelete,
+  userRole
 }: AttendanceGroupDetailsDialogProps) => {
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
   if (!group) return null;
+
+  const handleDelete = () => {
+    if (onDelete && group) {
+      onDelete(group);
+      setDeleteConfirmOpen(false);
+      onOpenChange(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            Detalhes da Chamada
+          <DialogTitle className="flex items-center justify-between">
+            <span>Detalhes da Chamada</span>
+            {userRole === 'admin' && onDelete && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setDeleteConfirmOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir Chamada
+              </Button>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -142,6 +168,14 @@ export const AttendanceGroupDetailsDialog = ({
             </TableBody>
           </Table>
         </div>
+
+        <DeleteConfirmation
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirm={handleDelete}
+          title="Excluir Registro de Chamada"
+          description={`Tem certeza que deseja excluir esta chamada? Esta ação excluirá ${group.total_students} registro(s) de frequência e não poderá ser desfeita.`}
+        />
       </DialogContent>
     </Dialog>
   );

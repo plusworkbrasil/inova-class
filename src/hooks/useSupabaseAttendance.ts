@@ -193,6 +193,30 @@ export const useSupabaseAttendance = () => {
     }
   };
 
+  const deleteBatchAttendance = async (attendanceIds: string[]) => {
+    try {
+      const { error } = await supabase
+        .from('attendance')
+        .delete()
+        .in('id', attendanceIds);
+
+      if (error) throw error;
+
+      await fetchAttendance();
+      toast({
+        title: "Sucesso!",
+        description: `${attendanceIds.length} registro(s) de frequência excluído(s).`
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao excluir registros."
+      });
+      throw err;
+    }
+  };
+
   const getGroupedAttendance = (): GroupedAttendance[] => {
     const grouped = data.reduce((acc, record) => {
       const key = `${record.date}-${record.subject_id}-${record.class_id}`;
@@ -220,6 +244,13 @@ export const useSupabaseAttendance = () => {
       return acc;
     }, {} as Record<string, GroupedAttendance>);
 
+    // Ordenar registros dentro de cada grupo alfabeticamente por nome do aluno
+    Object.values(grouped).forEach(group => {
+      group.records.sort((a, b) => 
+        (a.student_name || '').localeCompare(b.student_name || '', 'pt-BR')
+      );
+    });
+
     return Object.values(grouped).sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -237,6 +268,7 @@ export const useSupabaseAttendance = () => {
     createAttendance,
     updateAttendance,
     deleteAttendance,
+    deleteBatchAttendance,
     createBatchAttendance,
     checkDuplicateAttendance,
     getGroupedAttendance

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, Check, X } from 'lucide-react';
+import { Calendar, Users, Check, X, CheckCheck, XCircle, RotateCcw } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
@@ -109,6 +109,26 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       ...prev,
       [studentId]: !prev[studentId]
     }));
+  };
+
+  const markAllAsPresent = () => {
+    const allPresent: Record<string, boolean> = {};
+    students.forEach(student => {
+      allPresent[student.id] = true;
+    });
+    setStudentAttendance(allPresent);
+  };
+
+  const markAllAsAbsent = () => {
+    const allAbsent: Record<string, boolean> = {};
+    students.forEach(student => {
+      allAbsent[student.id] = false;
+    });
+    setStudentAttendance(allAbsent);
+  };
+
+  const clearAllAttendance = () => {
+    setStudentAttendance({});
   };
 
   const handleSubmit = (data: AttendanceFormValues) => {
@@ -244,20 +264,53 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
             {showStudents && (
               <Card>
                 <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <Users size={20} />
-                      <h3 className="text-lg font-medium">Lista de Chamada ({students.length} alunos)</h3>
+                  <div className="flex flex-col gap-3 mb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users size={20} />
+                        <h3 className="text-lg font-medium">Lista de Chamada ({students.length} alunos)</h3>
+                      </div>
+                      <div className="flex gap-4 text-sm">
+                        <span className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          Presentes: {presentCount}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                          Ausentes: {absentCount}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex gap-4 text-sm">
-                      <span className="flex items-center gap-1">
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                        Presentes: {presentCount}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        Ausentes: {absentCount}
-                      </span>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        onClick={markAllAsPresent}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCheck size={16} className="mr-1" />
+                        Marcar Todos Presentes
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={markAllAsAbsent}
+                      >
+                        <XCircle size={16} className="mr-1" />
+                        Marcar Todos Ausentes
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={clearAllAttendance}
+                      >
+                        <RotateCcw size={16} className="mr-1" />
+                        Limpar Marcações
+                      </Button>
                     </div>
                   </div>
 

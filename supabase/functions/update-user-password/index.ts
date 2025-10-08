@@ -60,8 +60,21 @@ serve(async (req) => {
       throw new Error('Missing userId or newPassword')
     }
 
-    if (newPassword.length < 6) {
-      throw new Error('Password must be at least 6 characters long')
+    // Enforce strong password requirements (server-side validation)
+    if (newPassword.length < 8) {
+      throw new Error('Password must be at least 8 characters long')
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      throw new Error('Password must contain at least one uppercase letter')
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      throw new Error('Password must contain at least one lowercase letter')
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      throw new Error('Password must contain at least one number')
+    }
+    if (!/[^A-Za-z0-9]/.test(newPassword)) {
+      throw new Error('Password must contain at least one special character')
     }
 
     // Update user password using admin API

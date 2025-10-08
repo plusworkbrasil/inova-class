@@ -18,13 +18,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, Plus } from 'lucide-react';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { cn } from '@/lib/utils';
+import { passwordSchema } from '@/lib/passwordValidation';
 
 const studentSchema = z.object({
   fullName: z.string().min(2, 'Nome completo é obrigatório'),
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF deve ter o formato 000.000.000-00'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  password: passwordSchema,
   class_id: z.string().optional(),
   birth_date: z.date().optional(),
   parentName: z.string().min(2, 'Nome dos pais é obrigatório'),

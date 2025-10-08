@@ -22,8 +22,11 @@ export const useRealClassData = () => {
       // Get total students
       const { data: students, error: studentsError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('role', 'student');
+        .select(`
+          id,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'student');
 
       if (studentsError) throw studentsError;
 
@@ -37,8 +40,11 @@ export const useRealClassData = () => {
       // Get total instructors
       const { data: instructors, error: instructorsError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('role', 'instructor');
+        .select(`
+          id,
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'instructor');
 
       if (instructorsError) throw instructorsError;
 

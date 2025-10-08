@@ -32,9 +32,10 @@ export const useRealRecipients = () => {
           name,
           email,
           class_id,
-          classes(name)
+          classes(name),
+          user_roles!inner(role)
         `)
-        .eq('role', 'student');
+        .eq('user_roles.role', 'student');
 
       if (studentsError) throw studentsError;
 

@@ -41,8 +41,12 @@ export const useReportsData = () => {
       // Fetch profiles (students) data
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('*, classes(name)')
-        .eq('role', 'student');
+        .select(`
+          *,
+          classes(name),
+          user_roles!inner(role)
+        `)
+        .eq('user_roles.role', 'student');
 
       // Fetch evasions data
       const { data: evasions } = await supabase

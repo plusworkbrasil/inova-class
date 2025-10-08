@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { Eye, EyeOff, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { validatePasswordStrength } from "@/lib/passwordValidation";
 
 interface PasswordUpdateDialogProps {
   open: boolean;
@@ -41,13 +40,11 @@ export function PasswordUpdateDialog({ open, onOpenChange, userId, userName }: P
       return;
     }
 
-    // Validate password strength
-    const passwordValidation = validatePasswordStrength(formData.newPassword);
-    if (!passwordValidation.isValid) {
+    if (formData.newPassword.length < 6) {
       toast({
         variant: "destructive",
-        title: "Senha fraca",
-        description: passwordValidation.errors.join('. '),
+        title: "Erro",
+        description: "A senha deve ter pelo menos 6 caracteres.",
       });
       return;
     }
@@ -103,10 +100,10 @@ export function PasswordUpdateDialog({ open, onOpenChange, userId, userName }: P
               <Input
                 id="newPassword"
                 type={showPassword ? "text" : "password"}
-                placeholder="Min. 8 caracteres, maiúsculas, minúsculas, números e símbolos"
+                placeholder="Digite a nova senha (mínimo 6 caracteres)"
                 {...register('newPassword', { 
                   required: 'Nova senha é obrigatória',
-                  minLength: { value: 8, message: 'Senha deve ter pelo menos 8 caracteres' }
+                  minLength: { value: 6, message: 'Senha deve ter pelo menos 6 caracteres' }
                 })}
               />
               <Button

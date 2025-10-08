@@ -33,99 +33,136 @@ export const useDashboardStats = () => {
       setLoading(true);
       setError(null);
 
+      let totalUsers = 0;
+      let totalStudents = 0;
+      let totalTeachers = 0;
+      let totalClasses = 0;
+      let totalSubjects = 0;
+      let totalDeclarations = 0;
+      let pendingDeclarations = 0;
+      let attendanceRate = '0%';
+
       // Buscar total de usuários
-      const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      try {
+        const { count, error } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true });
+        if (!error) totalUsers = count || 0;
+        else console.warn('Erro ao buscar total de usuários:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar total de usuários:', err);
+      }
 
-      if (usersError) throw usersError;
+      // Buscar total de estudantes (profiles com class_id)
+      try {
+        const { count, error } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .not('class_id', 'is', null);
+        if (!error) totalStudents = count || 0;
+        else console.warn('Erro ao buscar estudantes:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar estudantes:', err);
+      }
 
-      // Buscar total de estudantes - using user_roles table
-      const { count: totalStudents, error: studentsError } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('role', 'student');
-
-      if (studentsError) throw studentsError;
-
-      // Buscar total de professores/instrutores - using user_roles table
-      const { count: totalTeachers, error: teachersError } = await supabase
-        .from('user_roles')
-        .select('*', { count: 'exact', head: true })
-        .in('role', ['teacher', 'instructor']);
-
-      if (teachersError) throw teachersError;
+      // Buscar total de professores/instrutores (teacher_id únicos em subjects)
+      try {
+        const { data, error } = await supabase
+          .from('subjects')
+          .select('teacher_id')
+          .not('teacher_id', 'is', null);
+        if (!error && data) {
+          const uniqueTeachers = new Set(data.map(s => s.teacher_id));
+          totalTeachers = uniqueTeachers.size;
+        } else {
+          console.warn('Erro ao buscar professores:', error);
+        }
+      } catch (err) {
+        console.warn('Erro ao buscar professores:', err);
+      }
 
       // Buscar total de turmas
-      const { count: totalClasses, error: classesError } = await supabase
-        .from('classes')
-        .select('*', { count: 'exact', head: true });
-
-      if (classesError) throw classesError;
+      try {
+        const { count, error } = await supabase
+          .from('classes')
+          .select('*', { count: 'exact', head: true });
+        if (!error) totalClasses = count || 0;
+        else console.warn('Erro ao buscar turmas:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar turmas:', err);
+      }
 
       // Buscar total de disciplinas
-      const { count: totalSubjects, error: subjectsError } = await supabase
-        .from('subjects')
-        .select('*', { count: 'exact', head: true });
-
-      if (subjectsError) throw subjectsError;
+      try {
+        const { count, error } = await supabase
+          .from('subjects')
+          .select('*', { count: 'exact', head: true });
+        if (!error) totalSubjects = count || 0;
+        else console.warn('Erro ao buscar disciplinas:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar disciplinas:', err);
+      }
 
       // Buscar total de declarações
-      const { count: totalDeclarations, error: declarationsError } = await supabase
-        .from('declarations')
-        .select('*', { count: 'exact', head: true });
-
-      if (declarationsError) throw declarationsError;
+      try {
+        const { count, error } = await supabase
+          .from('declarations')
+          .select('*', { count: 'exact', head: true });
+        if (!error) totalDeclarations = count || 0;
+        else console.warn('Erro ao buscar declarações:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar declarações:', err);
+      }
 
       // Buscar declarações pendentes
-      const { count: pendingDeclarations, error: pendingError } = await supabase
-        .from('declarations')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-      if (pendingError) throw pendingError;
+      try {
+        const { count, error } = await supabase
+          .from('declarations')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        if (!error) pendingDeclarations = count || 0;
+        else console.warn('Erro ao buscar declarações pendentes:', error);
+      } catch (err) {
+        console.warn('Erro ao buscar declarações pendentes:', err);
+      }
 
       // Calcular frequência real dos alunos
-      let attendanceRate = '0%';
-      if (totalStudents && totalStudents > 0) {
-        // Buscar total de registros de presença
-        const { count: totalAttendance, error: attendanceError } = await supabase
-          .from('attendance')
-          .select('*', { count: 'exact', head: true });
+      if (totalStudents > 0) {
+        try {
+          const { count: totalAttendance, error: attendanceError } = await supabase
+            .from('attendance')
+            .select('*', { count: 'exact', head: true });
 
-        // Buscar total de presenças (is_present = true)
-        const { count: presentCount, error: presentError } = await supabase
-          .from('attendance')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_present', true);
+          const { count: presentCount, error: presentError } = await supabase
+            .from('attendance')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_present', true);
 
-        if (attendanceError || presentError) {
-          console.warn('Erro ao calcular frequência:', attendanceError || presentError);
+          if (!attendanceError && !presentError && totalAttendance && totalAttendance > 0) {
+            const rate = ((presentCount || 0) / totalAttendance) * 100;
+            attendanceRate = `${rate.toFixed(1)}%`;
+          } else {
+            console.warn('Erro ao calcular frequência:', attendanceError || presentError);
+            attendanceRate = 'N/A';
+          }
+        } catch (err) {
+          console.warn('Erro ao calcular frequência:', err);
           attendanceRate = 'N/A';
-        } else if (totalAttendance && totalAttendance > 0) {
-          const rate = ((presentCount || 0) / totalAttendance) * 100;
-          attendanceRate = `${rate.toFixed(1)}%`;
         }
       }
 
       setStats({
-        totalUsers: totalUsers || 0,
-        totalStudents: totalStudents || 0,
-        totalTeachers: totalTeachers || 0,
-        totalClasses: totalClasses || 0,
-        totalSubjects: totalSubjects || 0,
-        totalDeclarations: totalDeclarations || 0,
-        pendingDeclarations: pendingDeclarations || 0,
+        totalUsers,
+        totalStudents,
+        totalTeachers,
+        totalClasses,
+        totalSubjects,
+        totalDeclarations,
+        pendingDeclarations,
         attendanceRate,
       });
     } catch (err: any) {
-      setError(err.message);
-      console.error('Error fetching dashboard stats:', err);
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar estatísticas do dashboard."
-      });
+      console.warn('Error fetching dashboard stats:', err);
     } finally {
       setLoading(false);
     }

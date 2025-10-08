@@ -43,10 +43,9 @@ export const useReportsData = () => {
         .from('profiles')
         .select(`
           *,
-          classes(name),
-          user_roles!inner(role)
+          classes(name)
         `)
-        .eq('user_roles.role', 'student');
+        .not('class_id', 'is', null);
 
       // Fetch evasions data
       const { data: evasions } = await supabase

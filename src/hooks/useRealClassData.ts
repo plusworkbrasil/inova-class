@@ -19,14 +19,11 @@ export const useRealClassData = () => {
     try {
       setLoading(true);
       
-      // Get total students
+      // Get total students (profiles with class_id)
       const { data: students, error: studentsError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'student');
+        .select('id')
+        .not('class_id', 'is', null);
 
       if (studentsError) throw studentsError;
 
@@ -37,20 +34,18 @@ export const useRealClassData = () => {
 
       if (classesError) throw classesError;
 
-      // Get total instructors
-      const { data: instructors, error: instructorsError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_roles!inner(role)
-        `)
-        .eq('user_roles.role', 'instructor');
+      // Get total instructors (distinct teacher_id from subjects)
+      const { data: subjects, error: instructorsError } = await supabase
+        .from('subjects')
+        .select('teacher_id')
+        .not('teacher_id', 'is', null);
 
       if (instructorsError) throw instructorsError;
 
       const totalStudents = students?.length || 0;
       const totalClasses = classes?.length || 0;
-      const totalInstructors = instructors?.length || 0;
+      const uniqueInstructors = new Set(subjects?.map(s => s.teacher_id) || []);
+      const totalInstructors = uniqueInstructors.size;
       const averagePerClass = totalClasses > 0 ? Math.round(totalStudents / totalClasses) : 0;
 
       setStats({

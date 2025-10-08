@@ -44,12 +44,9 @@ export function ClassStudentsDialog({ open, onOpenChange, classId, className }: 
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles!inner(role)
-        `)
+        .select('*')
         .eq('class_id', classId)
-        .eq('user_roles.role', 'student');
+        .not('class_id', 'is', null);
 
       if (error) throw error;
       setStudents(data || []);

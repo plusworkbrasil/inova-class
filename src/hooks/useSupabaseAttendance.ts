@@ -15,6 +15,8 @@ export interface Attendance {
   daily_activity?: string;
   // Joined data
   student_name?: string;
+  student_enrollment?: string;
+  student_number?: string;
   class_name?: string;
   subject_name?: string;
 }
@@ -47,7 +49,7 @@ export const useSupabaseAttendance = () => {
         .from('attendance')
         .select(`
           *,
-          profiles:student_id(name),
+          profiles:student_id(name, enrollment_number, student_id),
           classes:class_id(name),
           subjects:subject_id(name)
         `)
@@ -59,6 +61,8 @@ export const useSupabaseAttendance = () => {
       const transformedData = (attendance || []).map((record: any) => ({
         ...record,
         student_name: record.profiles?.name,
+        student_enrollment: record.profiles?.enrollment_number,
+        student_number: record.profiles?.student_id,
         class_name: record.classes?.name,
         subject_name: record.subjects?.name
       }));

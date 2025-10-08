@@ -5,17 +5,17 @@ import { useToast } from './use-toast';
 
 export interface InstructorDashboardStats {
   myClasses: number;
-  myStudents: number;
-  pendingAttendance: number;
-  gradesToLaunch: number;
+  attendancePercentage: number; // Substituindo myStudents
+  averageGrade: number; // Substituindo pendingAttendance
+  evadedStudents: number; // Substituindo gradesToLaunch
 }
 
 export const useInstructorDashboardStats = () => {
   const [stats, setStats] = useState<InstructorDashboardStats>({
     myClasses: 0,
-    myStudents: 0,
-    pendingAttendance: 0,
-    gradesToLaunch: 0
+    attendancePercentage: 0,
+    averageGrade: 0,
+    evadedStudents: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,39 @@ export const useInstructorDashboardStats = () => {
       // Count unique classes
       const myClasses = classIds.length;
 
-      // Count students in instructor's classes - join with user_roles
+      // 1. Calcular porcentagem de presença (attendancePercentage)
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('is_present')
+        .in('subject_id', subjectIds.length > 0 ? subjectIds : ['00000000-0000-0000-0000-000000000000']);
+
+      if (attendanceError) throw attendanceError;
+
+      const totalAttendanceRecords = attendanceData?.length || 0;
+      const presentRecords = attendanceData?.filter(a => a.is_present).length || 0;
+      const attendancePercentage = totalAttendanceRecords > 0 
+        ? Math.round((presentRecords / totalAttendanceRecords) * 100) 
+        : 0;
+
+      // 2. Calcular média de notas (averageGrade)
+      const { data: gradesData, error: gradesError } = await supabase
+        .from('grades')
+        .select('value, max_value')
+        .in('subject_id', subjectIds.length > 0 ? subjectIds : ['00000000-0000-0000-0000-000000000000']);
+
+      if (gradesError) throw gradesError;
+
+      let averageGrade = 0;
+      if (gradesData && gradesData.length > 0) {
+        const totalGrade = gradesData.reduce((sum, grade) => {
+          const normalizedGrade = (Number(grade.value) / Number(grade.max_value)) * 10;
+          return sum + normalizedGrade;
+        }, 0);
+        averageGrade = parseFloat((totalGrade / gradesData.length).toFixed(1));
+      }
+
+      // 3. Calcular alunos evadidos nas disciplinas do instrutor (evadedStudents)
+      // Primeiro, buscar todos os alunos das turmas do instrutor
       const { data: studentProfiles, error: studentsError } = await supabase
         .from('profiles')
         .select('id')
@@ -51,52 +83,22 @@ export const useInstructorDashboardStats = () => {
 
       if (studentsError) throw studentsError;
 
-      // Filter students by role using user_roles
-      let studentsCount = 0;
-      if (studentProfiles && studentProfiles.length > 0) {
-        const { count } = await supabase
-          .from('user_roles')
-          .select('*', { count: 'exact', head: true })
-          .eq('role', 'student')
-          .in('user_id', studentProfiles.map(p => p.id));
-        studentsCount = count || 0;
-      }
+      const studentIds = studentProfiles?.map(s => s.id) || [];
 
-      // Calculate pending attendance (classes without attendance records in last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const { data: recentAttendance, error: attendanceError } = await supabase
-        .from('attendance')
-        .select('subject_id, date')
-        .in('subject_id', subjectIds.length > 0 ? subjectIds : ['00000000-0000-0000-0000-000000000000'])
-        .gte('date', sevenDaysAgo.toISOString().split('T')[0]);
+      // Buscar evasões ativas desses alunos
+      const { count: evadedCount, error: evasionsError } = await supabase
+        .from('evasions')
+        .select('student_id', { count: 'exact', head: true })
+        .in('student_id', studentIds.length > 0 ? studentIds : ['00000000-0000-0000-0000-000000000000'])
+        .eq('status', 'active');
 
-      if (attendanceError) throw attendanceError;
-
-      // Calculate pending attendance based on working days without records
-      const workingDays = 5; // Assuming 5 working days per week
-      const attendanceRecords = recentAttendance?.length || 0;
-      const expectedRecords = subjectIds.length * workingDays;
-      const pendingAttendance = Math.max(0, expectedRecords - attendanceRecords);
-
-      // Calculate grades to launch (estimate based on classes vs existing grades)
-      const { count: gradesCount, error: gradesError } = await supabase
-        .from('grades')
-        .select('*', { count: 'exact', head: true })
-        .in('subject_id', subjectIds.length > 0 ? subjectIds : ['00000000-0000-0000-0000-000000000000']);
-
-      if (gradesError) throw gradesError;
-
-      // Estimate grades to launch (assume 2 grades per student per subject minimum)
-      const expectedGrades = (studentsCount || 0) * subjectIds.length * 2;
-      const gradesToLaunch = Math.max(0, expectedGrades - (gradesCount || 0));
+      if (evasionsError) throw evasionsError;
 
       setStats({
         myClasses,
-        myStudents: studentsCount || 0,
-        pendingAttendance,
-        gradesToLaunch
+        attendancePercentage,
+        averageGrade,
+        evadedStudents: evadedCount || 0
       });
 
     } catch (err: any) {

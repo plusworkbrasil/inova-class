@@ -389,8 +389,8 @@ const TeacherGrades = () => {
                   const classItem = instructorClasses.find(c => c.id === subject?.class_id);
                   return (
                     <TableRow key={grade.id}>
-                      <TableCell className="font-medium">Aluno {grade.student_id}</TableCell>
-                      <TableCell>{grade.student_id}</TableCell>
+                      <TableCell className="font-medium">{grade.student_name || 'N/A'}</TableCell>
+                      <TableCell>{grade.student_enrollment || grade.student_number || 'N/A'}</TableCell>
                       <TableCell>{classItem?.name || 'N/A'}</TableCell>
                       <TableCell>{subject?.name || 'N/A'}</TableCell>
                       <TableCell>

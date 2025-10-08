@@ -39,7 +39,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit
 }) => {
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
-  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string}>>([]);
+  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string}>>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const { profile } = useAuth();
   
@@ -82,9 +82,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, name, student_id')
-        .eq('class_id', classId)
-        .eq('role', 'student');
+        .select('id, name, student_id, enrollment_number')
+        .eq('class_id', classId);
       
       if (error) throw error;
       setStudents(data || []);
@@ -342,7 +341,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                           <div>
                             <div className="font-medium">{student.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Matrícula: {student.student_id || 'N/A'}
+                              Matrícula: {student.enrollment_number || student.student_id || 'N/A'}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

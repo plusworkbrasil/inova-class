@@ -14,6 +14,10 @@ export interface Grade {
   observations?: string;
   created_at: string;
   updated_at: string;
+  // Joined data
+  student_name?: string;
+  student_enrollment?: string;
+  student_number?: string;
 }
 
 export const useSupabaseGrades = () => {
@@ -29,11 +33,23 @@ export const useSupabaseGrades = () => {
       
       const { data: grades, error } = await supabase
         .from('grades')
-        .select('*')
+        .select(`
+          *,
+          profiles:student_id(name, enrollment_number, student_id)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setData(grades || []);
+      
+      // Transform the data to include joined fields
+      const transformedData = (grades || []).map((record: any) => ({
+        ...record,
+        student_name: record.profiles?.name,
+        student_enrollment: record.profiles?.enrollment_number,
+        student_number: record.profiles?.student_id
+      }));
+      
+      setData(transformedData);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching grades:', err);

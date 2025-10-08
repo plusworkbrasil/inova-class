@@ -194,186 +194,190 @@ const Equipment = () => {
                   Cadastre e gerencie equipamentos do sistema
                 </CardDescription>
               </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Novo Equipamento
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Cadastrar Equipamento</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Nome</Label>
-                      <Input
-                        id="name"
-                        {...form.register('name')}
-                        placeholder="Nome do equipamento"
-                      />
-                      {form.formState.errors.name && (
-                        <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
-                      )}
+            {(userRole === 'admin' || userRole === 'secretary') && (
+              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Equipamento
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Cadastrar Equipamento</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nome</Label>
+                        <Input
+                          id="name"
+                          {...form.register('name')}
+                          placeholder="Nome do equipamento"
+                        />
+                        {form.formState.errors.name && (
+                          <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="patrimonio">Patrimônio</Label>
+                        <Input
+                          id="patrimonio"
+                          {...form.register('patrimonio')}
+                          placeholder="Número do patrimônio"
+                        />
+                        {form.formState.errors.patrimonio && (
+                          <p className="text-sm text-red-500">{form.formState.errors.patrimonio.message}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Tipo</Label>
+                        <Select onValueChange={(value) => form.setValue('type', value)} defaultValue={form.watch('type')}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="computador">Computador</SelectItem>
+                            <SelectItem value="notebook">Notebook</SelectItem>
+                            <SelectItem value="tablet">Tablet</SelectItem>
+                            <SelectItem value="projetor">Projetor</SelectItem>
+                            <SelectItem value="impressora">Impressora</SelectItem>
+                            <SelectItem value="outro">Outro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {form.formState.errors.type && (
+                          <p className="text-sm text-red-500">{form.formState.errors.type.message}</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Descrição</Label>
+                        <Textarea
+                          id="description"
+                          {...form.register('description')}
+                          placeholder="Descrição detalhada do equipamento"
+                          rows={3}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="brand">Marca</Label>
+                        <Input
+                          id="brand"
+                          {...form.register('brand')}
+                          placeholder="Marca do equipamento"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="model">Modelo</Label>
+                        <Input
+                          id="model"
+                          {...form.register('model')}
+                          placeholder="Modelo do equipamento"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="serial_number">Número de Série</Label>
+                        <Input
+                          id="serial_number"
+                          {...form.register('serial_number')}
+                          placeholder="Número de série"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="location">Localização</Label>
+                        <Input
+                          id="location"
+                          {...form.register('location')}
+                          placeholder="Local onde está o equipamento"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="purchase_date">Data de Compra</Label>
+                        <Input
+                          id="purchase_date"
+                          type="date"
+                          {...form.register('purchase_date')}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="warranty_date">Data de Garantia</Label>
+                        <Input
+                          id="warranty_date"
+                          type="date"
+                          {...form.register('warranty_date')}
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="patrimonio">Patrimônio</Label>
-                      <Input
-                        id="patrimonio"
-                        {...form.register('patrimonio')}
-                        placeholder="Número do patrimônio"
-                      />
-                      {form.formState.errors.patrimonio && (
-                        <p className="text-sm text-red-500">{form.formState.errors.patrimonio.message}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="type">Tipo</Label>
-                      <Select onValueChange={(value) => form.setValue('type', value)} defaultValue={form.watch('type')}>
+                      <Label htmlFor="status">Status</Label>
+                      <Select onValueChange={(value) => form.setValue('status', value)} defaultValue={form.watch('status')}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o tipo" />
+                          <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="computador">Computador</SelectItem>
-                          <SelectItem value="notebook">Notebook</SelectItem>
-                          <SelectItem value="tablet">Tablet</SelectItem>
-                          <SelectItem value="projetor">Projetor</SelectItem>
-                          <SelectItem value="impressora">Impressora</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
+                          <SelectItem value="disponivel">Disponível</SelectItem>
+                          <SelectItem value="em_uso">Em Uso</SelectItem>
+                          <SelectItem value="manutencao">Manutenção</SelectItem>
+                          <SelectItem value="indisponivel">Indisponível</SelectItem>
                         </SelectContent>
                       </Select>
-                      {form.formState.errors.type && (
-                        <p className="text-sm text-red-500">{form.formState.errors.type.message}</p>
+                      {form.formState.errors.status && (
+                        <p className="text-sm text-red-500">{form.formState.errors.status.message}</p>
                       )}
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="description">Descrição</Label>
+                      <Label htmlFor="observations">Observações</Label>
                       <Textarea
-                        id="description"
-                        {...form.register('description')}
-                        placeholder="Descrição detalhada do equipamento"
+                        id="observations"
+                        {...form.register('observations')}
+                        placeholder="Observações adicionais"
                         rows={3}
                       />
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="brand">Marca</Label>
-                      <Input
-                        id="brand"
-                        {...form.register('brand')}
-                        placeholder="Marca do equipamento"
-                      />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsCreateDialogOpen(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        Cadastrar
+                      </Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="model">Modelo</Label>
-                      <Input
-                        id="model"
-                        {...form.register('model')}
-                        placeholder="Modelo do equipamento"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="serial_number">Número de Série</Label>
-                      <Input
-                        id="serial_number"
-                        {...form.register('serial_number')}
-                        placeholder="Número de série"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Localização</Label>
-                      <Input
-                        id="location"
-                        {...form.register('location')}
-                        placeholder="Local onde está o equipamento"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="purchase_date">Data de Compra</Label>
-                      <Input
-                        id="purchase_date"
-                        type="date"
-                        {...form.register('purchase_date')}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="warranty_date">Data de Garantia</Label>
-                      <Input
-                        id="warranty_date"
-                        type="date"
-                        {...form.register('warranty_date')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select onValueChange={(value) => form.setValue('status', value)} defaultValue={form.watch('status')}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="disponivel">Disponível</SelectItem>
-                        <SelectItem value="em_uso">Em Uso</SelectItem>
-                        <SelectItem value="manutencao">Manutenção</SelectItem>
-                        <SelectItem value="indisponivel">Indisponível</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.status && (
-                      <p className="text-sm text-red-500">{form.formState.errors.status.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="observations">Observações</Label>
-                    <Textarea
-                      id="observations"
-                      {...form.register('observations')}
-                      placeholder="Observações adicionais"
-                      rows={3}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsCreateDialogOpen(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button type="submit">
-                      Cadastrar
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="equipments" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="equipments">Equipamentos</TabsTrigger>
+          <Tabs defaultValue={userRole === 'instructor' ? 'allocations' : 'equipments'} className="w-full">
+            <TabsList className={`grid w-full ${userRole === 'instructor' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {(userRole === 'admin' || userRole === 'secretary') && (
+                <TabsTrigger value="equipments">Equipamentos</TabsTrigger>
+              )}
               <TabsTrigger value="allocations">Alocações</TabsTrigger>
             </TabsList>
             

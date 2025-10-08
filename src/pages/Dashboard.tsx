@@ -93,9 +93,9 @@ const Dashboard = () => {
           description: 'Gerencie suas turmas e atividades',
           cards: [
             { title: 'Minhas Turmas', value: instructorStatsLoading ? '...' : instructorStats.myClasses.toString(), description: 'Turmas que leciono' },
-            { title: 'Meus Alunos', value: instructorStatsLoading ? '...' : instructorStats.myStudents.toString(), description: 'Alunos das minhas turmas' },
-            { title: 'Chamadas Pendentes', value: instructorStatsLoading ? '...' : instructorStats.pendingAttendance.toString(), description: 'Aguardando registro' },
-            { title: 'Notas a Lançar', value: instructorStatsLoading ? '...' : instructorStats.gradesToLaunch.toString(), description: 'Avaliações pendentes' },
+            { title: '% Presença', value: instructorStatsLoading ? '...' : `${instructorStats.attendancePercentage}%`, description: 'Porcentagem de alunos presentes' },
+            { title: 'Média de Notas', value: instructorStatsLoading ? '...' : instructorStats.averageGrade.toString(), description: 'Média geral dos alunos' },
+            { title: 'Alunos Evadidos', value: instructorStatsLoading ? '...' : instructorStats.evadedStudents.toString(), description: 'Evasões nas suas disciplinas' },
           ]
         };
       case 'coordinator':

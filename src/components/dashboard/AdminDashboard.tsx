@@ -152,11 +152,11 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Active Classes */}
+        {/* Active Subjects */}
         <Card className="shadow-[var(--shadow-card)]">
           <CardHeader>
             <CardTitle className="flex items-center">
-              <BookOpen className="w-5 h-5 mr-2 text-secondary" />
+              <Calendar className="w-5 h-5 mr-2 text-secondary" />
               Turmas em Andamento
             </CardTitle>
           </CardHeader>
@@ -164,22 +164,22 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               {reportsLoading ? <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">Carregando dados...</p>
-                </div> : reportsData.classDistribution.length > 0 ? reportsData.classDistribution.map((cls, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                </div> : reportsData.activeSubjects.length > 0 ? reportsData.activeSubjects.map((subject, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-4 h-4 rounded-full" style={{
-                  backgroundColor: cls.color
+                  backgroundColor: subject.color
                 }} />
                       <div>
-                        <p className="font-medium">{cls.name}</p>
-                        <p className="text-sm text-muted-foreground">Turma ativa</p>
+                        <p className="font-medium">{subject.subjectName}</p>
+                        <p className="text-sm text-muted-foreground">{subject.className} • {subject.code}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-primary">{cls.value} alunos</p>
-                      <p className="text-xs text-muted-foreground">Matriculados</p>
+                      <p className="font-semibold text-primary">Termina em</p>
+                      <p className="text-sm text-muted-foreground">{subject.endDate}</p>
                     </div>
                   </div>) : <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhuma turma encontrada</p>
+                  <p className="text-muted-foreground">Nenhuma disciplina em andamento</p>
                 </div>}
             </div>
           </CardContent>

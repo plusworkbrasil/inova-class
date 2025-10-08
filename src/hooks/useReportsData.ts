@@ -7,6 +7,14 @@ export interface ReportData {
   classDistribution: Array<{ name: string; value: number; color: string }>;
   topAbsentStudents: Array<{ name: string; class: string; absences: number; percentage: number }>;
   evasionData: Array<{ name: string; value: number; color: string }>;
+  activeSubjects: Array<{ 
+    subjectName: string; 
+    className: string; 
+    code: string;
+    endDate: string; 
+    teacherName: string;
+    color: string;
+  }>;
 }
 
 export const useReportsData = () => {
@@ -15,7 +23,8 @@ export const useReportsData = () => {
     gradesBySubject: [],
     classDistribution: [],
     topAbsentStudents: [],
-    evasionData: []
+    evasionData: [],
+    activeSubjects: []
   });
   const [loading, setLoading] = useState(true);
 
@@ -52,6 +61,15 @@ export const useReportsData = () => {
         .from('evasions')
         .select('*');
 
+      // Fetch subjects data
+      const { data: subjects } = await supabase
+        .from('subjects')
+        .select(`
+          *,
+          classes(name),
+          profiles(name)
+        `);
+
       // Process attendance by month
       const attendanceByMonth = attendance ? processAttendanceByMonth(attendance) : [];
 
@@ -67,12 +85,16 @@ export const useReportsData = () => {
       // Process evasion data
       const evasionData = evasions ? processEvasionData(evasions) : [];
 
+      // Process active subjects
+      const activeSubjects = subjects ? processActiveSubjects(subjects) : [];
+
       setData({
         attendanceByMonth,
         gradesBySubject,
         classDistribution,
         topAbsentStudents,
-        evasionData
+        evasionData,
+        activeSubjects
       });
     } catch (error) {
       console.error('Error fetching reports data:', error);
@@ -186,6 +208,28 @@ export const useReportsData = () => {
       value: Math.round((count / total) * 100),
       color: colors[index % colors.length]
     }));
+  };
+
+  const processActiveSubjects = (subjects: any[]) => {
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
+    const today = new Date();
+    
+    return subjects
+      .filter(subject => {
+        if (!subject.start_date || !subject.end_date) return false;
+        const startDate = new Date(subject.start_date);
+        const endDate = new Date(subject.end_date);
+        return subject.status === 'ativo' && startDate <= today && endDate >= today;
+      })
+      .sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())
+      .map((subject, index) => ({
+        subjectName: subject.name,
+        className: subject.classes?.name || 'Sem Turma',
+        code: subject.code || '-',
+        endDate: new Date(subject.end_date).toLocaleDateString('pt-BR'),
+        teacherName: subject.profiles?.name || 'Sem Instrutor',
+        color: colors[index % colors.length]
+      }));
   };
 
   useEffect(() => {

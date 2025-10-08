@@ -46,14 +46,11 @@ serve(async (req) => {
       );
     }
 
-    // Check if the caller has permission (admin or secretary)
-    const { data: callerProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check if the caller has permission (admin or secretary) using RPC
+    const { data: callerRole, error: roleError } = await supabaseAdmin
+      .rpc('get_user_role', { user_id: user.id })
 
-    if (!callerProfile || !['admin', 'secretary'].includes(callerProfile.role)) {
+    if (roleError || !callerRole || !['admin', 'secretary'].includes(callerRole)) {
       return new Response(
         JSON.stringify({ error: 'Insufficient permissions. Only admins and secretaries can invite students.' }),
         { 
@@ -122,11 +119,10 @@ serve(async (req) => {
       );
     }
 
-    // Update the profile with additional information
+    // Update the profile with additional information (without role field)
     const profileData: any = {
       name: name,
-      email: email,
-      role: 'student'
+      email: email
     };
     
     if (class_id) {
@@ -145,6 +141,20 @@ serve(async (req) => {
       // Don't fail the request if profile update fails, user was created successfully
     }
 
+    // Insert role into user_roles table
+    const { error: roleInsertError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: newUser.user.id,
+        role: 'student',
+        granted_by: user.id
+      })
+
+    if (roleInsertError) {
+      console.error('Role insert error:', roleInsertError);
+      // Don't fail if role already exists
+    }
+
     // Send password reset email instead of returning the password
     const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
@@ -161,7 +171,7 @@ serve(async (req) => {
       JSON.stringify({ 
         message: 'Convite enviado com sucesso!',
         user: newUser.user,
-        profile: profile || { id: newUser.user.id, name, email, role: 'student' }
+        profile: profile || { id: newUser.user.id, name, email }
       }),
       {
         status: 200,

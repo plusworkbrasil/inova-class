@@ -54,18 +54,15 @@ serve(async (req) => {
       throw new Error('Invalid or expired token')
     }
 
-    // Check if the current user has permission to create users
-    const { data: callerProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
+    // Check if the current user has permission to create users using RPC
+    const { data: callerRole, error: roleError } = await supabaseAdmin
+      .rpc('get_user_role', { user_id: user.id })
 
-    if (profileError || !callerProfile) {
+    if (roleError || !callerRole) {
       throw new Error('Could not verify user permissions')
     }
 
-    if (!['admin', 'secretary'].includes(callerProfile.role)) {
+    if (!['admin', 'secretary'].includes(callerRole)) {
       throw new Error('Access denied: Only admins and secretaries can create users')
     }
 
@@ -73,7 +70,7 @@ serve(async (req) => {
 
     // Validate the requested role - allow all valid roles
     const allowedRoles = ['student', 'instructor', 'teacher', 'secretary']
-    if (callerProfile.role !== 'admin') {
+    if (callerRole !== 'admin') {
       // Secretaries can only create students, instructors and teachers
       // Remove 'secretary' from allowed roles for non-admin users
       allowedRoles.splice(allowedRoles.indexOf('secretary'), 1)
@@ -111,8 +108,7 @@ serve(async (req) => {
     const profileData: any = {
       id: authUser.user.id,
       name: userData.name,
-      email: userData.email,
-      role: userData.role
+      email: userData.email
     }
 
     // Add optional fields if provided
@@ -147,6 +143,20 @@ serve(async (req) => {
     if (updateError) {
       console.error('Profile update error:', updateError)
       throw new Error(`Failed to update profile: ${updateError.message}`)
+    }
+
+    // Insert role into user_roles table
+    const { error: roleInsertError } = await supabaseAdmin
+      .from('user_roles')
+      .insert({
+        user_id: authUser.user.id,
+        role: userData.role,
+        granted_by: user.id
+      })
+
+    if (roleInsertError) {
+      console.error('Role insert error:', roleInsertError)
+      throw new Error(`Failed to assign user role: ${roleInsertError.message}`)
     }
 
     console.log(`Successfully created user: ${userData.email}`)

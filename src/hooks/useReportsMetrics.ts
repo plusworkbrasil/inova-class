@@ -36,7 +36,7 @@ export const useReportsMetrics = () => {
       const { data: allStudents } = await supabase
         .from('profiles')
         .select('id, status')
-        .eq('role', 'student');
+        .not('class_id', 'is', null);
 
       const studentsEnrolled = allStudents?.length || 0;
       const studentsAttending = allStudents?.filter(s => s.status === 'active').length || 0;
@@ -78,7 +78,7 @@ export const useReportsMetrics = () => {
           class_id,
           classes!inner(name)
         `)
-        .eq('role', 'student');
+        .not('class_id', 'is', null);
 
       // Calcular estatísticas das turmas
       const classCount: Record<string, number> = {};

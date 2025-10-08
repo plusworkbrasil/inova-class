@@ -95,7 +95,7 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
         .from('profiles')
         .select('id, name, student_id, class_id')
         .eq('class_id', subject.class_id)
-        .eq('role', 'student');
+        .not('class_id', 'is', null);
       
       if (error) throw error;
       setStudents(data || []);

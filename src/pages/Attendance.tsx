@@ -16,7 +16,7 @@ import { UserRole } from '@/types/user';
 import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
-import { toBrasiliaDate } from '@/lib/utils';
+import { toBrasiliaDate, formatDateBR } from '@/lib/utils';
 
 
 const Attendance = () => {
@@ -372,7 +372,7 @@ const Attendance = () => {
                     filteredRecords.map((record) => (
                       <TableRow key={record.id}>
                         <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
-                        <TableCell>{new Date(record.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{formatDateBR(record.date)}</TableCell>
                         <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
                         <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
                         <TableCell>
@@ -419,7 +419,7 @@ const Attendance = () => {
                   ) : (
                     groupedRecords.map((group) => (
                       <TableRow key={`${group.date}-${group.subject_id}-${group.class_id}`}>
-                        <TableCell>{new Date(group.date).toLocaleDateString('pt-BR')}</TableCell>
+                        <TableCell>{formatDateBR(group.date)}</TableCell>
                         <TableCell>{group.class_name}</TableCell>
                         <TableCell>{group.subject_name}</TableCell>
                         <TableCell>

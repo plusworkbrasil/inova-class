@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, Book, CheckCircle, XCircle } from "lucide-react";
 import { Attendance } from "@/hooks/useSupabaseAttendance";
+import { formatDateBR } from "@/lib/utils";
 
 interface AttendanceViewDialogProps {
   open: boolean;
@@ -31,7 +32,7 @@ export function AttendanceViewDialog({ open, onOpenChange, attendance }: Attenda
               <label className="text-sm font-medium text-muted-foreground">Data</label>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(attendance.date).toLocaleDateString('pt-BR')}</span>
+                <span>{formatDateBR(attendance.date)}</span>
               </div>
             </div>
             

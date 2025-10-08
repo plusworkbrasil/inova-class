@@ -44,3 +44,22 @@ export function getTodayInBrasilia(): string {
   
   return `${year}-${month}-${day}`;
 }
+
+/**
+ * Formata uma data para o padrão brasileiro DD/MM/YYYY
+ * Evita problemas de timezone ao formatar datas YYYY-MM-DD
+ */
+export function formatDateBR(date: Date | string): string {
+  // Se for string no formato YYYY-MM-DD, formatar diretamente
+  // sem criar objeto Date para evitar interpretação UTC
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [year, month, day] = date.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  
+  // Para outros formatos, usar toLocaleDateString com timezone de Brasília
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo'
+  });
+}

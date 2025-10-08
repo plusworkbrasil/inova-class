@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Check, X, Edit, FileText } from 'lucide-react';
 import { GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { formatDateBR } from '@/lib/utils';
 
 interface AttendanceGroupDetailsDialogProps {
   open: boolean;
@@ -37,7 +38,7 @@ export const AttendanceGroupDetailsDialog = ({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Data</p>
-                  <p className="font-medium">{new Date(group.date).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{formatDateBR(group.date)}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Turma</p>

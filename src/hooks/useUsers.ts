@@ -90,12 +90,11 @@ export const useUsers = () => {
         if (authError) throw authError;
 
         if (authData.user) {
-          // Atualizar o perfil com dados adicionais
+          // Atualizar o perfil com dados adicionais (SEM role)
           const { error: profileError } = await supabase
             .from('profiles')
             .update({
               name: userData.name,
-              role: userData.role,
               phone: userData.phone,
               birth_date: userData.birth_date || null,
               cep: userData.cep,
@@ -120,6 +119,24 @@ export const useUsers = () => {
 
           if (profileError) {
             console.error('Error updating profile:', profileError);
+            throw profileError;
+          }
+
+          // Inserir role na tabela user_roles
+          if (userData.role) {
+            const { data: currentUser } = await supabase.auth.getUser();
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: authData.user.id,
+                role: userData.role,
+                granted_by: currentUser?.user?.id
+              });
+
+            if (roleError) {
+              console.error('Error inserting role:', roleError);
+              throw roleError;
+            }
           }
         }
 

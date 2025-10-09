@@ -57,12 +57,20 @@ export const EquipmentAllocationDialog: React.FC<EquipmentAllocationDialogProps>
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, student_id')
-        .eq('role', 'student')
         .eq('status', 'active')
         .order('name');
 
       if (error) throw error;
-      setStudents(data || []);
+      
+      // Filtrar apenas estudantes usando a função get_user_role
+      const studentsWithRoles = await Promise.all(
+        (data || []).map(async (profile) => {
+          const { data: role } = await supabase.rpc('get_user_role', { user_id: profile.id });
+          return role === 'student' ? profile : null;
+        })
+      );
+      
+      setStudents(studentsWithRoles.filter(s => s !== null) as Student[]);
     } catch (error) {
       console.error('Error fetching students:', error);
     }

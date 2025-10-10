@@ -128,6 +128,8 @@ serve(async (req) => {
     if (userData.student_id) profileData.student_id = userData.student_id
     if (userData.class_id) profileData.class_id = userData.class_id
     if (userData.instructor_subjects) profileData.instructor_subjects = userData.instructor_subjects
+    if (userData.enrollment_number) profileData.enrollment_number = userData.enrollment_number
+    if (userData.birth_date) profileData.birth_date = userData.birth_date
 
     // Wait a moment for the trigger to create the basic profile
     await new Promise(resolve => setTimeout(resolve, 100))

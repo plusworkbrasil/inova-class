@@ -46,7 +46,8 @@ export function ClassStudentsDialog({ open, onOpenChange, classId, className }: 
         .from('profiles')
         .select('*')
         .eq('class_id', classId)
-        .not('class_id', 'is', null);
+        .not('class_id', 'is', null)
+        .order('name', { ascending: true });
 
       if (error) throw error;
       setStudents(data || []);

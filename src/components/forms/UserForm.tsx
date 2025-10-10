@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Upload } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
-import { cn } from '@/lib/utils';
+import { cn, formatDateBR } from '@/lib/utils';
 
 const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -269,21 +269,40 @@ export const UserForm: React.FC<UserFormProps> = ({
                 control={form.control}
                 name="birth_date"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        placeholder="dd/mm/aaaa"
-                        value={field.value ? format(field.value, "yyyy-MM-dd") : ""}
-                        onChange={(e) => {
-                          const dateValue = e.target.value ? new Date(e.target.value) : undefined;
-                          field.onChange(dateValue);
-                        }}
-                        max={format(new Date(), "yyyy-MM-dd")}
-                        min="1900-01-01"
-                      />
-                    </FormControl>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              formatDateBR(field.value)
+                            ) : (
+                              <span>Selecione a data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          className="pointer-events-auto"
+                        />
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -306,7 +325,7 @@ export const UserForm: React.FC<UserFormProps> = ({
                       <SelectItem value="coordinator">Coordenador</SelectItem>
                       <SelectItem value="secretary">Secretaria</SelectItem>
                       <SelectItem value="tutor">Tutor</SelectItem>
-                      <SelectItem value="teacher">Instrutor</SelectItem>
+                      <SelectItem value="instructor">Instrutor</SelectItem>
                       <SelectItem value="student">Aluno</SelectItem>
                     </SelectContent>
                   </Select>

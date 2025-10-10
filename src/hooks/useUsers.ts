@@ -124,12 +124,13 @@ export const useUsers = () => {
 
           // Inserir role na tabela user_roles
           if (userData.role) {
+            const normalizedRole = userData.role === 'teacher' ? 'instructor' : userData.role;
             const { data: currentUser } = await supabase.auth.getUser();
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert({
                 user_id: authData.user.id,
-                role: userData.role,
+                role: normalizedRole,
                 granted_by: currentUser?.user?.id
               });
 
@@ -180,10 +181,15 @@ export const useUsers = () => {
 
   const updateUser = async (id: string, updates: Partial<User>) => {
     try {
-      // Remove apenas campos undefined para evitar problemas
-      // Mantém null para permitir limpeza de campos como avatar
+      // Separar role dos demais campos
+      const { role: incomingRole, ...profileUpdates } = updates;
+      
+      // Normalizar "teacher" para "instructor" (compatibilidade)
+      const normalizedRole = incomingRole === 'teacher' ? 'instructor' : incomingRole;
+      
+      // Remove campos undefined
       const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined)
+        Object.entries(profileUpdates).filter(([_, value]) => value !== undefined)
       );
 
       // Compatibilidade: manter 'photo' sincronizado com 'avatar'
@@ -196,7 +202,36 @@ export const useUsers = () => {
         (cleanUpdates as any).class_id = null;
       }
 
-      console.log('Updating user with data:', cleanUpdates);
+      // Atualizar role se fornecido e diferente do atual
+      if (normalizedRole) {
+        const { data: currentRole } = await supabase.rpc('get_user_role', { user_id: id });
+        
+        if (currentRole !== normalizedRole) {
+          // Deletar role antiga
+          await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', id);
+          
+          // Inserir novo role
+          const { data: currentUser } = await supabase.auth.getUser();
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: id,
+              role: normalizedRole,
+              granted_by: currentUser?.user?.id
+            });
+
+          if (roleError) {
+            console.error('Error updating role:', roleError);
+            throw roleError;
+          }
+        }
+      }
+
+      // Atualizar perfil na tabela profiles (sem role)
+      console.log('Updating profile with data:', cleanUpdates);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -210,8 +245,8 @@ export const useUsers = () => {
         throw error;
       }
 
-      // Atualizar o estado local
-      setUsers(users.map(u => u.id === id ? { ...u, ...data } : u));
+      // Recarregar lista de usuários para refletir mudanças
+      await fetchUsers();
       
       toast({
         title: "Usuário atualizado com sucesso!",
@@ -222,14 +257,11 @@ export const useUsers = () => {
     } catch (err: any) {
       console.error('Error updating user:', err);
       
-      // Mensagens de erro mais específicas
       let errorMessage = "Não foi possível atualizar o usuário.";
-      if (err.message.includes('role')) {
+      if (err.message.includes('invalid input value for enum app_role')) {
+        errorMessage = "Erro: Função inválida. Use 'instructor' ao invés de 'teacher'.";
+      } else if (err.message.includes('role') || err.message.includes('RLS')) {
         errorMessage = "Erro: Você não tem permissão para alterar funções de usuário.";
-      } else if (err.message.includes('RLS')) {
-        errorMessage = "Erro: Acesso negado. Verifique suas permissões.";
-      } else if (err.message.includes('Access denied')) {
-        errorMessage = "Erro: Acesso negado. Verifique suas permissões.";
       }
       
       toast({

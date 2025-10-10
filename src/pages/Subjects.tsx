@@ -17,7 +17,7 @@ import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
-import { cn } from '@/lib/utils';
+import { cn, toBrasiliaDate } from '@/lib/utils';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -103,12 +103,12 @@ const Subjects = () => {
         status: data.status,
       };
 
-      if (data.start_date) {
-        subjectData.start_date = data.start_date.toISOString().split('T')[0];
-      }
-      if (data.end_date) {
-        subjectData.end_date = data.end_date.toISOString().split('T')[0];
-      }
+    if (data.start_date) {
+      subjectData.start_date = toBrasiliaDate(data.start_date);
+    }
+    if (data.end_date) {
+      subjectData.end_date = toBrasiliaDate(data.end_date);
+    }
 
       await createSubject(subjectData);
       
@@ -135,12 +135,12 @@ const Subjects = () => {
         status: subjectData.status,
       };
 
-      if (subjectData.start_date) {
-        updateData.start_date = subjectData.start_date.toISOString().split('T')[0];
-      }
-      if (subjectData.end_date) {
-        updateData.end_date = subjectData.end_date.toISOString().split('T')[0];
-      }
+    if (subjectData.start_date) {
+      updateData.start_date = toBrasiliaDate(subjectData.start_date);
+    }
+    if (subjectData.end_date) {
+      updateData.end_date = toBrasiliaDate(subjectData.end_date);
+    }
 
       await updateSubject(editingSubject.id, updateData);
       

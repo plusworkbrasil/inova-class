@@ -83,7 +83,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
-        .eq('class_id', classId);
+        .eq('class_id', classId)
+        .order('name', { ascending: true });
       
       if (error) throw error;
       setStudents(data || []);

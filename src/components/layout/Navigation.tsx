@@ -130,6 +130,10 @@ const menuItems = {
     icon: FileText,
     label: 'Comunicação',
     path: '/communications'
+  }, {
+    icon: FileText,
+    label: 'Relatórios',
+    path: '/reports'
   }],
   tutor: [{
     icon: LayoutDashboard,

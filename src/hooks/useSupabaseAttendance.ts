@@ -83,18 +83,26 @@ export const useSupabaseAttendance = () => {
 
   const createAttendance = async (attendanceData: Omit<Attendance, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      console.log('🔍 Tentando criar attendance:', attendanceData);
+      
       const { error } = await supabase
         .from('attendance')
         .insert([attendanceData]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro RLS/SQL:', error);
+        throw error;
+      }
 
+      console.log('✅ Attendance criado com sucesso');
       await fetchAttendance();
+      
       toast({
         title: "Sucesso!",
         description: "Frequência registrada com sucesso."
       });
     } catch (err: any) {
+      console.error('❌ Erro completo:', err);
       toast({
         variant: "destructive",
         title: "Erro",

@@ -25,6 +25,8 @@ const InstructorSubjects = () => {
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
+      console.log('📝 Registrando chamada para:', data);
+      
       for (const student of data.attendance) {
         await createAttendance({
           student_id: student.studentId,
@@ -44,11 +46,12 @@ const InstructorSubjects = () => {
       refetch();
       setIsAttendanceFormOpen(false);
       setSelectedSubject(null);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Erro ao registrar chamada:', error);
       toast({
         variant: "destructive",
         title: "Erro ao registrar chamada",
-        description: "Ocorreu um erro ao salvar a frequência.",
+        description: error.message || "Ocorreu um erro ao salvar a frequência. Verifique suas permissões.",
       });
     }
   };

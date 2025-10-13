@@ -269,40 +269,28 @@ export const UserForm: React.FC<UserFormProps> = ({
                 control={form.control}
                 name="birth_date"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              formatDateBR(field.value)
-                            ) : (
-                              <span>Selecione a data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
+                    <FormControl>
+                      <Input
+                        type="date"
+                        max={new Date().toISOString().split('T')[0]}
+                        min="1900-01-01"
+                        value={field.value ? toBrasiliaDate(field.value) : ''}
+                        onChange={(e) => {
+                          const dateValue = e.target.value;
+                          if (dateValue) {
+                            // Cria um objeto Date a partir do valor YYYY-MM-DD
+                            const [year, month, day] = dateValue.split('-');
+                            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                            field.onChange(date);
+                          } else {
+                            field.onChange(undefined);
                           }
-                          initialFocus
-                          className="pointer-events-auto"
-                        />
-                      </PopoverContent>
-                    </Popover>
+                        }}
+                        className="w-full"
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Plus, Upload } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
-import { cn, formatDateBR } from '@/lib/utils';
+import { cn, formatDateBR, toBrasiliaDate } from '@/lib/utils';
 
 const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
@@ -144,7 +144,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     const submissionData = {
       ...data,
       avatar: avatarUrl === null ? null : avatarUrl,
-      birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : undefined
+      birth_date: data.birth_date ? toBrasiliaDate(data.birth_date) : undefined
     };
     onSubmit(submissionData);
     setOpen(false);

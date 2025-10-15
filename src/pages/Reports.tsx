@@ -16,8 +16,8 @@ import { useReportsData } from '@/hooks/useReportsData';
 import { useReportsMetrics } from '@/hooks/useReportsMetrics';
 
 const Reports = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [userName, setUserName] = useState('Usuário');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: reportsData, loading: reportsLoading } = useReportsData();

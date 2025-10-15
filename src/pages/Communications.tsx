@@ -54,8 +54,8 @@ const mockCommunications = [
 ];
 
 const Communications = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [userName, setUserName] = useState('Usuário');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [messageTitle, setMessageTitle] = useState('');

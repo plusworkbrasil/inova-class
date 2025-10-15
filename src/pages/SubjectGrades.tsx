@@ -31,8 +31,8 @@ const SubjectGrades = () => {
   const { users } = useUsers();
   const { toast } = useToast();
 
-  const userRole = (profile?.role || 'admin') as UserRole;
-  const userName = profile?.name || 'Admin';
+  const userRole = (profile?.role || 'student') as UserRole;
+  const userName = profile?.name || 'Usuário';
   
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');

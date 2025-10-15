@@ -8,6 +8,7 @@ import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
 import { useCoordinatorDashboardStats } from '@/hooks/useCoordinatorDashboardStats';
@@ -20,27 +21,39 @@ import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 
 const Dashboard = () => {
-  const { profile, loading: authLoading, isAuthenticated } = useAuth();
+  const { user, profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { stats: instructorStats, loading: instructorStatsLoading } = useInstructorDashboardStats();
   const { stats: coordinatorStats, loading: coordinatorStatsLoading } = useCoordinatorDashboardStats();
   const { data: grades } = useSupabaseGrades();
   const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
+  const { role: userRoleFromDB, loading: roleLoading } = useUserRole(user?.id);
   
-  const userRole = (profile?.role || 'admin') as UserRole;
-  const userName = profile?.name || 'Admin';
+  const userRole = (userRoleFromDB || 'student') as UserRole;
+  const userName = profile?.name || 'Usuário';
 
   useEffect(() => {
     const checkAuth = async () => {
       // Só redireciona se não estiver carregando E não estiver autenticado
-      if (!authLoading && !isAuthenticated) {
+      if (!authLoading && !roleLoading && !isAuthenticated) {
         navigate('/auth', { replace: true });
       }
     };
     
     checkAuth();
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, roleLoading, isAuthenticated, navigate]);
+
+  // Show loading while auth or role is loading
+  if (authLoading || roleLoading) {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   const handleChangeUser = () => {
     navigate('/auth');

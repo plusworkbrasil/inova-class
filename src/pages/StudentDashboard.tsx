@@ -19,8 +19,8 @@ const StudentDashboard = () => {
   const { studentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [userName, setUserName] = useState('Usuário');
 
   // Hooks do Supabase
   const { user, profile } = useSupabaseAuth();

@@ -25,8 +25,8 @@ const Grades = () => {
   const { users } = useUsers();
   const { toast } = useToast();
 
-  const userRole = (profile?.role || 'admin') as UserRole;
-  const userName = profile?.name || 'Admin';
+  const userRole = (profile?.role || 'student') as UserRole;
+  const userName = profile?.name || 'Usuário';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');

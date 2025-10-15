@@ -18,8 +18,8 @@ import { useRealClassData } from '@/hooks/useRealClassData';
 
 const Classes = () => {
   const { profile } = useAuth();
-  const userRole = (profile?.role || 'admin') as UserRole;
-  const userName = profile?.name || 'Admin';
+  const userRole = (profile?.role || 'student') as UserRole;
+  const userName = profile?.name || 'Usuário';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);

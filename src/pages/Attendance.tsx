@@ -20,8 +20,8 @@ import { toBrasiliaDate, formatDateBR } from '@/lib/utils';
 
 
 const Attendance = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [userName, setUserName] = useState('Usuário');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);

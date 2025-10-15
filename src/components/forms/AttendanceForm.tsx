@@ -80,16 +80,23 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     
     setLoadingStudents(true);
     try {
+      console.log('🔍 Buscando alunos da turma:', classId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
         .eq('class_id', classId)
         .order('name', { ascending: true });
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar alunos:', error);
+        throw error;
+      }
+      
+      console.log('✅ Alunos encontrados:', data?.length || 0);
       setStudents(data || []);
     } catch (error) {
-      console.error('Erro ao buscar alunos:', error);
+      console.error('❌ Erro ao buscar alunos:', error);
       setStudents([]);
     } finally {
       setLoadingStudents(false);

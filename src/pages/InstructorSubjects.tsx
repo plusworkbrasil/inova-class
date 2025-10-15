@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,19 @@ import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 
 const InstructorSubjects = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { subjects, loading } = useInstructorSubjects();
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const { toast } = useToast();
   const { createAttendance, refetch } = useSupabaseAttendance();
+
+  // Logs de debug
+  useEffect(() => {
+    console.log('👤 Usuário atual:', user?.id);
+    console.log('👤 Profile role:', profile?.role);
+    console.log('📚 Disciplinas carregadas:', subjects.length);
+  }, [user?.id, profile?.role, subjects]);
 
   const handleAttendanceClick = (subjectId: string) => {
     setSelectedSubject(subjectId);

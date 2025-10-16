@@ -16,12 +16,14 @@ import { UserRole } from '@/types/user';
 import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { toBrasiliaDate, formatDateBR } from '@/lib/utils';
 
 
 const Attendance = () => {
-  const [userRole, setUserRole] = useState<UserRole>('student');
-  const [userName, setUserName] = useState('Usuário');
+  const { user, profile } = useAuth();
+  const { role: userRole, loading: roleLoading } = useUserRole(user?.id);
+  const userName = profile?.name || 'Usuário';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
@@ -31,7 +33,6 @@ const Attendance = () => {
   const [selectedAttendance, setSelectedAttendance] = useState<Attendance | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupedAttendance | null>(null);
   const { toast } = useToast();
-  const { user, profile } = useAuth();
   const { 
     data: attendanceData, 
     loading: attendanceLoading, 
@@ -45,12 +46,6 @@ const Attendance = () => {
   } = useSupabaseAttendance();
   const { data: classes } = useSupabaseClasses();
 
-  useEffect(() => {
-    if (profile) {
-      setUserRole(profile.role as UserRole);
-      setUserName(profile.name);
-    }
-  }, [profile]);
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
@@ -229,7 +224,7 @@ const Attendance = () => {
   };
 
   const filteredRecords = getFilteredData();
-  const groupedRecords = userRole !== 'student' ? getGroupedAttendance() : [];
+  const groupedRecords = userRole && userRole !== 'student' ? getGroupedAttendance() : [];
 
   return (
     <Layout>

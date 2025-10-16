@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { role: resolvedRole, loading: roleLoading } = useUserRole(user?.id);
 
   console.log('[Layout] Auth state:', {
     userId: user?.id,
@@ -25,7 +27,7 @@ const Layout = ({ children }: LayoutProps) => {
     }
   }, [loading, isAuthenticated, navigate]);
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -37,7 +39,7 @@ const Layout = ({ children }: LayoutProps) => {
     return null;
   }
 
-  const displayRole = (profile?.role || 'student') as UserRole;
+  const displayRole = (resolvedRole || 'student') as UserRole;
   const displayName = profile?.name || user?.email || 'Usuário';
   const displayAvatar = '';
 

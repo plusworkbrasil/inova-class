@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useUserRole } from './useUserRole';
 import { useToast } from './use-toast';
 
 export interface InstructorDashboardStats {
@@ -19,7 +20,8 @@ export const useInstructorDashboardStats = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const { role, loading: roleLoading } = useUserRole(user?.id);
   const { toast } = useToast();
 
   const fetchInstructorStats = async () => {
@@ -115,14 +117,15 @@ export const useInstructorDashboardStats = () => {
   };
 
   useEffect(() => {
-    if (profile?.role === 'instructor') {
+    console.log('[useInstructorDashboardStats] Role:', role, 'RoleLoading:', roleLoading);
+    if (!roleLoading && role === 'instructor') {
       fetchInstructorStats();
     }
-  }, [profile]);
+  }, [role, roleLoading]);
 
   return {
     stats,
-    loading,
+    loading: loading || roleLoading,
     error,
     refetch: fetchInstructorStats
   };

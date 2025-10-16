@@ -68,10 +68,14 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
       return subject.class_id === selectedClassId;
     }
     // Para instructors: apenas disciplinas que eles ministram na turma selecionada
-    return subject.class_id === selectedClassId && (
-      subject.teacher_id === profile?.id || 
-      profile?.instructor_subjects?.includes(subject.name)
-    );
+    const isTeacher = subject.teacher_id === profile?.id;
+    const isInstructorSubject = profile?.instructor_subjects?.includes(subject.name);
+    
+    if (!isTeacher && !isInstructorSubject) {
+      console.log(`[AttendanceForm] Instrutor ${profile?.name} não tem permissão para: ${subject.name}`);
+    }
+    
+    return subject.class_id === selectedClassId && (isTeacher || isInstructorSubject);
   }) || [];
 
   // Buscar alunos da turma selecionada

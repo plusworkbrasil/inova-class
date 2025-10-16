@@ -272,9 +272,10 @@ const Dashboard = () => {
                 {userRole === 'instructor' && (
                   <>
                     <Badge variant="secondary">• Dashboard</Badge>
-                    <Badge variant="secondary">• Chamada</Badge>
+                    <Badge variant="secondary">• Minhas Disciplinas</Badge>
+                    <Badge variant="secondary">• Frequência</Badge>
                     <Badge variant="secondary">• Notas</Badge>
-                    <Badge variant="secondary">• Declarações</Badge>
+                    <Badge variant="secondary">• Equipamentos</Badge>
                   </>
                 )}
                 {userRole === 'student' && (

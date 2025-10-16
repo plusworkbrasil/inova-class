@@ -68,7 +68,7 @@ const InstructorSubjects = () => {
   }
 
   return (
-    <Layout userRole={profile.role as any} userName={profile.name} userAvatar={profile.avatar}>
+    <Layout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Minhas Disciplinas</h1>

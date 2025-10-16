@@ -47,7 +47,7 @@ const Settings = () => {
 
   if (loading) {
     return (
-      <Layout userRole="admin" userName="Admin" userAvatar="">
+      <Layout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
           <span className="ml-2">Carregando configurações...</span>
@@ -57,7 +57,7 @@ const Settings = () => {
   }
 
   return (
-    <Layout userRole="admin" userName="Admin" userAvatar="">
+    <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Configurações</h1>

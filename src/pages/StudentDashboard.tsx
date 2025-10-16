@@ -155,7 +155,7 @@ const StudentDashboard = () => {
 
   if (gradesLoading || attendanceLoading) {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <div className="space-y-6">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -169,7 +169,7 @@ const StudentDashboard = () => {
   }
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button 

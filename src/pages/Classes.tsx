@@ -95,7 +95,7 @@ const Classes = () => {
 
   if (loading) {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
@@ -104,7 +104,7 @@ const Classes = () => {
   }
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Turmas</h1>

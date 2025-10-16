@@ -47,7 +47,7 @@ const Dashboard = () => {
   // Show loading while auth or role is loading
   if (authLoading || roleLoading) {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
@@ -66,7 +66,7 @@ const Dashboard = () => {
   // Para admin, mostrar o AdminDashboard completo
   if (userRole === 'admin') {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <AdminDashboard />
       </Layout>
     );
@@ -158,7 +158,7 @@ const Dashboard = () => {
   const content = getDashboardContent();
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         {/* Banner de avisos urgentes para alunos */}
         {userRole === 'student' && (

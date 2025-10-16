@@ -76,7 +76,7 @@ const Profile = () => {
   }
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         {/* Cabeçalho */}
         <div>

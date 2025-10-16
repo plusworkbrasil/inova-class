@@ -167,7 +167,7 @@ const Equipment = () => {
 
   if (loading) {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <div className="flex justify-center items-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -176,7 +176,7 @@ const Equipment = () => {
   }
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-start mb-6">
           <div>

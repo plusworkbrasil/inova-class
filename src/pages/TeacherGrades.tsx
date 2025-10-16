@@ -185,11 +185,7 @@ const TeacherGrades = () => {
   }
 
   return (
-    <Layout 
-      userRole={((profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'instructor') as UserRole}
-      userName={profile?.name || 'Instrutor'}
-      userAvatar=""
-    >
+    <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>

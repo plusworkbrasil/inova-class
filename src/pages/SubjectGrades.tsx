@@ -47,7 +47,7 @@ const SubjectGrades = () => {
 
   if (!canManageGrades) {
     return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
+      <Layout>
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <h2 className="text-2xl font-semibold mb-2">Acesso Negado</h2>
@@ -201,7 +201,7 @@ const SubjectGrades = () => {
   ];
 
   return (
-    <Layout userRole={userRole} userName={userName} userAvatar="">
+    <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>

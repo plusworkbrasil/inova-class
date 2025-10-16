@@ -6,14 +6,18 @@ import { useAuth } from '@/hooks/useAuth';
 
 interface LayoutProps {
   children: ReactNode;
-  userRole?: UserRole;
-  userName?: string;
-  userAvatar?: string;
 }
 
-const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
+const Layout = ({ children }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+
+  console.log('[Layout] Auth state:', {
+    userId: user?.id,
+    profileRole: profile?.role,
+    loading,
+    isAuthenticated
+  });
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -33,9 +37,9 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
     return null;
   }
 
-  const displayRole = (profile?.role || userRole || 'student') as UserRole;
-  const displayName = profile?.name || userName || user?.email || 'Usuário';
-  const displayAvatar = userAvatar || '';
+  const displayRole = (profile?.role || 'student') as UserRole;
+  const displayName = profile?.name || user?.email || 'Usuário';
+  const displayAvatar = '';
 
   return (
     <div className="min-h-screen bg-background">

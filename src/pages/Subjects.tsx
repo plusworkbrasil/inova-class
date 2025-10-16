@@ -21,8 +21,8 @@ import { cn, toBrasiliaDate } from '@/lib/utils';
 
 const Subjects = () => {
   const { profile } = useAuth();
-  const userRole = (profile?.role || 'student') as UserRole;
-  const userName = profile?.name || 'Usuário';
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -188,7 +188,7 @@ const Subjects = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
         </div>
@@ -197,7 +197,7 @@ const Subjects = () => {
   }
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Gerenciamento de Disciplinas</h1>

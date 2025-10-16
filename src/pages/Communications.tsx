@@ -54,8 +54,8 @@ const mockCommunications = [
 ];
 
 const Communications = () => {
-  const [userRole, setUserRole] = useState<UserRole>('student');
-  const [userName, setUserName] = useState('Usuário');
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [messageTitle, setMessageTitle] = useState('');
@@ -185,7 +185,7 @@ const Communications = () => {
   );
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Comunicação e Informativos</h1>

@@ -3,23 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 
 interface LayoutProps {
   children: ReactNode;
+  userRole?: UserRole;
+  userName?: string;
+  userAvatar?: string;
 }
 
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { role: resolvedRole, loading: roleLoading } = useUserRole(user?.id);
-
-  console.log('[Layout] Auth state:', {
-    userId: user?.id,
-    profileRole: profile?.role,
-    loading,
-    isAuthenticated
-  });
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -27,7 +21,7 @@ const Layout = ({ children }: LayoutProps) => {
     }
   }, [loading, isAuthenticated, navigate]);
 
-  if (loading || roleLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -39,9 +33,9 @@ const Layout = ({ children }: LayoutProps) => {
     return null;
   }
 
-  const displayRole = (resolvedRole || 'student') as UserRole;
-  const displayName = profile?.name || user?.email || 'Usuário';
-  const displayAvatar = '';
+  const displayRole = (profile?.role || userRole || 'student') as UserRole;
+  const displayName = profile?.name || userName || user?.email || 'Usuário';
+  const displayAvatar = userAvatar || '';
 
   return (
     <div className="min-h-screen bg-background">

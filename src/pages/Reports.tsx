@@ -16,8 +16,8 @@ import { useReportsData } from '@/hooks/useReportsData';
 import { useReportsMetrics } from '@/hooks/useReportsMetrics';
 
 const Reports = () => {
-  const [userRole, setUserRole] = useState<UserRole>('student');
-  const [userName, setUserName] = useState('Usuário');
+  const [userRole, setUserRole] = useState<UserRole>('admin');
+  const [userName, setUserName] = useState('Admin');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: reportsData, loading: reportsLoading } = useReportsData();
@@ -206,7 +206,7 @@ const Reports = () => {
   };
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Relatórios</h1>

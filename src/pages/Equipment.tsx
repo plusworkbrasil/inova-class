@@ -50,7 +50,7 @@ const Equipment = () => {
   const { data, loading, createEquipment, updateEquipment, deleteEquipment } = useEquipment();
 
   // Map database role to application role (handle legacy 'teacher' role)
-  const userRole = ((profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'student') as UserRole;
+  const userRole = ((profile?.role === 'teacher' ? 'instructor' : profile?.role) || 'admin') as UserRole;
   const userName = profile?.name || 'Usuário';
 
   const form = useForm<EquipmentFormData>({
@@ -167,7 +167,7 @@ const Equipment = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex justify-center items-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
@@ -176,7 +176,7 @@ const Equipment = () => {
   }
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-start mb-6">
           <div>

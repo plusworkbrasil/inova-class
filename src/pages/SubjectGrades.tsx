@@ -31,8 +31,8 @@ const SubjectGrades = () => {
   const { users } = useUsers();
   const { toast } = useToast();
 
-  const userRole = (profile?.role || 'student') as UserRole;
-  const userName = profile?.name || 'Usuário';
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
   
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -47,7 +47,7 @@ const SubjectGrades = () => {
 
   if (!canManageGrades) {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <h2 className="text-2xl font-semibold mb-2">Acesso Negado</h2>
@@ -201,7 +201,7 @@ const SubjectGrades = () => {
   ];
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>

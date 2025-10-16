@@ -8,7 +8,6 @@ import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
-import { useUserRole } from '@/hooks/useUserRole';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
 import { useCoordinatorDashboardStats } from '@/hooks/useCoordinatorDashboardStats';
@@ -21,39 +20,27 @@ import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 
 const Dashboard = () => {
-  const { user, profile, loading: authLoading, isAuthenticated } = useAuth();
+  const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const { stats, loading: statsLoading } = useDashboardStats();
   const { stats: instructorStats, loading: instructorStatsLoading } = useInstructorDashboardStats();
   const { stats: coordinatorStats, loading: coordinatorStatsLoading } = useCoordinatorDashboardStats();
   const { data: grades } = useSupabaseGrades();
   const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
-  const { role: userRoleFromDB, loading: roleLoading } = useUserRole(user?.id);
   
-  const userRole = (userRoleFromDB || 'student') as UserRole;
-  const userName = profile?.name || 'Usuário';
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
 
   useEffect(() => {
     const checkAuth = async () => {
       // Só redireciona se não estiver carregando E não estiver autenticado
-      if (!authLoading && !roleLoading && !isAuthenticated) {
+      if (!authLoading && !isAuthenticated) {
         navigate('/auth', { replace: true });
       }
     };
     
     checkAuth();
-  }, [authLoading, roleLoading, isAuthenticated, navigate]);
-
-  // Show loading while auth or role is loading
-  if (authLoading || roleLoading) {
-    return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </Layout>
-    );
-  }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleChangeUser = () => {
     navigate('/auth');
@@ -66,7 +53,7 @@ const Dashboard = () => {
   // Para admin, mostrar o AdminDashboard completo
   if (userRole === 'admin') {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <AdminDashboard />
       </Layout>
     );
@@ -158,7 +145,7 @@ const Dashboard = () => {
   const content = getDashboardContent();
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         {/* Banner de avisos urgentes para alunos */}
         {userRole === 'student' && (
@@ -272,10 +259,9 @@ const Dashboard = () => {
                 {userRole === 'instructor' && (
                   <>
                     <Badge variant="secondary">• Dashboard</Badge>
-                    <Badge variant="secondary">• Minhas Disciplinas</Badge>
-                    <Badge variant="secondary">• Frequência</Badge>
+                    <Badge variant="secondary">• Chamada</Badge>
                     <Badge variant="secondary">• Notas</Badge>
-                    <Badge variant="secondary">• Equipamentos</Badge>
+                    <Badge variant="secondary">• Declarações</Badge>
                   </>
                 )}
                 {userRole === 'student' && (

@@ -159,7 +159,7 @@ const Notices = () => {
 
   if (userRole !== 'secretary' && userRole !== 'admin') {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Acesso restrito à secretaria.</p>
         </div>
@@ -168,7 +168,7 @@ const Notices = () => {
   }
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         {/* Cabeçalho */}
         <div className="flex justify-between items-start">

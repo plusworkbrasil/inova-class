@@ -25,8 +25,8 @@ const Grades = () => {
   const { users } = useUsers();
   const { toast } = useToast();
 
-  const userRole = (profile?.role || 'student') as UserRole;
-  const userName = profile?.name || 'Usuário';
+  const userRole = (profile?.role || 'admin') as UserRole;
+  const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
@@ -40,7 +40,7 @@ const Grades = () => {
 
   if (!canManageGrades) {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <h2 className="text-2xl font-semibold mb-2">Acesso Negado</h2>
@@ -158,7 +158,7 @@ const Grades = () => {
   const subjectsCount = new Set(grades.map(grade => grade.subject_id)).size;
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">

@@ -152,7 +152,7 @@ const Declarations = () => {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="space-y-6">
           <div className="flex justify-center items-center min-h-[400px]">
             <p>Carregando...</p>
@@ -163,7 +163,7 @@ const Declarations = () => {
   }
 
   return (
-    <Layout>
+    <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">

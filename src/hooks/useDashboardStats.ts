@@ -46,6 +46,22 @@ export const useDashboardStats = () => {
       
       console.log('✅ [useDashboardStats] Sessão válida:', session.user.email);
 
+      // Verificar role do usuário atual
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .single();
+
+      console.log('🔒 [useDashboardStats] User role:', roleData?.role);
+
+      // Só executar queries amplas se for admin/secretary
+      if (roleData?.role !== 'admin' && roleData?.role !== 'secretary') {
+        console.warn('⚠️ [useDashboardStats] Este hook deve ser usado apenas por admin/secretary');
+        setLoading(false);
+        return;
+      }
+
       let totalUsers = 0;
       let totalStudents = 0;
       let totalTeachers = 0;

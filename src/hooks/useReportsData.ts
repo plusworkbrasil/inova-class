@@ -33,6 +33,18 @@ export const useReportsData = () => {
       setLoading(true);
       console.log('🔍 [useReportsData] Iniciando busca de dados de relatórios...');
 
+      // Verificar role do usuário
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        console.log('🔒 [useReportsData] User role:', roleData?.role);
+      }
+
       // Fetch attendance data
       console.log('🔍 [useReportsData] Buscando dados de frequência...');
       const { data: attendance, error: attendanceError } = await supabase

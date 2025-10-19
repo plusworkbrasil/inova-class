@@ -28,9 +28,22 @@ const StatsCard = ({ title, value, icon, trend, className }: StatsCardProps) => 
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold text-foreground mb-1">
-          {value}
-        </div>
+        {value === 0 || value === 'Erro' || value === 'N/A' ? (
+          <div className="space-y-2">
+            <div className="text-2xl font-bold text-muted-foreground">
+              {value === 0 ? '0' : value}
+            </div>
+            {value === 'Erro' && (
+              <p className="text-xs text-muted-foreground">
+                Não foi possível carregar os dados
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="text-2xl font-bold text-foreground mb-1">
+            {value}
+          </div>
+        )}
         {trend && (
           <div className="flex items-center text-xs">
             <span

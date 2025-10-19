@@ -13,11 +13,11 @@ import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats
 import { useCoordinatorDashboardStats } from '@/hooks/useCoordinatorDashboardStats';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
-import StudentNotifications from '@/components/dashboard/StudentNotifications';
+import AdminDashboard from '@/components/dashboard/AdminDashboard';
+import InstructorDashboard from '@/components/dashboard/InstructorDashboard';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
-import AdminDashboard from '@/components/dashboard/AdminDashboard';
 
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
@@ -55,14 +55,6 @@ const Dashboard = () => {
     );
   }
 
-  const handleChangeUser = () => {
-    navigate('/auth');
-  };
-
-  const handleLogout = () => {
-    navigate('/auth');
-  };
-
   // Para admin, mostrar o AdminDashboard completo
   if (userRole === 'admin') {
     return (
@@ -71,6 +63,23 @@ const Dashboard = () => {
       </Layout>
     );
   }
+
+  // Para instructor, usar InstructorDashboard
+  if (userRole === 'instructor') {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <InstructorDashboard />
+      </Layout>
+    );
+  }
+
+  const handleChangeUser = () => {
+    navigate('/auth');
+  };
+
+  const handleLogout = () => {
+    navigate('/auth');
+  };
 
   const getDashboardContent = () => {
     // Calculate real student data from database
@@ -98,17 +107,6 @@ const Dashboard = () => {
             { title: 'Minhas Notas', value: averageGrade, description: 'Média geral' },
             { title: 'Frequência', value: attendancePercentage, description: 'Presença nas aulas' },
             { title: 'Faltas', value: totalAbsences.toString(), description: 'Total no período' },
-          ]
-        };
-      case 'instructor':
-        return {
-          title: 'Dashboard do Instrutor',
-          description: 'Gerencie suas turmas e atividades',
-          cards: [
-            { title: 'Minhas Turmas', value: instructorStatsLoading ? '...' : instructorStats.myClasses.toString(), description: 'Turmas que leciono' },
-            { title: '% Presença', value: instructorStatsLoading ? '...' : `${instructorStats.attendancePercentage}%`, description: 'Porcentagem de alunos presentes' },
-            { title: 'Média de Notas', value: instructorStatsLoading ? '...' : instructorStats.averageGrade.toString(), description: 'Média geral dos alunos' },
-            { title: 'Alunos Evadidos', value: instructorStatsLoading ? '...' : instructorStats.evadedStudents.toString(), description: 'Evasões nas suas disciplinas' },
           ]
         };
       case 'coordinator':
@@ -269,14 +267,6 @@ const Dashboard = () => {
                 Com seu perfil de <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>, você tem acesso às seguintes funcionalidades no menu lateral:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {userRole === 'instructor' && (
-                  <>
-                    <Badge variant="secondary">• Dashboard</Badge>
-                    <Badge variant="secondary">• Chamada</Badge>
-                    <Badge variant="secondary">• Notas</Badge>
-                    <Badge variant="secondary">• Declarações</Badge>
-                  </>
-                )}
                 {userRole === 'student' && (
                   <>
                     <Badge variant="secondary">• Dashboard</Badge>

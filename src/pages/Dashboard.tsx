@@ -21,14 +21,10 @@ import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
 
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
-  const { stats, loading: statsLoading } = useDashboardStats();
-  const { stats: instructorStats, loading: instructorStatsLoading } = useInstructorDashboardStats();
-  const { stats: coordinatorStats, loading: coordinatorStatsLoading } = useCoordinatorDashboardStats();
-  const { data: grades } = useSupabaseGrades();
-  const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
   
-  // NEVER assume 'admin' as default - wait for real role
+  // NÃO carregamos dados aqui - cada dashboard carrega seus próprios dados
+  // Isso evita queries antes do role estar pronto
   const userRole = profile?.role as UserRole | undefined;
   const userName = profile?.name || 'Usuário';
 
@@ -45,6 +41,7 @@ const Dashboard = () => {
 
   // Se não tiver papel definido, mostrar loading
   if (authLoading || !userRole) {
+    console.log('⏳ [Dashboard] Aguardando role do usuário...');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -55,7 +52,9 @@ const Dashboard = () => {
     );
   }
 
-  // Para admin, mostrar o AdminDashboard completo
+  console.log('✅ [Dashboard] Role carregado:', userRole);
+
+  // Renderizar dashboard específico por papel (cada um carrega seus próprios dados)
   if (userRole === 'admin') {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -64,7 +63,6 @@ const Dashboard = () => {
     );
   }
 
-  // Para instructor, usar InstructorDashboard
   if (userRole === 'instructor') {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -81,22 +79,9 @@ const Dashboard = () => {
     navigate('/auth');
   };
 
+  // Para papéis restantes (student, coordinator, secretary, tutor)
+  // Cada um terá um dashboard simples sem queries pesadas no topo
   const getDashboardContent = () => {
-    // Calculate real student data from database
-    const studentGrades = grades?.filter(g => g.student_id === profile?.id) || [];
-    const studentAttendance = attendance?.filter(a => a.student_id === profile?.id) || [];
-    
-    const averageGrade = studentGrades.length > 0 
-      ? (studentGrades.reduce((sum, grade) => sum + Number(grade.value), 0) / studentGrades.length).toFixed(1)
-      : '0.0';
-    
-    const totalAttendanceDays = studentAttendance.length;
-    const presentDays = studentAttendance.filter(a => a.is_present).length;
-    const attendancePercentage = totalAttendanceDays > 0 
-      ? `${Math.round((presentDays / totalAttendanceDays) * 100)}%`
-      : '0%';
-    
-    const totalAbsences = studentAttendance.filter(a => !a.is_present).length;
 
     switch (userRole) {
       case 'student':
@@ -104,9 +89,9 @@ const Dashboard = () => {
           title: 'Dashboard do Aluno',
           description: 'Bem-vindo ao seu painel acadêmico',
           cards: [
-            { title: 'Minhas Notas', value: averageGrade, description: 'Média geral' },
-            { title: 'Frequência', value: attendancePercentage, description: 'Presença nas aulas' },
-            { title: 'Faltas', value: totalAbsences.toString(), description: 'Total no período' },
+            { title: 'Minhas Notas', value: 'Ver Notas', description: 'Acesse suas notas' },
+            { title: 'Frequência', value: 'Ver Frequência', description: 'Acesse sua frequência' },
+            { title: 'Declarações', value: 'Solicitar', description: 'Solicite declarações' },
           ]
         };
       case 'coordinator':
@@ -114,12 +99,9 @@ const Dashboard = () => {
           title: 'Dashboard do Coordenador',
           description: 'Visão geral da coordenação acadêmica',
           cards: [
-            { title: 'Turmas Gerenciadas', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalClasses.toString(), description: 'Total de turmas sob coordenação' },
-            { title: 'Instrutores', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalInstructors.toString(), description: 'Total de instrutores ativos' },
-            { title: 'Frequência Geral', value: coordinatorStatsLoading ? '...' : `${coordinatorStats.averageAttendance}%`, description: 'Taxa média de presença' },
-            { title: 'Comunicações', value: coordinatorStatsLoading ? '...' : coordinatorStats.totalCommunications.toString(), description: 'Comunicações enviadas' },
-            { title: 'Evasões Ativas', value: coordinatorStatsLoading ? '...' : coordinatorStats.activeEvasions.toString(), description: 'Casos de evasão em acompanhamento' },
-            { title: 'Relatórios Pendentes', value: coordinatorStatsLoading ? '...' : coordinatorStats.pendingReports.toString(), description: 'Relatórios aguardando processamento' }
+            { title: 'Turmas Gerenciadas', value: 'Carregando...', description: 'Total de turmas sob coordenação' },
+            { title: 'Instrutores', value: 'Carregando...', description: 'Total de instrutores ativos' },
+            { title: 'Frequência Geral', value: 'Carregando...', description: 'Taxa média de presença' },
           ]
         };
       case 'secretary':
@@ -127,10 +109,9 @@ const Dashboard = () => {
           title: 'Dashboard da Secretaria',
           description: 'Gestão administrativa e documentos',
           cards: [
-            { title: 'Matrículas', value: statsLoading ? '...' : stats.totalStudents.toString(), description: 'Alunos matriculados' },
-            { title: 'Declarações', value: statsLoading ? '...' : stats.pendingDeclarations.toString(), description: 'Pendentes de emissão' },
-            { title: 'Documentos', value: statsLoading ? '...' : stats.totalDeclarations.toString(), description: 'Total no sistema' },
-            { title: 'Atendimentos', value: '0', description: 'Agendados hoje' },
+            { title: 'Matrículas', value: 'Carregando...', description: 'Alunos matriculados' },
+            { title: 'Declarações', value: 'Carregando...', description: 'Pendentes de emissão' },
+            { title: 'Documentos', value: 'Carregando...', description: 'Total no sistema' },
           ]
         };
       case 'tutor':
@@ -138,10 +119,9 @@ const Dashboard = () => {
           title: 'Dashboard do Tutor',
           description: 'Acompanhamento dos alunos tutorados',
           cards: [
-            { title: 'Alunos Tutorados', value: '15', description: 'Sob sua tutoria' },
-            { title: 'Reuniões', value: '5', description: 'Agendadas esta semana' },
-            { title: 'Relatórios', value: '3', description: 'Pendentes de entrega' },
-            { title: 'Alertas', value: '2', description: 'Alunos em risco' },
+            { title: 'Alunos Tutorados', value: 'Carregando...', description: 'Sob sua tutoria' },
+            { title: 'Reuniões', value: 'Carregando...', description: 'Agendadas esta semana' },
+            { title: 'Relatórios', value: 'Carregando...', description: 'Pendentes de entrega' },
           ]
         };
       default:

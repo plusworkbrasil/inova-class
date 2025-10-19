@@ -51,23 +51,28 @@ export const useSupabaseAuth = () => {
 
       if (!data) return null;
 
-      // Fetch role from user_roles table using RPC
+      // Fetch role from user_roles table (agora sem recursão!)
       const { data: roleData, error: roleError } = await supabase
-        .rpc('get_user_role', { user_id: userId });
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
 
       if (roleError) {
-        console.error('Error fetching user role:', roleError);
+        console.error('⚠️ [useSupabaseAuth] Error fetching role:', roleError);
       }
 
+      const userRole = roleData?.role || 'student';
+
       // Merge profile with role
-      const profileWithRole = { ...data, role: roleData || 'student' };
+      const profileWithRole = { ...data, role: userRole };
 
       // SECURITY: Log role assignment for debugging
       console.log('🔐 [useSupabaseAuth] Role loaded:', {
         userId: userId,
         email: data.email,
-        roleFromDB: roleData,
-        finalRole: profileWithRole.role
+        roleFromDB: roleData?.role,
+        finalRole: userRole
       });
 
       return profileWithRole;

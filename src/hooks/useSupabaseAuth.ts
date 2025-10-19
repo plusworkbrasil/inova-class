@@ -60,7 +60,17 @@ export const useSupabaseAuth = () => {
       }
 
       // Merge profile with role
-      return { ...data, role: roleData || 'student' };
+      const profileWithRole = { ...data, role: roleData || 'student' };
+
+      // SECURITY: Log role assignment for debugging
+      console.log('🔐 [useSupabaseAuth] Role loaded:', {
+        userId: userId,
+        email: data.email,
+        roleFromDB: roleData,
+        finalRole: profileWithRole.role
+      });
+
+      return profileWithRole;
     } catch (err: any) {
       console.error('Error fetching profile:', err);
       return null;

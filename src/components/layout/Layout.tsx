@@ -33,9 +33,22 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
     return null;
   }
 
-  const displayRole = (profile?.role || userRole || 'student') as UserRole;
+  // NEVER use 'student' as default fallback - prefer userRole from props
+  const displayRole = (profile?.role || userRole) as UserRole | undefined;
   const displayName = profile?.name || userName || user?.email || 'Usuário';
   const displayAvatar = userAvatar || '';
+
+  // If no role is defined, show loading
+  if (!displayRole) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

@@ -28,8 +28,9 @@ const Dashboard = () => {
   const { data: attendance } = useSupabaseAttendance();
   const navigate = useNavigate();
   
-  const userRole = (profile?.role || 'admin') as UserRole;
-  const userName = profile?.name || 'Admin';
+  // NEVER assume 'admin' as default - wait for real role
+  const userRole = profile?.role as UserRole | undefined;
+  const userName = profile?.name || 'Usuário';
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -41,6 +42,18 @@ const Dashboard = () => {
     
     checkAuth();
   }, [authLoading, isAuthenticated, navigate]);
+
+  // Se não tiver papel definido, mostrar loading
+  if (authLoading || !userRole) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Carregando perfil...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleChangeUser = () => {
     navigate('/auth');

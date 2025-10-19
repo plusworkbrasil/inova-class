@@ -31,11 +31,19 @@ export const useReportsData = () => {
   const fetchReportsData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 [useReportsData] Iniciando busca de dados de relatórios...');
 
       // Fetch attendance data
-      const { data: attendance } = await supabase
+      console.log('🔍 [useReportsData] Buscando dados de frequência...');
+      const { data: attendance, error: attendanceError } = await supabase
         .from('attendance')
         .select('*');
+      
+      if (attendanceError) {
+        console.error('❌ [useReportsData] Erro ao buscar frequência:', attendanceError.message);
+      } else {
+        console.log(`✅ [useReportsData] Frequência carregada: ${attendance?.length || 0} registros`);
+      }
 
       // Fetch grades data
       const { data: grades } = await supabase
@@ -43,9 +51,16 @@ export const useReportsData = () => {
         .select('*, subjects(name)');
 
       // Fetch classes data
-      const { data: classes } = await supabase
+      console.log('🔍 [useReportsData] Buscando turmas...');
+      const { data: classes, error: classesError } = await supabase
         .from('classes')
         .select('*');
+      
+      if (classesError) {
+        console.error('❌ [useReportsData] Erro ao buscar turmas:', classesError.message);
+      } else {
+        console.log(`✅ [useReportsData] Turmas carregadas: ${classes?.length || 0}`);
+      }
 
       // Fetch profiles (students) data
       const { data: profiles } = await supabase

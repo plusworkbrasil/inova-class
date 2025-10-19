@@ -24,20 +24,31 @@ export const useSupabaseClasses = () => {
       setLoading(true);
       setError(null);
       
+      console.log('🔍 [useSupabaseClasses] Iniciando busca de turmas...');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔍 [useSupabaseClasses] User ID:', session?.user?.id);
+      
       const { data: classes, error } = await supabase
         .from('classes')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [useSupabaseClasses] Erro ao buscar turmas:', error.message, error.code);
+        console.error('❌ [useSupabaseClasses] Detalhes:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+      
+      console.log(`✅ [useSupabaseClasses] Turmas carregadas: ${classes?.length || 0}`);
       setData(classes || []);
     } catch (err: any) {
       setError(err.message);
-      console.error('Error fetching classes:', err);
+      console.error('❌ [useSupabaseClasses] Erro fatal:', err);
       toast({
         variant: "destructive",
-        title: "Erro",
-        description: "Erro ao carregar turmas."
+        title: "Erro ao carregar turmas",
+        description: err.message || "Erro desconhecido. Verifique o console."
       });
     } finally {
       setLoading(false);

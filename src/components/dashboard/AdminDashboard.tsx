@@ -38,26 +38,46 @@ const AdminDashboard = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatsCard title="Total de Alunos" value={statsLoading ? "..." : stats.totalStudents} icon={<Users className="h-4 w-4" />} trend={{
-        value: 0,
-        label: "estudantes cadastrados",
-        isPositive: true
-      }} />
-        <StatsCard title="Turmas Ativas" value={statsLoading ? "..." : stats.totalClasses} icon={<GraduationCap className="h-4 w-4" />} trend={{
-        value: 0,
-        label: "turmas cadastradas",
-        isPositive: true
-      }} />
-        <StatsCard title="Declarações Pendentes" value={statsLoading ? "..." : stats.pendingDeclarations} icon={<AlertTriangle className="h-4 w-4" />} trend={{
-        value: 0,
-        label: "aguardando processamento",
-        isPositive: false
-      }} />
-        <StatsCard title="Taxa de Frequência" value={statsLoading ? "..." : stats.attendanceRate} icon={<TrendingUp className="h-4 w-4" />} trend={{
-        value: 0,
-        label: "frequência geral",
-        isPositive: true
-      }} />
+        <StatsCard 
+          title="Total de Alunos" 
+          value={statsLoading ? <div className="animate-pulse h-8 w-16 bg-muted rounded"></div> : stats.totalStudents === 0 ? <span className="text-destructive">Erro</span> : stats.totalStudents} 
+          icon={<Users className="h-4 w-4" />} 
+          trend={{
+            value: 0,
+            label: "estudantes cadastrados",
+            isPositive: true
+          }} 
+        />
+        <StatsCard 
+          title="Turmas Ativas" 
+          value={statsLoading ? <div className="animate-pulse h-8 w-16 bg-muted rounded"></div> : stats.totalClasses === 0 ? <span className="text-destructive">Erro</span> : stats.totalClasses} 
+          icon={<GraduationCap className="h-4 w-4" />} 
+          trend={{
+            value: 0,
+            label: "turmas cadastradas",
+            isPositive: true
+          }} 
+        />
+        <StatsCard 
+          title="Declarações Pendentes" 
+          value={statsLoading ? <div className="animate-pulse h-8 w-16 bg-muted rounded"></div> : stats.pendingDeclarations} 
+          icon={<AlertTriangle className="h-4 w-4" />} 
+          trend={{
+            value: 0,
+            label: "aguardando processamento",
+            isPositive: false
+          }} 
+        />
+        <StatsCard 
+          title="Taxa de Frequência" 
+          value={statsLoading ? <div className="animate-pulse h-8 w-16 bg-muted rounded"></div> : stats.attendanceRate} 
+          icon={<TrendingUp className="h-4 w-4" />} 
+          trend={{
+            value: 0,
+            label: "frequência geral",
+            isPositive: true
+          }} 
+        />
       </div>
 
       {/* Birthday Card and Charts */}

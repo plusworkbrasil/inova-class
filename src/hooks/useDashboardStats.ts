@@ -33,14 +33,18 @@ export const useDashboardStats = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 [useDashboardStats] Iniciando busca de estatísticas...');
+
       // Verificar se há sessão ativa antes de buscar dados
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.warn('No active session, skipping stats fetch');
+        console.error('❌ [useDashboardStats] Sessão inválida ou expirada');
         setLoading(false);
         return;
       }
+      
+      console.log('✅ [useDashboardStats] Sessão válida:', session.user.email);
 
       let totalUsers = 0;
       let totalStudents = 0;
@@ -52,14 +56,19 @@ export const useDashboardStats = () => {
       let attendanceRate = '0%';
 
       // Buscar total de usuários
+      console.log('🔍 [useDashboardStats] Buscando total de usuários...');
       try {
         const { count, error } = await supabase
           .from('profiles')
           .select('*', { count: 'exact', head: true });
-        if (!error) totalUsers = count || 0;
-        else console.warn('Erro ao buscar total de usuários:', error);
-      } catch (err) {
-        console.warn('Erro ao buscar total de usuários:', err);
+        if (!error) {
+          totalUsers = count || 0;
+          console.log(`✅ [useDashboardStats] Total usuários: ${totalUsers}`);
+        } else {
+          console.error('❌ [useDashboardStats] Erro ao buscar usuários:', error.message, error.code);
+        }
+      } catch (err: any) {
+        console.error('❌ [useDashboardStats] Erro ao buscar usuários:', err.message);
       }
 
       // Buscar total de estudantes (profiles com class_id)
@@ -91,14 +100,19 @@ export const useDashboardStats = () => {
       }
 
       // Buscar total de turmas
+      console.log('🔍 [useDashboardStats] Buscando turmas...');
       try {
         const { count, error } = await supabase
           .from('classes')
           .select('*', { count: 'exact', head: true });
-        if (!error) totalClasses = count || 0;
-        else console.warn('Erro ao buscar turmas:', error);
-      } catch (err) {
-        console.warn('Erro ao buscar turmas:', err);
+        if (!error) {
+          totalClasses = count || 0;
+          console.log(`✅ [useDashboardStats] Total turmas: ${totalClasses}`);
+        } else {
+          console.error('❌ [useDashboardStats] Erro ao buscar turmas:', error.message, error.code);
+        }
+      } catch (err: any) {
+        console.error('❌ [useDashboardStats] Erro ao buscar turmas:', err.message);
       }
 
       // Buscar total de disciplinas

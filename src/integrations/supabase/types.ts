@@ -63,13 +63,6 @@ export type Database = {
             foreignKeyName: "attendance_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -151,13 +144,6 @@ export type Database = {
             foreignKeyName: "classes_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "classes_teacher_id_fkey"
-            columns: ["teacher_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -216,13 +202,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "communications_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "communications_author_id_fkey"
             columns: ["author_id"]
@@ -295,21 +274,7 @@ export type Database = {
             foreignKeyName: "declarations_processed_by_fkey"
             columns: ["processed_by"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "declarations_processed_by_fkey"
-            columns: ["processed_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "declarations_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
             referencedColumns: ["id"]
           },
           {
@@ -426,13 +391,6 @@ export type Database = {
             foreignKeyName: "equipment_allocations_allocated_by_fkey"
             columns: ["allocated_by"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "equipment_allocations_allocated_by_fkey"
-            columns: ["allocated_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -441,13 +399,6 @@ export type Database = {
             columns: ["equipment_id"]
             isOneToOne: false
             referencedRelation: "equipment"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "equipment_allocations_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
             referencedColumns: ["id"]
           },
           {
@@ -498,21 +449,7 @@ export type Database = {
             foreignKeyName: "evasions_reported_by_fkey"
             columns: ["reported_by"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evasions_reported_by_fkey"
-            columns: ["reported_by"]
-            isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evasions_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
             referencedColumns: ["id"]
           },
           {
@@ -569,13 +506,6 @@ export type Database = {
             foreignKeyName: "grades_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "grades_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -584,13 +514,6 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "grades_teacher_id_fkey"
-            columns: ["teacher_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
             referencedColumns: ["id"]
           },
           {
@@ -824,13 +747,6 @@ export type Database = {
             foreignKeyName: "fk_student_academic_info_student"
             columns: ["student_id"]
             isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_student_academic_info_student"
-            columns: ["student_id"]
-            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -885,13 +801,6 @@ export type Database = {
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subjects_teacher_id_fkey"
-            columns: ["teacher_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
             referencedColumns: ["id"]
           },
           {
@@ -956,84 +865,7 @@ export type Database = {
       }
     }
     Views: {
-      instructor_academic_info_view: {
-        Row: {
-          academic_status: string | null
-          class_id: string | null
-          created_at: string | null
-          enrollment_date: string | null
-          id: string | null
-          student_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          academic_status?: string | null
-          class_id?: string | null
-          created_at?: string | null
-          enrollment_date?: string | null
-          id?: string | null
-          student_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          academic_status?: string | null
-          class_id?: string | null
-          created_at?: string | null
-          enrollment_date?: string | null
-          id?: string | null
-          student_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fk_student_academic_info_student"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "instructor_student_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_student_academic_info_student"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      instructor_student_view: {
-        Row: {
-          class_id: string | null
-          created_at: string | null
-          email: string | null
-          enrollment_number: string | null
-          id: string | null
-          name: string | null
-          status: string | null
-          student_id: string | null
-        }
-        Insert: {
-          class_id?: string | null
-          created_at?: string | null
-          email?: string | null
-          enrollment_number?: string | null
-          id?: string | null
-          name?: string | null
-          status?: string | null
-          student_id?: string | null
-        }
-        Update: {
-          class_id?: string | null
-          created_at?: string | null
-          email?: string | null
-          enrollment_number?: string | null
-          id?: string | null
-          name?: string | null
-          status?: string | null
-          student_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       can_access_medical_data: {
@@ -1062,6 +894,18 @@ export type Database = {
           severity: string
           user_id: string
           user_name: string
+        }[]
+      }
+      get_instructor_academic_info: {
+        Args: { instructor_id: string }
+        Returns: {
+          academic_status: string
+          class_id: string
+          created_at: string
+          enrollment_date: string
+          id: string
+          student_id: string
+          updated_at: string
         }[]
       }
       get_instructor_students: {

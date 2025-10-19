@@ -28,14 +28,23 @@ export const useInstructorDashboardStats = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      console.log('🔍 [useInstructorDashboardStats] Iniciando busca de estatísticas do instrutor...');
+      console.log('🔍 [useInstructorDashboardStats] ID do instrutor:', profile.id);
 
       // Get subjects where instructor teaches
+      console.log('🔍 [useInstructorDashboardStats] Buscando disciplinas do instrutor...');
       const { data: subjects, error: subjectsError } = await supabase
         .from('subjects')
         .select('id, name, class_id')
         .or(`teacher_id.eq.${profile.id}${profile.instructor_subjects && profile.instructor_subjects.length > 0 ? `,name.in.(${profile.instructor_subjects.map(s => `"${s}"`).join(',')})` : ''}`);
 
-      if (subjectsError) throw subjectsError;
+      if (subjectsError) {
+        console.error('❌ [useInstructorDashboardStats] Erro ao buscar disciplinas:', subjectsError.message);
+        throw subjectsError;
+      }
+      
+      console.log(`✅ [useInstructorDashboardStats] Disciplinas encontradas: ${subjects?.length || 0}`);
 
       const subjectIds = subjects?.map(s => s.id) || [];
       const classIds = [...new Set(subjects?.map(s => s.class_id).filter(Boolean))];

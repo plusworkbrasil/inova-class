@@ -51,16 +51,19 @@ export const useDashboardStats = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
       console.log('🔒 [useDashboardStats] User role:', roleData?.role);
 
       // Só executar queries amplas se for admin/secretary
       if (roleData?.role !== 'admin' && roleData?.role !== 'secretary') {
         console.warn('⚠️ [useDashboardStats] Este hook deve ser usado apenas por admin/secretary');
+        console.warn('⚠️ [useDashboardStats] Role atual:', roleData?.role);
         setLoading(false);
         return;
       }
+
+      console.log('✅ [useDashboardStats] Role válido, buscando dados...');
 
       let totalUsers = 0;
       let totalStudents = 0;

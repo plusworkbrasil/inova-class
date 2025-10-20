@@ -43,15 +43,52 @@ export const useSupabaseAuth = () => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      // Handle RLS recursion or other RLS errors
+      if (error) {
+        console.error('⚠️ [useSupabaseAuth] Error fetching profile:', error);
+        
+        // If it's a RLS recursion error (42P17) or any RLS error, try fallback
+        if (error.code === '42P17' || error.code?.startsWith('42')) {
+          console.warn('🔄 [useSupabaseAuth] RLS error detected, using fallback profile');
+          
+          // Try to get role directly from user_roles
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+          // Get user metadata from session
+          const { data: { session } } = await supabase.auth.getSession();
+          const userRole = roleData?.role || 'student';
+
+          // Create minimal fallback profile
+          const fallbackProfile = {
+            id: userId,
+            email: session?.user?.email || '',
+            name: session?.user?.user_metadata?.name || session?.user?.email || 'Usuário',
+            role: userRole,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          toast({
+            title: "Perfil com acesso limitado",
+            description: "Algumas informações podem não estar disponíveis. Tente fazer logout e login novamente.",
+            variant: "default"
+          });
+
+          return fallbackProfile;
+        }
+
         throw error;
       }
 
       if (!data) return null;
 
-      // Fetch role from user_roles table (agora sem recursão!)
+      // Fetch role from user_roles table
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
@@ -68,7 +105,7 @@ export const useSupabaseAuth = () => {
       const profileWithRole = { ...data, role: userRole };
 
       // SECURITY: Log role assignment for debugging
-      console.log('🔐 [useSupabaseAuth] Role loaded:', {
+      console.log('🔐 [useSupabaseAuth] Profile loaded:', {
         userId: userId,
         email: data.email,
         roleFromDB: roleData?.role,
@@ -77,7 +114,7 @@ export const useSupabaseAuth = () => {
 
       return profileWithRole;
     } catch (err: any) {
-      console.error('Error fetching profile:', err);
+      console.error('❌ [useSupabaseAuth] Fatal error fetching profile:', err);
       return null;
     }
   };

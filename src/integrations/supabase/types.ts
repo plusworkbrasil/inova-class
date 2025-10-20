@@ -1004,12 +1004,18 @@ export type Database = {
         Args: { instructor_id: string; subject_id: string }
         Returns: boolean
       }
+      instructor_can_view_profile: {
+        Args: { _user_id: string; target_profile_id: string }
+        Returns: boolean
+      }
       instructor_can_view_student: {
         Args: { target_student_id: string }
         Returns: boolean
       }
       is_instructor_of_subject: {
-        Args: { subject: string; user_id: string }
+        Args:
+          | { _subject_id: string; _user_id: string }
+          | { subject: string; user_id: string }
         Returns: boolean
       }
       log_profile_update_attempt: {
@@ -1044,6 +1050,10 @@ export type Database = {
       setup_test_admin: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      student_in_class: {
+        Args: { _class_id: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

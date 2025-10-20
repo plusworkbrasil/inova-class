@@ -91,20 +91,29 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
         return;
       }
 
+      // Usar RPC segura para buscar alunos que o instrutor pode visualizar
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, student_id, class_id')
-        .eq('class_id', subject.class_id)
-        .not('class_id', 'is', null);
+        .rpc('get_instructor_students');
       
       if (error) throw error;
-      setStudents(data || []);
+      
+      // Filtrar apenas alunos da turma da disciplina selecionada
+      const filteredStudents = (data || []).filter(
+        student => student.class_id === subject.class_id
+      );
+      
+      setStudents(filteredStudents);
       setSelectedSubject(subject);
       
       // Buscar notas existentes para esta disciplina
-      await fetchExistingGrades(subjectId, data || []);
+      await fetchExistingGrades(subjectId, filteredStudents);
     } catch (error) {
       console.error('Erro ao buscar alunos:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao carregar alunos",
+        description: "Não foi possível carregar a lista de alunos. Verifique suas permissões.",
+      });
       setStudents([]);
     } finally {
       setLoadingStudents(false);

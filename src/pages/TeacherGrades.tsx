@@ -8,12 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
-import { BatchGradeForm } from '@/components/forms/BatchGradeForm';
+import { InstructorGradesBySubjectForm } from '@/components/forms/InstructorGradesBySubjectForm';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
-import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
+import { useInstructorClasses } from '@/hooks/useInstructorClasses';
 import { UserRole } from '@/types/user';
 
 const TeacherGrades = () => {
@@ -22,31 +23,18 @@ const TeacherGrades = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
-  const [batchGradeMode, setBatchGradeMode] = useState(false);
-  const [selectedClassForBatch, setSelectedClassForBatch] = useState('');
-  const [selectedSubjectForBatch, setSelectedSubjectForBatch] = useState('');
+  const [isInstructorGradeFormOpen, setIsInstructorGradeFormOpen] = useState(false);
   const { toast } = useToast();
   
   // Hooks para dados reais
   const { profile, loading: authLoading } = useAuth();
   const { data: grades, createGrade, updateGrade, refetch } = useSupabaseGrades();
-  const { data: subjects } = useSupabaseSubjects();
-  const { data: classes } = useSupabaseClasses();
-
-  // Filtrar disciplinas do instrutor
-  const instructorSubjects = subjects?.filter(subject => 
-    subject.teacher_id === profile?.id || 
-    profile?.instructor_subjects?.includes(subject.name)
-  ) || [];
-
-  // Filtrar turmas relacionadas às disciplinas do instrutor
-  const instructorClasses = classes?.filter(classItem => 
-    instructorSubjects.some(subject => subject.class_id === classItem.id)
-  ) || [];
+  const { subjects: instructorSubjects, loading: subjectsLoading } = useInstructorSubjects();
+  const { classes: instructorClasses, loading: classesLoading } = useInstructorClasses();
 
   // Filtrar notas das disciplinas do instrutor
   const instructorGrades = grades?.filter(grade => 
-    instructorSubjects.some(subject => subject.id === grade.subject_id)
+    instructorSubjects?.some(subject => subject.id === grade.subject_id)
   ) || [];
 
   const handleCreateGrade = async (data: any) => {
@@ -97,32 +85,36 @@ const TeacherGrades = () => {
     }
   };
 
-  const handleBatchGradesSubmit = async (gradesData: any[]) => {
+  const handleCreateMultipleGrades = async (gradesData: any[]) => {
     try {
       for (const gradeData of gradesData) {
-        await createGrade({
-          student_id: gradeData.studentId,
-          subject_id: gradeData.subjectId,
-          value: gradeData.grade,
-          max_value: gradeData.maxGrade,
-          date: gradeData.date,
-          teacher_id: profile?.id || '',
-          type: gradeData.type,
-          observations: gradeData.observations || ''
-        });
+        await createGrade(gradeData);
       }
-      setBatchGradeMode(false);
-      setSelectedClassForBatch('');
-      setSelectedSubjectForBatch('');
       toast({
         title: "Notas lançadas com sucesso!",
-        description: `${gradesData.length} notas foram registradas.`,
+        description: `${gradesData.length} notas foram adicionadas.`,
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro",
         description: "Erro ao lançar notas em lote.",
+      });
+    }
+  };
+
+  const handleUpdateGrade = async (gradeId: string, data: any) => {
+    try {
+      await updateGrade(gradeId, data);
+      toast({
+        title: "Nota atualizada!",
+        description: "A nota foi atualizada com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Erro ao atualizar nota.",
       });
     }
   };
@@ -134,13 +126,11 @@ const TeacherGrades = () => {
 
   const openCreateForm = () => {
     setEditingGrade(null);
-    setBatchGradeMode(false);
     setIsGradeFormOpen(true);
   };
 
   const openBatchGradeForm = () => {
-    setBatchGradeMode(true);
-    setIsGradeFormOpen(true);
+    setIsInstructorGradeFormOpen(true);
   };
 
   const getGradeBadgeVariant = (grade: number, maxGrade: number) => {
@@ -165,22 +155,22 @@ const TeacherGrades = () => {
   const averageGrade = totalGrades > 0 ? 
     instructorGrades.reduce((sum, grade) => sum + Number(grade.value), 0) / totalGrades : 0;
   const failingGrades = instructorGrades.filter(grade => (Number(grade.value) / Number(grade.max_value)) * 100 < 60).length;
-  const subjectsCount = instructorSubjects.length;
+  const subjectsCount = instructorSubjects?.length || 0;
 
   // Filtrar dados baseado na busca e filtros
   const filteredGrades = instructorGrades.filter(grade => {
-    const subject = instructorSubjects.find(s => s.id === grade.subject_id);
+    const subject = instructorSubjects?.find(s => s.id === grade.subject_id);
     const matchesSearch = searchTerm === '' || 
       grade.student_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesClass = selectedClass === '' || 
-      (subject && instructorClasses.find(c => c.id === subject.class_id)?.name === selectedClass);
+      (subject && instructorClasses?.find(c => c.id === subject.class_id)?.name === selectedClass);
     const matchesSubject = selectedSubject === '' || 
       (subject && subject.name === selectedSubject);
     
     return matchesSearch && matchesClass && matchesSubject;
   });
 
-  if (authLoading) {
+  if (authLoading || subjectsLoading || classesLoading) {
     return <div>Carregando...</div>;
   }
 
@@ -261,8 +251,8 @@ const TeacherGrades = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {instructorSubjects.map(subject => {
-                const subjectClass = instructorClasses.find(c => c.id === subject.class_id);
+              {instructorSubjects?.map(subject => {
+                const subjectClass = instructorClasses?.find(c => c.id === subject.class_id);
                 return (
                   <div key={subject.id} className="space-y-3">
                     <h4 className="font-semibold text-lg text-primary">{subject.name}</h4>
@@ -272,17 +262,12 @@ const TeacherGrades = () => {
                           <div>
                             <p className="font-medium">{subjectClass.name}</p>
                             <p className="text-sm text-muted-foreground">
-                              {subjectClass.student_count || 0} alunos
+                              Ano: {subjectClass.year} • {subject.student_count || 0} alunos
                             </p>
                           </div>
                           <Button 
                             size="sm"
-                            onClick={() => {
-                              setSelectedClassForBatch(subjectClass.id);
-                              setSelectedSubjectForBatch(subject.id);
-                              setBatchGradeMode(true);
-                              setIsGradeFormOpen(true);
-                            }}
+                            onClick={openBatchGradeForm}
                           >
                             Lançar Notas
                           </Button>
@@ -305,7 +290,7 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Disciplinas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {instructorSubjects.map(subject => (
+                  {instructorSubjects?.map(subject => (
                     <Badge key={subject.id} variant="secondary">{subject.name}</Badge>
                   ))}
                 </div>
@@ -313,7 +298,7 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Turmas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {instructorClasses.map(classItem => (
+                  {instructorClasses?.map(classItem => (
                     <Badge key={classItem.id} variant="outline">{classItem.name}</Badge>
                   ))}
                 </div>
@@ -342,7 +327,7 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {instructorClasses.map((classItem) => (
+                  {instructorClasses?.map((classItem) => (
                     <SelectItem key={classItem.id} value={classItem.name}>
                       {classItem.name}
                     </SelectItem>
@@ -354,7 +339,7 @@ const TeacherGrades = () => {
                   <SelectValue placeholder="Selecionar disciplina" />
                 </SelectTrigger>
                 <SelectContent>
-                  {instructorSubjects.map((subject) => (
+                  {instructorSubjects?.map((subject) => (
                     <SelectItem key={subject.id} value={subject.name}>
                       {subject.name}
                     </SelectItem>
@@ -385,8 +370,8 @@ const TeacherGrades = () => {
               </TableHeader>
               <TableBody>
                 {filteredGrades.map((grade) => {
-                  const subject = instructorSubjects.find(s => s.id === grade.subject_id);
-                  const classItem = instructorClasses.find(c => c.id === subject?.class_id);
+                  const subject = instructorSubjects?.find(s => s.id === grade.subject_id);
+                  const classItem = instructorClasses?.find(c => c.id === subject?.class_id);
                   return (
                     <TableRow key={grade.id}>
                       <TableCell className="font-medium">{grade.student_name || 'N/A'}</TableCell>
@@ -421,34 +406,22 @@ const TeacherGrades = () => {
           </CardContent>
         </Card>
         
-        {batchGradeMode ? (
-          <BatchGradeForm
-            open={isGradeFormOpen}
-            onOpenChange={(open) => {
-              setIsGradeFormOpen(open);
-              if (!open) {
-                setBatchGradeMode(false);
-                setSelectedClassForBatch('');
-                setSelectedSubjectForBatch('');
-              }
-            }}
-            onSubmit={handleBatchGradesSubmit}
-            selectedClass={selectedClassForBatch}
-            selectedSubject={selectedSubjectForBatch}
-            currentUser={profile}
-            students={[]}
-          />
-        ) : (
-          <GradeForm
-            open={isGradeFormOpen}
-            onOpenChange={setIsGradeFormOpen}
-            onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
-            initialData={editingGrade}
-            mode={editingGrade ? 'edit' : 'create'}
-            userRole="teacher"
-            currentUser={profile}
-          />
-        )}
+        <InstructorGradesBySubjectForm
+          open={isInstructorGradeFormOpen}
+          onOpenChange={setIsInstructorGradeFormOpen}
+          onSubmit={handleCreateMultipleGrades}
+          onUpdate={handleUpdateGrade}
+        />
+
+        <GradeForm
+          open={isGradeFormOpen}
+          onOpenChange={setIsGradeFormOpen}
+          onSubmit={editingGrade ? handleEditGrade : handleCreateGrade}
+          initialData={editingGrade}
+          mode={editingGrade ? 'edit' : 'create'}
+          userRole="teacher"
+          currentUser={profile}
+        />
       </div>
     </Layout>
   );

@@ -266,11 +266,15 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {instructorSubjects.map((subject) => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name} {subject.class_id && `(Turma: ${subject.class_id})`}
-                          </SelectItem>
-                        ))}
+                        {instructorSubjects.map((subject) => {
+                          const classData = subjects?.find(s => s.id === subject.id);
+                          const className = classData?.class_id ? ` - Turma ID: ${classData.class_id}` : '';
+                          return (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.name}{className}
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <FormMessage />

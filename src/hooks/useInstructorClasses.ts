@@ -41,12 +41,13 @@ export function useInstructorClasses() {
           return;
         }
 
-        // Buscar dados completos das turmas
+        // Buscar dados completos das turmas com ordenação por mais recentes
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
-          .select('id, name, year')
+          .select('id, name, year, created_at')
           .in('id', classIds)
-          .order('name');
+          .order('year', { ascending: false })
+          .order('created_at', { ascending: false });
 
         if (classesError) {
           throw classesError;

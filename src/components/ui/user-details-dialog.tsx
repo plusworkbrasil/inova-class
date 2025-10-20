@@ -63,7 +63,7 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
             useEffect(() => {
               // Log that user details were accessed
               const accessedFields = ['name', 'email', 'role'];
-              if (canViewPersonalData) accessedFields.push('cpf', 'rg', 'phone', 'street', 'city');
+              if (canViewPersonalData) accessedFields.push('cpf', 'rg', 'phone', 'street', 'city', 'birth_date');
               if (canViewMedicalData) accessedFields.push('medical_info', 'allergies', 'medications');
               logAccess(accessedFields);
             }, [canViewMedicalData, canViewPersonalData, logAccess]);
@@ -120,6 +120,18 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                   <div className="flex items-center gap-2">
                     <Shield size={16} className="text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">CPF: [Dados Pessoais Protegidos]</span>
+                  </div>
+                )}
+                {canViewPersonalData && user.birth_date && (
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-muted-foreground" />
+                    <span className="text-sm">Nascimento: {formatDate(user.birth_date)}</span>
+                  </div>
+                )}
+                {!canViewPersonalData && user.birth_date && (
+                  <div className="flex items-center gap-2">
+                    <Shield size={16} className="text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Nascimento: [Dado Protegido]</span>
                   </div>
                 )}
                 {user.student_id && (

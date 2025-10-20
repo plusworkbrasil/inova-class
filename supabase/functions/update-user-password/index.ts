@@ -41,17 +41,17 @@ serve(async (req) => {
     }
 
     // Only admins and secretaries can update passwords
-    const { data: callerProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
+    const { data: userRole, error: roleError } = await supabaseAdmin
+      .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single()
 
-    if (profileError || !callerProfile) {
+    if (roleError || !userRole) {
       throw new Error('Could not verify user permissions')
     }
 
-    if (!['admin', 'secretary'].includes(callerProfile.role)) {
+    if (!['admin', 'secretary'].includes(userRole.role)) {
       throw new Error('Access denied: Only admins and secretaries can update user passwords')
     }
 

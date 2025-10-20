@@ -15,6 +15,7 @@ import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import AdminDashboard from '@/components/dashboard/AdminDashboard';
 import InstructorDashboard from '@/components/dashboard/InstructorDashboard';
+import TutorDashboard from '@/components/dashboard/TutorDashboard';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
@@ -71,6 +72,14 @@ const Dashboard = () => {
     );
   }
 
+  if (userRole === 'tutor') {
+    return (
+      <Layout userRole={userRole} userName={userName} userAvatar="">
+        <TutorDashboard />
+      </Layout>
+    );
+  }
+
   const handleChangeUser = () => {
     navigate('/auth');
   };
@@ -112,16 +121,6 @@ const Dashboard = () => {
             { title: 'Matrículas', value: 'Carregando...', description: 'Alunos matriculados' },
             { title: 'Declarações', value: 'Carregando...', description: 'Pendentes de emissão' },
             { title: 'Documentos', value: 'Carregando...', description: 'Total no sistema' },
-          ]
-        };
-      case 'tutor':
-        return {
-          title: 'Dashboard do Tutor',
-          description: 'Acompanhamento dos alunos tutorados',
-          cards: [
-            { title: 'Alunos Tutorados', value: 'Carregando...', description: 'Sob sua tutoria' },
-            { title: 'Reuniões', value: 'Carregando...', description: 'Agendadas esta semana' },
-            { title: 'Relatórios', value: 'Carregando...', description: 'Pendentes de entrega' },
           ]
         };
       default:
@@ -264,14 +263,6 @@ const Dashboard = () => {
                     <Badge variant="secondary">• Acompanhamento</Badge>
                     <Badge variant="secondary">• Comunicação</Badge>
                     <Badge variant="secondary">• Relatórios</Badge>
-                  </>
-                )}
-                {userRole === 'tutor' && (
-                  <>
-                    <Badge variant="secondary">• Dashboard</Badge>
-                    <Badge variant="secondary">• Frequência</Badge>
-                    <Badge variant="secondary">• Declarações</Badge>
-                    <Badge variant="secondary">• Comunicação</Badge>
                   </>
                 )}
               </div>

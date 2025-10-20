@@ -140,9 +140,21 @@ const menuItems = {
     label: 'Dashboard',
     path: '/'
   }, {
+    icon: GraduationCap,
+    label: 'Turmas',
+    path: '/classes'
+  }, {
     icon: ClipboardCheck,
     label: 'Frequência',
     path: '/attendance'
+  }, {
+    icon: BookOpen,
+    label: 'Disciplinas',
+    path: '/subjects'
+  }, {
+    icon: UserX,
+    label: 'Evasões',
+    path: '/evasions'
   }, {
     icon: FileText,
     label: 'Declarações',
@@ -151,6 +163,10 @@ const menuItems = {
     icon: Mail,
     label: 'Comunicação',
     path: '/communications'
+  }, {
+    icon: FileText,
+    label: 'Relatórios',
+    path: '/reports'
   }],
   teacher: [{
     icon: LayoutDashboard,

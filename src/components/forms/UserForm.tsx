@@ -29,7 +29,7 @@ const createUserFormSchema = (mode: 'create' | 'edit') => z.object({
   role: z.string().min(1, 'Perfil é obrigatório'),
   class_id: z.string().optional(),
   phone: z.string().optional(),
-  birth_date: z.date().optional(),
+  birth_date: z.string().optional(),
   status: z.string().min(1, 'Status é obrigatório'),
   cep: z.string().optional().refine((val) => !val || /^\d{5}-\d{3}$/.test(val), 'CEP deve ter o formato 00000-000'),
   street: z.string().optional(),
@@ -74,7 +74,7 @@ export const UserForm: React.FC<UserFormProps> = ({
       role: initialData?.role || '',
       class_id: initialData?.class_id || '',
       phone: initialData?.phone || '',
-      birth_date: initialData?.birth_date ? new Date(initialData.birth_date) : undefined,
+      birth_date: initialData?.birth_date || '',
       status: initialData?.status || 'ativo',
       cep: initialData?.cep || '',
       street: initialData?.street || '',
@@ -144,7 +144,7 @@ export const UserForm: React.FC<UserFormProps> = ({
     const submissionData = {
       ...data,
       avatar: avatarUrl === null ? null : avatarUrl,
-      birth_date: data.birth_date ? toBrasiliaDate(data.birth_date) : undefined
+      birth_date: data.birth_date || undefined
     };
     onSubmit(submissionData);
     setOpen(false);
@@ -276,18 +276,8 @@ export const UserForm: React.FC<UserFormProps> = ({
                         type="date"
                         max={new Date().toISOString().split('T')[0]}
                         min="1900-01-01"
-                        value={field.value ? toBrasiliaDate(field.value) : ''}
-                        onChange={(e) => {
-                          const dateValue = e.target.value;
-                          if (dateValue) {
-                            // Cria um objeto Date a partir do valor YYYY-MM-DD
-                            const [year, month, day] = dateValue.split('-');
-                            const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                            field.onChange(date);
-                          } else {
-                            field.onChange(undefined);
-                          }
-                        }}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value)}
                         className="w-full"
                       />
                     </FormControl>

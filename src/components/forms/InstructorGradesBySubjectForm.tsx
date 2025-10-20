@@ -97,11 +97,11 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
       
       if (error) throw error;
       
-      // Filtrar apenas alunos da turma da disciplina selecionada
-      const filteredStudents = (data || []).filter(
-        student => student.class_id === subject.class_id
-      );
-      
+      // Filtrar apenas alunos da turma da disciplina selecionada e ordenar alfabeticamente
+      const filteredStudents = (data || [])
+        .filter(student => student.class_id === subject.class_id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+
       setStudents(filteredStudents);
       setSelectedSubject(subject);
       

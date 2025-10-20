@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface ReportData {
   attendanceByMonth: Array<{ month: string; presente: number; falta: number }>;
+  attendanceTotals: Array<{ name: string; value: number; count: number; color: string }>;
   gradesBySubject: Array<{ subject: string; average: number }>;
   classDistribution: Array<{ name: string; value: number; color: string }>;
   topAbsentStudents: Array<{ name: string; class: string; absences: number; percentage: number }>;
@@ -20,6 +21,7 @@ export interface ReportData {
 export const useReportsData = () => {
   const [data, setData] = useState<ReportData>({
     attendanceByMonth: [],
+    attendanceTotals: [],
     gradesBySubject: [],
     classDistribution: [],
     topAbsentStudents: [],
@@ -100,6 +102,9 @@ export const useReportsData = () => {
       // Process attendance by month
       const attendanceByMonth = attendance ? processAttendanceByMonth(attendance) : [];
 
+      // Process attendance totals
+      const attendanceTotals = attendance ? processAttendanceTotals(attendance) : [];
+
       // Process grades by subject
       const gradesBySubject = grades ? processGradesBySubject(grades) : [];
 
@@ -117,6 +122,7 @@ export const useReportsData = () => {
 
       setData({
         attendanceByMonth,
+        attendanceTotals,
         gradesBySubject,
         classDistribution,
         topAbsentStudents,
@@ -155,6 +161,34 @@ export const useReportsData = () => {
       presente: Math.round((data.present / data.total) * 100) || 0,
       falta: Math.round((data.absent / data.total) * 100) || 0
     }));
+  };
+
+  const processAttendanceTotals = (attendance: any[]) => {
+    const totals = attendance.reduce((acc, record) => {
+      if (record.is_present) {
+        acc.presente++;
+      } else {
+        acc.falta++;
+      }
+      return acc;
+    }, { presente: 0, falta: 0 });
+
+    const total = totals.presente + totals.falta;
+    
+    return total > 0 ? [
+      {
+        name: 'Presentes',
+        value: Math.round((totals.presente / total) * 100),
+        count: totals.presente,
+        color: '#10B981'
+      },
+      {
+        name: 'Faltas',
+        value: Math.round((totals.falta / total) * 100),
+        count: totals.falta,
+        color: '#EF4444'
+      }
+    ] : [];
   };
 
   const processGradesBySubject = (grades: any[]) => {

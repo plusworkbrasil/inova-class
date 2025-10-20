@@ -97,14 +97,28 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   {reportsLoading ? <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Carregando dados...</p>
-                    </div> : <LineChart data={reportsData.attendanceByMonth}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="presente" stroke="#10B981" strokeWidth={3} name="% Presentes" />
-                      <Line type="monotone" dataKey="falta" stroke="#EF4444" strokeWidth={3} name="% Faltas" />
-                    </LineChart>}
+                    </div> : reportsData.attendanceTotals.length > 0 ? <PieChart>
+                      <Pie 
+                        data={reportsData.attendanceTotals} 
+                        cx="50%" 
+                        cy="50%" 
+                        outerRadius={100} 
+                        dataKey="value"
+                        label={({ name, value, count }) => `${name}: ${value}% (${count})`}
+                      >
+                        {reportsData.attendanceTotals.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number, name: string, props: any) => [
+                          `${value}% (${props.payload.count} registros)`,
+                          name
+                        ]}
+                      />
+                    </PieChart> : <div className="flex items-center justify-center h-full">
+                      <p className="text-muted-foreground">Sem dados de frequência</p>
+                    </div>}
                 </ResponsiveContainer>
               </CardContent>
             </Card>

@@ -99,6 +99,7 @@ const Users = () => {
       role: userData.role as 'admin' | 'secretary' | 'instructor' | 'student',
       class_id: userData.class_id,
       phone: userData.phone,
+      birth_date: userData.birth_date,
       cep: userData.cep,
       street: userData.street,
       number: userData.number,

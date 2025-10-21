@@ -4,11 +4,14 @@ import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { SubjectTimelineCard } from '@/components/ui/subject-timeline-card';
 import { useClassSubjects } from '@/hooks/useClassSubjects';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
-import { ArrowLeft, Calendar } from 'lucide-react';
+import { ArrowLeft, Calendar, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { parseYMDToLocalDate } from '@/lib/utils';
+import { differenceInDays } from 'date-fns';
 
 export default function ClassTimeline() {
   const navigate = useNavigate();
@@ -17,6 +20,32 @@ export default function ClassTimeline() {
   const { subjects, loading: subjectsLoading, error } = useClassSubjects(selectedClassId);
 
   const selectedClass = classes?.find(c => c.id === selectedClassId);
+
+  const urgentSubjects = subjects.filter(s => {
+    if (!s.end_date) return false;
+    const now = new Date();
+    const end = parseYMDToLocalDate(s.end_date);
+    const days = differenceInDays(end, now);
+    return days <= 4 && days >= 0;
+  });
+
+  const sortedSubjects = [...subjects].sort((a, b) => {
+    const getDays = (endDate: string | null) => {
+      if (!endDate) return 999;
+      const now = new Date();
+      const end = parseYMDToLocalDate(endDate);
+      const days = differenceInDays(end, now);
+      return days >= 0 ? days : 999;
+    };
+    
+    const daysA = getDays(a.end_date);
+    const daysB = getDays(b.end_date);
+    
+    if (daysA <= 4 && daysB > 4) return -1;
+    if (daysB <= 4 && daysA > 4) return 1;
+    
+    return daysA - daysB;
+  });
 
   return (
     <Layout>
@@ -34,6 +63,11 @@ export default function ClassTimeline() {
               <h1 className="text-3xl font-bold flex items-center gap-2">
                 <Calendar className="h-8 w-8" />
                 Cronograma de Disciplinas
+                {selectedClassId && urgentSubjects.length > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {urgentSubjects.length} urgente{urgentSubjects.length > 1 ? 's' : ''}
+                  </Badge>
+                )}
               </h1>
               <p className="text-muted-foreground mt-1">
                 Visualize a timeline das disciplinas por turma
@@ -80,6 +114,40 @@ export default function ClassTimeline() {
               </p>
             </div>
 
+            {!subjectsLoading && !error && urgentSubjects.length > 0 && (
+              <Card className="mb-6 border-orange-400 bg-orange-50/50 dark:bg-orange-950/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+                    <AlertTriangle className="h-5 w-5" />
+                    Disciplinas Finalizando em Breve
+                    <Badge variant="destructive">{urgentSubjects.length}</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Estas disciplinas estão próximas do término (≤ 4 dias)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {urgentSubjects.map((subject) => (
+                    <SubjectTimelineCard
+                      key={subject.id}
+                      name={subject.name}
+                      teacherName={subject.teacher_name || 'Não atribuído'}
+                      startDate={subject.start_date}
+                      endDate={subject.end_date}
+                      code={subject.code}
+                      description={subject.description}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {!subjectsLoading && !error && subjects.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-xl font-semibold">Todas as Disciplinas</h3>
+              </div>
+            )}
+
             {subjectsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -111,7 +179,7 @@ export default function ClassTimeline() {
               </Card>
             ) : (
               <div className="space-y-4">
-                {subjects.map((subject) => (
+                {sortedSubjects.map((subject) => (
                   <SubjectTimelineCard
                     key={subject.id}
                     name={subject.name}

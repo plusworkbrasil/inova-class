@@ -128,3 +128,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom animations for urgent subjects */
+@keyframes pulse-red {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.4;
+    transform: scale(1.1);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 1.5s ease-in-out infinite;
+}

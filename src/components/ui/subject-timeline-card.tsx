@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen } from 'lucide-react';
-import { parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
+import { BookOpen, AlertTriangle } from 'lucide-react';
+import { parseYMDToLocalDate, formatDateBR, cn } from '@/lib/utils';
+import { differenceInDays } from 'date-fns';
 
 interface SubjectTimelineCardProps {
   name: string;
@@ -39,6 +40,13 @@ const calculateDays = (startDate: string | null, endDate: string | null): number
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
 
+const getDaysRemaining = (endDate: string | null): number | null => {
+  if (!endDate) return null;
+  const now = new Date();
+  const end = parseYMDToLocalDate(endDate);
+  return differenceInDays(end, now);
+};
+
 export function SubjectTimelineCard({
   name,
   teacherName,
@@ -49,6 +57,9 @@ export function SubjectTimelineCard({
 }: SubjectTimelineCardProps) {
   const status = getSubjectStatus(startDate, endDate);
   const totalDays = calculateDays(startDate, endDate);
+  const daysRemaining = getDaysRemaining(endDate);
+  const isUrgent = daysRemaining !== null && daysRemaining <= 4 && daysRemaining >= 0;
+  const isCritical = daysRemaining !== null && daysRemaining <= 2 && daysRemaining >= 0;
 
   const formatDate = (date: string | null) => {
     if (!date) return 'Não definida';
@@ -56,16 +67,40 @@ export function SubjectTimelineCard({
   };
 
   return (
-    <Card className="mb-4">
+    <Card className={cn(
+      "mb-4 transition-all",
+      isCritical && "border-2 border-red-500",
+      isUrgent && !isCritical && "border-2 border-orange-400"
+    )}>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex items-center gap-2">
+          {isCritical && (
+            <div className="relative flex items-center mr-1">
+              <span className="absolute inline-flex h-3 w-3 rounded-full bg-red-500 opacity-75 animate-pulse-red" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600" />
+            </div>
+          )}
           <BookOpen className="h-5 w-5 text-primary" />
           <div>
             <CardTitle className="text-lg">{name}</CardTitle>
             {code && <p className="text-sm text-muted-foreground">Código: {code}</p>}
           </div>
         </div>
-        <Badge variant={status.variant}>{status.label}</Badge>
+        <div className="flex items-center gap-2">
+          {isCritical && (
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Termina em {daysRemaining} {daysRemaining === 1 ? 'dia' : 'dias'}!
+            </Badge>
+          )}
+          {isUrgent && !isCritical && (
+            <Badge className="bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              Termina em {daysRemaining} dias
+            </Badge>
+          )}
+          <Badge variant={status.variant}>{status.label}</Badge>
+        </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm text-muted-foreground mb-2">

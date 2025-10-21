@@ -18,16 +18,12 @@ export function toBrasiliaDate(date: Date | string): string {
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  // Formatar a data no timezone de Brasília
-  const brasiliaDateString = dateObj.toLocaleDateString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
+  // Usar diretamente ano/mês/dia do objeto Date local
+  // sem conversão de timezone para manter a data selecionada
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
   
-  // Converter de DD/MM/YYYY para YYYY-MM-DD
-  const [day, month, year] = brasiliaDateString.split('/');
   return `${year}-${month}-${day}`;
 }
 

@@ -42,6 +42,17 @@ export function getTodayInBrasilia(): string {
 }
 
 /**
+ * Converte uma string YYYY-MM-DD para um objeto Date local
+ * sem interpretação de timezone, evitando retroação de datas
+ */
+export function parseYMDToLocalDate(ymd: string): Date {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(ymd);
+  if (!match) return new Date(ymd);
+  const [, year, month, day] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+/**
  * Formata uma data para o padrão brasileiro DD/MM/YYYY
  * Evita problemas de timezone ao formatar datas YYYY-MM-DD
  */

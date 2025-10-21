@@ -2,8 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
 
 interface SubjectTimelineCardProps {
   name: string;
@@ -18,8 +17,8 @@ const getSubjectStatus = (startDate: string | null, endDate: string | null) => {
   if (!startDate || !endDate) return { label: 'Sem data', variant: 'outline' as const, progress: 0 };
   
   const now = new Date();
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseYMDToLocalDate(startDate);
+  const end = parseYMDToLocalDate(endDate);
   
   if (now < start) return { label: 'Não iniciada', variant: 'secondary' as const, progress: 0 };
   if (now > end) return { label: 'Concluída', variant: 'outline' as const, progress: 100 };
@@ -34,8 +33,8 @@ const calculateProgress = (start: Date, end: Date, now: Date): number => {
 
 const calculateDays = (startDate: string | null, endDate: string | null): number => {
   if (!startDate || !endDate) return 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = parseYMDToLocalDate(startDate);
+  const end = parseYMDToLocalDate(endDate);
   const diff = end.getTime() - start.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 };
@@ -53,7 +52,7 @@ export function SubjectTimelineCard({
 
   const formatDate = (date: string | null) => {
     if (!date) return 'Não definida';
-    return format(new Date(date), "dd/MM/yyyy", { locale: ptBR });
+    return formatDateBR(date);
   };
 
   return (

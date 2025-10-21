@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import { cn, parseYMDToLocalDate } from '@/lib/utils';
 import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
@@ -87,8 +87,16 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
         workload: initialData.workload || 40,
         description: initialData.description || '',
         status: initialData.status || 'ativo',
-        start_date: initialData.start_date ? new Date(initialData.start_date) : undefined,
-        end_date: initialData.end_date ? new Date(initialData.end_date) : undefined,
+        start_date: initialData.start_date 
+          ? (typeof initialData.start_date === 'string' 
+              ? parseYMDToLocalDate(initialData.start_date) 
+              : initialData.start_date)
+          : undefined,
+        end_date: initialData.end_date 
+          ? (typeof initialData.end_date === 'string' 
+              ? parseYMDToLocalDate(initialData.end_date) 
+              : initialData.end_date)
+          : undefined,
       });
     } else if (open && !initialData) {
       // Resetar para valores padrão quando criar novo

@@ -17,7 +17,7 @@ import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
-import { cn, toBrasiliaDate } from '@/lib/utils';
+import { cn, toBrasiliaDate, parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -68,8 +68,8 @@ const Subjects = () => {
   // Função para verificar se a disciplina está ativa no momento
   const isSubjectActive = (subject: any) => {
     const now = new Date();
-    const startDate = (subject as any).start_date ? new Date((subject as any).start_date) : null;
-    const endDate = (subject as any).end_date ? new Date((subject as any).end_date) : null;
+    const startDate = (subject as any).start_date ? parseYMDToLocalDate((subject as any).start_date) : null;
+    const endDate = (subject as any).end_date ? parseYMDToLocalDate((subject as any).end_date) : null;
     
     if (!startDate && !endDate) return subject.status === 'ativo';
     if (!startDate) return now <= endDate && subject.status === 'ativo';
@@ -82,7 +82,7 @@ const Subjects = () => {
   const isSubjectEndingSoon = (subject: any) => {
     if (!isSubjectActive(subject)) return false;
     
-    const endDate = (subject as any).end_date ? new Date((subject as any).end_date) : null;
+    const endDate = (subject as any).end_date ? parseYMDToLocalDate((subject as any).end_date) : null;
     if (!endDate) return false;
     
     const now = new Date();
@@ -288,9 +288,9 @@ const Subjects = () => {
                                   <TooltipTrigger>
                                     <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
                                   </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Disciplina termina em {differenceInDays(new Date((subject as any).end_date), new Date())} dia(s)</p>
-                                  </TooltipContent>
+                                   <TooltipContent>
+                                     <p>Disciplina termina em {differenceInDays(parseYMDToLocalDate((subject as any).end_date), new Date())} dia(s)</p>
+                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
                             )}
@@ -324,7 +324,7 @@ const Subjects = () => {
                               <div className="flex items-center gap-1 text-success">
                                 <Calendar className="w-3 h-3" />
                                 <span>
-                                  Início: {new Date((subject as any).start_date).toLocaleDateString('pt-BR')}
+                                  Início: {formatDateBR((subject as any).start_date)}
                                 </span>
                               </div>
                             )}
@@ -333,7 +333,7 @@ const Subjects = () => {
                               <div className="flex items-center gap-1 text-warning">
                                 <Calendar className="w-3 h-3" />
                                 <span>
-                                  Término: {new Date((subject as any).end_date).toLocaleDateString('pt-BR')}
+                                  Término: {formatDateBR((subject as any).end_date)}
                                 </span>
                               </div>
                             )}
@@ -435,17 +435,17 @@ const Subjects = () => {
                      </TableCell>
                      <TableCell>
                        <div className="space-y-1">
-                         {(subject as any).start_date && (
-                           <div className="text-xs flex items-center">
-                             <Calendar className="w-3 h-3 mr-1" />
-                             {new Date((subject as any).start_date).toLocaleDateString('pt-BR')}
-                           </div>
-                         )}
-                         {(subject as any).end_date && (
-                           <div className="text-xs text-muted-foreground">
-                             até {new Date((subject as any).end_date).toLocaleDateString('pt-BR')}
-                           </div>
-                         )}
+                            {(subject as any).start_date && (
+                            <div className="text-xs flex items-center">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {formatDateBR((subject as any).start_date)}
+                            </div>
+                          )}
+                          {(subject as any).end_date && (
+                            <div className="text-xs text-muted-foreground">
+                              até {formatDateBR((subject as any).end_date)}
+                            </div>
+                          )}
                          {!(subject as any).start_date && !(subject as any).end_date && (
                            <span className="text-xs text-muted-foreground">Não definido</span>
                          )}
@@ -462,9 +462,9 @@ const Subjects = () => {
                                <TooltipTrigger>
                                  <AlertTriangle className="w-4 h-4 text-orange-500 animate-pulse" />
                                </TooltipTrigger>
-                               <TooltipContent>
-                                 <p>Termina em {differenceInDays(new Date((subject as any).end_date), new Date())} dia(s)</p>
-                               </TooltipContent>
+                                <TooltipContent>
+                                  <p>Termina em {differenceInDays(parseYMDToLocalDate((subject as any).end_date), new Date())} dia(s)</p>
+                                </TooltipContent>
                              </Tooltip>
                            </TooltipProvider>
                          )}

@@ -81,7 +81,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           record_id: string | null
           table_name: string
           user_agent: string | null
@@ -92,7 +92,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name: string
           user_agent?: string | null
@@ -103,7 +103,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
@@ -885,7 +885,7 @@ export type Database = {
         Returns: boolean
       }
       detect_suspicious_activity: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           alert_type: string
           description: string
@@ -909,7 +909,7 @@ export type Database = {
         }[]
       }
       get_instructor_students: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           class_id: string
           enrollment_number: string
@@ -967,7 +967,7 @@ export type Database = {
         }[]
       }
       get_security_metrics: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           failed_access_attempts: number
           medical_access_count: number
@@ -1012,12 +1012,9 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
-      is_instructor_of_subject: {
-        Args:
-          | { _subject_id: string; _user_id: string }
-          | { subject: string; user_id: string }
-        Returns: boolean
-      }
+      is_instructor_of_subject:
+        | { Args: { subject: string; user_id: string }; Returns: boolean }
+        | { Args: { _subject_id: string; _user_id: string }; Returns: boolean }
       log_profile_update_attempt: {
         Args: {
           details?: string
@@ -1047,10 +1044,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      setup_test_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      setup_test_admin: { Args: never; Returns: undefined }
       student_in_class: {
         Args: { _class_id: string; _user_id: string }
         Returns: boolean

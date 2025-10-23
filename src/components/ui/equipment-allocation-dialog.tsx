@@ -35,7 +35,10 @@ export const EquipmentAllocationDialog: React.FC<EquipmentAllocationDialogProps>
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [selectedShift, setSelectedShift] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  );
   const [observations, setObservations] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -48,7 +51,8 @@ export const EquipmentAllocationDialog: React.FC<EquipmentAllocationDialogProps>
       setSelectedStudent('');
       setSelectedShift('');
       setObservations('');
-      setSelectedDate(new Date().toISOString().split('T')[0]);
+      setStartDate(new Date().toISOString().split('T')[0]);
+      setEndDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
     }
   }, [open]);
 
@@ -89,7 +93,8 @@ export const EquipmentAllocationDialog: React.FC<EquipmentAllocationDialogProps>
         equipment_id: selectedEquipment.id,
         student_id: selectedStudent,
         shift: selectedShift as 'manha' | 'tarde' | 'noite',
-        date: selectedDate,
+        start_date: startDate,
+        end_date: endDate,
         observations
       });
       onOpenChange(false);
@@ -149,12 +154,24 @@ export const EquipmentAllocationDialog: React.FC<EquipmentAllocationDialogProps>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="date">Data</Label>
+            <Label htmlFor="startDate">Data de Início</Label>
             <Input
-              id="date"
+              id="startDate"
               type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="endDate">Data de Devolução Prevista</Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
               required
             />
           </div>

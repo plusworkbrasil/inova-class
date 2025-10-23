@@ -59,61 +59,96 @@ export const EquipmentAllocationsView: React.FC = () => {
     }
   };
 
-  const AllocationCard: React.FC<{ allocation: EquipmentAllocation }> = ({ allocation }) => (
-    <Card className="mb-3">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <Monitor className="h-4 w-4 text-primary" />
-              <span className="font-medium">{allocation.equipment?.name}</span>
-              {allocation.equipment?.patrimonio && (
-                <Badge variant="outline" className="text-xs">
-                  {allocation.equipment.patrimonio}
-                </Badge>
+  const AllocationCard: React.FC<{ allocation: EquipmentAllocation }> = ({ allocation }) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(allocation.end_date);
+    endDate.setHours(0, 0, 0, 0);
+    const isOverdue = allocation.status === 'ativo' && endDate < today;
+    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+    return (
+      <Card className={`mb-3 ${isOverdue ? 'border-destructive' : ''}`}>
+        <CardContent className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Monitor className="h-4 w-4 text-primary" />
+                <span className="font-medium">{allocation.equipment?.name}</span>
+                {allocation.equipment?.patrimonio && (
+                  <Badge variant="outline" className="text-xs">
+                    {allocation.equipment.patrimonio}
+                  </Badge>
+                )}
+                {isOverdue && (
+                  <Badge variant="destructive" className="text-xs">
+                    Atrasado
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <User className="h-3 w-3" />
+                <span>{allocation.student?.name}</span>
+                {allocation.student?.student_id && (
+                  <span className="text-xs">({allocation.student.student_id})</span>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                <Clock className="h-3 w-3" />
+                <span>Início: {new Date(allocation.start_date).toLocaleDateString('pt-BR')}</span>
+              </div>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                <span>
+                  Devolução: {endDate.toLocaleDateString('pt-BR')}
+                  {allocation.status === 'ativo' && (
+                    <span className={isOverdue ? 'text-destructive ml-2 font-medium' : 'text-muted-foreground ml-2'}>
+                      ({isOverdue ? `${Math.abs(daysRemaining)} dias atrasado` : `${daysRemaining} dias restantes`})
+                    </span>
+                  )}
+                </span>
+              </div>
+              
+              {allocation.returned_at && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  <Clock className="h-3 w-3" />
+                  <span>Devolvido em: {new Date(allocation.returned_at).toLocaleString('pt-BR')}</span>
+                </div>
+              )}
+              
+              {allocation.observations && (
+                <p className="text-xs text-muted-foreground mt-2">{allocation.observations}</p>
               )}
             </div>
             
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-              <User className="h-3 w-3" />
-              <span>{allocation.student?.name}</span>
-              {allocation.student?.student_id && (
-                <span className="text-xs">({allocation.student.student_id})</span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>Alocado em: {new Date(allocation.allocated_at).toLocaleString('pt-BR')}</span>
-            </div>
-            
-            {allocation.observations && (
-              <p className="text-xs text-muted-foreground mt-2">{allocation.observations}</p>
+            {allocation.status === 'ativo' && (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleReturn(allocation.id)}
+                  className="text-green-600 hover:text-green-700"
+                >
+                  Devolver
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleCancel(allocation.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Cancelar
+                </Button>
+              </div>
             )}
           </div>
-          
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleReturn(allocation.id)}
-              className="text-green-600 hover:text-green-700"
-            >
-              Devolver
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleCancel(allocation.id)}
-              className="text-red-600 hover:text-red-700"
-            >
-              Cancelar
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const ShiftContent: React.FC<{ allocations: EquipmentAllocation[]; shiftName: string }> = ({ 
     allocations, 

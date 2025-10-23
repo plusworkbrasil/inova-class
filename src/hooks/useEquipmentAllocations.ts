@@ -8,7 +8,8 @@ export interface EquipmentAllocation {
   student_id: string;
   allocated_by: string;
   shift: 'manha' | 'tarde' | 'noite';
-  date: string;
+  start_date: string;
+  end_date: string;
   status: 'ativo' | 'finalizado' | 'cancelado';
   allocated_at: string;
   returned_at?: string;
@@ -70,19 +71,24 @@ export const useEquipmentAllocations = () => {
     equipment_id: string;
     student_id: string;
     shift: 'manha' | 'tarde' | 'noite';
-    date?: string;
+    start_date?: string;
+    end_date?: string;
     observations?: string;
   }) => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) throw new Error('Usuário não autenticado');
 
+      const today = new Date().toISOString().split('T')[0];
+      const defaultEndDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
       const { error } = await supabase
         .from('equipment_allocations')
         .insert([{
           ...allocationData,
           allocated_by: user.user.id,
-          date: allocationData.date || new Date().toISOString().split('T')[0]
+          start_date: allocationData.start_date || today,
+          end_date: allocationData.end_date || defaultEndDate
         }]);
 
       if (error) throw error;
@@ -188,7 +194,7 @@ export const useEquipmentAllocations = () => {
           student:student_id!inner (name, student_id)
         `)
         .eq('shift', shift)
-        .eq('date', date)
+        .eq('start_date', date)
         .eq('status', 'ativo');
 
       if (error) throw error;

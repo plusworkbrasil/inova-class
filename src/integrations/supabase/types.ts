@@ -348,12 +348,13 @@ export type Database = {
           allocated_at: string
           allocated_by: string
           created_at: string
-          date: string
+          end_date: string
           equipment_id: string
           id: string
           observations: string | null
           returned_at: string | null
           shift: Database["public"]["Enums"]["shift_type"]
+          start_date: string
           status: Database["public"]["Enums"]["allocation_status"]
           student_id: string
           updated_at: string
@@ -362,12 +363,13 @@ export type Database = {
           allocated_at?: string
           allocated_by: string
           created_at?: string
-          date?: string
+          end_date?: string
           equipment_id: string
           id?: string
           observations?: string | null
           returned_at?: string | null
           shift: Database["public"]["Enums"]["shift_type"]
+          start_date?: string
           status?: Database["public"]["Enums"]["allocation_status"]
           student_id: string
           updated_at?: string
@@ -376,12 +378,13 @@ export type Database = {
           allocated_at?: string
           allocated_by?: string
           created_at?: string
-          date?: string
+          end_date?: string
           equipment_id?: string
           id?: string
           observations?: string | null
           returned_at?: string | null
           shift?: Database["public"]["Enums"]["shift_type"]
+          start_date?: string
           status?: Database["public"]["Enums"]["allocation_status"]
           student_id?: string
           updated_at?: string

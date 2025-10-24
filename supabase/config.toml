@@ -1,5 +1,11 @@
 project_id = "gaamkwzexqpzppgpkozy"
 
+[auth.email]
+enable_confirmations = false
+enable_signup = true
+double_confirm_changes = false
+max_frequency = "1m"
+
 [functions.create-test-user]
 verify_jwt = false
 

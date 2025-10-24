@@ -1,14 +1,18 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const {
     stats,
     loading: statsLoading
@@ -25,6 +29,14 @@ const AdminDashboard = () => {
           <p className="text-muted-foreground mt-1">Visão geral do sistema acadêmico</p>
         </div>
         <div className="flex space-x-2 mt-4 md:mt-0">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="flex items-center gap-2"
+          >
+            <Key className="h-4 w-4" />
+            Alterar Senha
+          </Button>
           <Button 
             variant="outline" 
             onClick={() => navigate('/class-timeline')}
@@ -219,6 +231,11 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ChangeOwnPasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </div>;
 };
 export default AdminDashboard;

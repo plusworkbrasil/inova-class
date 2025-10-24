@@ -2,3 +2,6 @@ project_id = "gaamkwzexqpzppgpkozy"
 
 [functions.create-test-user]
 verify_jwt = false
+
+[functions.update-own-password]
+verify_jwt = true

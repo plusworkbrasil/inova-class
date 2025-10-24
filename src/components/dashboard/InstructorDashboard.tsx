@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import StatsCard from './StatsCard';
-import { Users, BookOpen, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Users, BookOpen, CheckCircle, AlertTriangle, Key } from 'lucide-react';
 import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 
 const InstructorDashboard = () => {
   const { stats, loading, error } = useInstructorDashboardStats();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   if (loading) {
     return (
@@ -35,11 +39,21 @@ const InstructorDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard do Instrutor</h1>
-        <p className="text-muted-foreground">
-          Visão geral das suas turmas e alunos
-        </p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard do Instrutor</h1>
+          <p className="text-muted-foreground">
+            Visão geral das suas turmas e alunos
+          </p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => setIsChangePasswordOpen(true)}
+          className="flex items-center gap-2 mt-4 md:mt-0"
+        >
+          <Key className="h-4 w-4" />
+          Alterar Senha
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -94,6 +108,11 @@ const InstructorDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <ChangeOwnPasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </div>
   );
 };

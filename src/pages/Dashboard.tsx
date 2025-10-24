@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { UserRole } from '@/types/user';
-import { LayoutDashboard, User, LogOut, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, User, LogOut, RefreshCw, Key } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,10 +19,12 @@ import TutorDashboard from '@/components/dashboard/TutorDashboard';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   
   // NÃO carregamos dados aqui - cada dashboard carrega seus próprios dados
   // Isso evita queries antes do role estar pronto
@@ -172,10 +174,18 @@ const Dashboard = () => {
                 <Badge variant="outline">{getRoleTranslation(userRole)}</Badge>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Você está acessando o sistema com perfil de <strong>{getRoleTranslation(userRole)}</strong>. 
               Use o menu lateral para navegar pelas funcionalidades disponíveis para este tipo de usuário.
             </p>
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center gap-2"
+              onClick={() => setIsChangePasswordOpen(true)}
+            >
+              <Key className="h-4 w-4" />
+              Alterar Minha Senha
+            </Button>
           </CardContent>
         </Card>
 
@@ -274,6 +284,11 @@ const Dashboard = () => {
         {userRole === 'student' && (
           <StudentNotificationCenter studentRole={userRole} />
         )}
+
+        <ChangeOwnPasswordDialog
+          open={isChangePasswordOpen}
+          onOpenChange={setIsChangePasswordOpen}
+        />
       </div>
     </Layout>
   );

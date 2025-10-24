@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, GraduationCap, FileText, TrendingUp, BookOpen, UserX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Users, GraduationCap, FileText, TrendingUp, BookOpen, UserX, Key } from 'lucide-react';
 import { useTutorDashboardStats } from '@/hooks/useTutorDashboardStats';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 
 const TutorDashboard = () => {
   const { stats, loading } = useTutorDashboardStats();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   if (loading) {
     return (
@@ -28,11 +32,19 @@ const TutorDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center">
         <div>
           <h1 className="text-3xl font-bold">Dashboard do Tutor</h1>
           <p className="text-muted-foreground">Acompanhamento e supervisão acadêmica</p>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => setIsChangePasswordOpen(true)}
+          className="flex items-center gap-2 mt-4 md:mt-0"
+        >
+          <Key className="h-4 w-4" />
+          Alterar Senha
+        </Button>
       </div>
 
       {/* Cards de Estatísticas */}
@@ -141,6 +153,11 @@ const TutorDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      <ChangeOwnPasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+      />
     </div>
   );
 };

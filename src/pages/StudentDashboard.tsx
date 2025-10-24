@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { ArrowLeft, User, Calendar, BookOpen, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, User, Calendar, BookOpen, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown, Key, Shield } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
@@ -14,6 +14,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 
 const StudentDashboard = () => {
   const { studentId } = useParams();
@@ -21,6 +22,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // Hooks do Supabase
   const { user, profile } = useSupabaseAuth();
@@ -216,6 +218,29 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Security Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield size={20} />
+              Segurança da Conta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Mantenha sua conta segura alterando sua senha regularmente
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center gap-2"
+              onClick={() => setIsChangePasswordOpen(true)}
+            >
+              <Key className="h-4 w-4" />
+              Alterar Minha Senha
+            </Button>
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -375,6 +400,11 @@ const StudentDashboard = () => {
 
         {/* Módulo de Avisos Completo para Alunos */}
         <StudentNotificationCenter studentRole="student" />
+
+        <ChangeOwnPasswordDialog
+          open={isChangePasswordOpen}
+          onOpenChange={setIsChangePasswordOpen}
+        />
       </div>
     </Layout>
   );

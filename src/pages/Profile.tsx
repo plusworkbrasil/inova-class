@@ -9,14 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle, User, Key } from 'lucide-react';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { UserRole } from '@/types/user';
+import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 
 const Profile = () => {
   const { user, profile, isAuthenticated } = useAuth();
   const { data: communications, loading: commLoading } = useCommunications();
   const { data: classes } = useSupabaseClasses();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   
   // Fallback para quando não temos profile ainda
   const userRole = (profile?.role as UserRole) || 'student';
@@ -169,6 +172,17 @@ const Profile = () => {
                   </span>
                 </div>
               </div>
+              <Separator />
+              <div className="pt-4">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center gap-2"
+                  onClick={() => setIsChangePasswordOpen(true)}
+                >
+                  <Key className="h-4 w-4" />
+                  Alterar Senha
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -254,6 +268,11 @@ const Profile = () => {
             </CardContent>
           </Card>
         </div>
+
+        <ChangeOwnPasswordDialog
+          open={isChangePasswordOpen}
+          onOpenChange={setIsChangePasswordOpen}
+        />
       </div>
     </Layout>
   );

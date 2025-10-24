@@ -158,23 +158,46 @@ const handler = async (req: Request): Promise<Response> => {
     if (!targetUserId && email) {
       console.log(`[confirm-user-email] Looking up user by email: ${email}`);
       
-      // Find user by email
-      const { data: users, error: findError } = await supabaseServiceRole.auth.admin.listUsers();
-      if (findError) {
-        console.error('[confirm-user-email] Failed to list users:', findError.message);
-        throw findError;
+      // Buscar usuário com paginação
+      let targetUser = null;
+      let page = 1;
+      const perPage = 1000;
+      
+      while (!targetUser) {
+        const { data: usersData, error: findError } = await supabaseServiceRole.auth.admin.listUsers({
+          page,
+          perPage
+        });
+        
+        if (findError) {
+          console.error('[confirm-user-email] Failed to list users:', findError.message);
+          throw findError;
+        }
+        
+        // Buscar usuário na página atual (case-insensitive)
+        targetUser = usersData.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+        
+        // Se não encontrou e ainda há mais páginas, continua
+        if (!targetUser && usersData.users.length === perPage) {
+          page++;
+          console.log(`[confirm-user-email] User not found on page ${page - 1}, checking next page...`);
+        } else if (!targetUser) {
+          // Não encontrou e não há mais páginas
+          console.error(`[confirm-user-email] User not found with email: ${email} (searched ${page} pages)`);
+          return new Response(
+            JSON.stringify({ 
+              error: 'Usuário não encontrado no sistema. Verifique se o email está correto.', 
+              step: 'user_lookup', 
+              email,
+              pagesSearched: page
+            }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
       }
       
-      const targetUser = users.users.find(u => u.email === email);
-      if (!targetUser) {
-        console.error(`[confirm-user-email] User not found with email: ${email}`);
-        return new Response(
-          JSON.stringify({ error: 'User not found', step: 'user_lookup', email }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
       targetUserId = targetUser.id;
-      console.log(`[confirm-user-email] Found user: ${targetUserId}`);
+      console.log(`[confirm-user-email] Found user: ${targetUserId} on page ${page}`);
     }
 
     if (!targetUserId) {

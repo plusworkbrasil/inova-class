@@ -14,20 +14,21 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const authHeader = req.headers.get('Authorization')!;
 
-    // Create client with user's auth token
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    // Create client with user's auth token (uses anon key for user operations)
+    const supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: authHeader },
       },
     });
 
-    // Create admin client for audit logging
+    // Create admin client for privileged operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) {
       console.error('Auth error:', userError);
@@ -50,7 +51,7 @@ serve(async (req) => {
     }
 
     // Validate current password by attempting sign in
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabaseClient.auth.signInWithPassword({
       email: user.email!,
       password: currentPassword,
     });

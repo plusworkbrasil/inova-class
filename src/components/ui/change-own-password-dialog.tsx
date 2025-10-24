@@ -76,15 +76,41 @@ export function ChangeOwnPasswordDialog({ open, onOpenChange }: ChangeOwnPasswor
 
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('update-own-password', {
+      // Obter sessão atual
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Sessão expirada. Faça login novamente."
+        });
+        return;
+      }
+
+      // Chamar edge function com header de autorização
+      const { data, error } = await supabase.functions.invoke('update-own-password', {
         body: {
           currentPassword,
           newPassword
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
       if (error) {
         console.error('Error updating password:', error);
+        
+        // Tratar erro de sessão especificamente
+        if (error.message?.includes('session') || error.message?.includes('Auth')) {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Sessão expirada. Faça login novamente."
+          });
+          return;
+        }
         
         // Handle specific error messages
         if (error.message.includes('incorreta') || error.message.includes('incorrect')) {

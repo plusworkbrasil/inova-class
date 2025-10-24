@@ -244,9 +244,17 @@ const Navigation = ({
   const handleLogout = async () => {
     try {
       await signOut();
+    } catch (error: any) {
+      // Se o erro for "Session not found", ignorar (usuário já está deslogado)
+      if (error?.message?.includes('Session not found') || 
+          error?.message?.includes('session_not_found')) {
+        console.log('Sessão já estava inválida, limpando dados locais');
+      } else {
+        console.error('Erro ao fazer logout:', error);
+      }
+    } finally {
+      // Sempre redirecionar para login, independente do erro
       navigate('/auth');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
     }
   };
   const isActivePath = (path: string) => {

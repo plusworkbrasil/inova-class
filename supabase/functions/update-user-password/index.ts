@@ -17,6 +17,11 @@ serve(async (req) => {
       throw new Error('No authorization header')
     }
 
+    // Extrair o token (formato: "Bearer <token>")
+    const token = authHeader.replace('Bearer ', '').trim()
+
+    console.log('update-user-password: Has auth header:', !!authHeader, 'token length:', token.length)
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -29,16 +34,23 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
-        global: { headers: { Authorization: authHeader } },
-        auth: { autoRefreshToken: false, persistSession: false }
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { 
+          autoRefreshToken: false, 
+          persistSession: false,
+          detectSessionInUrl: false
+        }
       }
     )
 
-    // Validate caller
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser()
+    // Validate caller using the provided JWT token
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser(token)
     if (userError || !user) {
+      console.error('Auth error:', userError)
       throw new Error('Invalid or expired token')
     }
+
+    console.log('Admin user authenticated:', user.email)
 
     // Only admins and secretaries can update passwords
     const { data: userRole, error: roleError } = await supabaseAdmin

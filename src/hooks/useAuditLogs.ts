@@ -34,20 +34,10 @@ export const useAuditLogs = () => {
       
       let query = supabase
         .from('audit_logs')
-        .select(`
-          *,
-          profiles!inner (
-            name,
-            email
-          )
-        `, { count: 'exact' })
+        .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
-      if (userFilter) {
-        query = query.or(`profiles.name.ilike.%${userFilter}%,profiles.email.ilike.%${userFilter}%`);
-      }
-
       if (actionFilter && actionFilter !== 'all') {
         query = query.eq('action', actionFilter);
       }
@@ -69,31 +59,41 @@ export const useAuditLogs = () => {
         return;
       }
 
-      // Buscar roles dos usuários em batch
+      // Buscar dados dos usuários em batch (profiles e roles)
       const userIds = [...new Set(data?.map(log => log.user_id) || [])];
+      
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds);
+
       const { data: rolesData } = await supabase
         .from('user_roles')
         .select('user_id, role')
         .in('user_id', userIds);
 
-      // Criar mapa de user_id -> role
+      // Criar mapas de user_id -> dados
+      const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
       const roleMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
 
       // Transformar dados para o formato esperado
-      const transformedLogs = data?.map((log: any) => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        table_name: log.table_name,
-        record_id: log.record_id,
-        accessed_fields: log.accessed_fields,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.profiles?.name || 'Usuário não encontrado',
-        user_email: log.profiles?.email || '',
-        user_role: roleMap.get(log.user_id) || ''
-      })) || [];
+      const transformedLogs = data?.map((log: any) => {
+        const profile = profileMap.get(log.user_id);
+        return {
+          id: log.id,
+          user_id: log.user_id,
+          action: log.action,
+          table_name: log.table_name,
+          record_id: log.record_id,
+          accessed_fields: log.accessed_fields,
+          ip_address: log.ip_address,
+          user_agent: log.user_agent,
+          created_at: log.created_at,
+          user_name: profile?.name || 'Usuário não encontrado',
+          user_email: profile?.email || '',
+          user_role: roleMap.get(log.user_id) || ''
+        };
+      }) || [];
 
       setLogs(transformedLogs);
       setTotalCount(count || 0);

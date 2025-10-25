@@ -38,8 +38,7 @@ export const useAuditLogs = () => {
           *,
           profiles!inner (
             name,
-            email,
-            role
+            email
           )
         `, { count: 'exact' })
         .order('created_at', { ascending: false });
@@ -70,6 +69,16 @@ export const useAuditLogs = () => {
         return;
       }
 
+      // Buscar roles dos usuários em batch
+      const userIds = [...new Set(data?.map(log => log.user_id) || [])];
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+
+      // Criar mapa de user_id -> role
+      const roleMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
+
       // Transformar dados para o formato esperado
       const transformedLogs = data?.map((log: any) => ({
         id: log.id,
@@ -83,7 +92,7 @@ export const useAuditLogs = () => {
         created_at: log.created_at,
         user_name: log.profiles?.name || 'Usuário não encontrado',
         user_email: log.profiles?.email || '',
-        user_role: log.profiles?.role || ''
+        user_role: roleMap.get(log.user_id) || ''
       })) || [];
 
       setLogs(transformedLogs);

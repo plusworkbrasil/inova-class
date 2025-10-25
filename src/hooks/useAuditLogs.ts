@@ -32,6 +32,14 @@ export const useAuditLogs = () => {
     try {
       setLoading(true);
       
+      // Verificar se há sessão ativa antes de fazer a query
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Sem sessão ainda, não mostra toast - aguarda listener
+        setLoading(false);
+        return;
+      }
+      
       let query = supabase
         .from('audit_logs')
         .select('*', { count: 'exact' })
@@ -50,12 +58,20 @@ export const useAuditLogs = () => {
       const { data, error, count } = await query;
 
       if (error) {
-        console.error('Error fetching audit logs:', error);
-        toast({
-          variant: "destructive",
-          title: "Erro",
-          description: "Erro ao carregar logs de auditoria."
+        console.error('Error fetching audit logs:', { 
+          code: error.code, 
+          message: error.message, 
+          details: error.details 
         });
+        
+        // Só mostra toast se for erro real (não falta de sessão)
+        if (error.code !== 'PGRST301') {
+          toast({
+            variant: "destructive",
+            title: "Erro",
+            description: "Erro ao carregar logs de auditoria."
+          });
+        }
         return;
       }
 
@@ -110,7 +126,29 @@ export const useAuditLogs = () => {
   };
 
   useEffect(() => {
-    fetchLogs();
+    let unsubscribe: (() => void) | undefined;
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        // Sessão já disponível, busca imediatamente
+        fetchLogs();
+      } else {
+        // Aguarda sessão estar pronta
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+          if (sess) {
+            fetchLogs();
+            subscription.unsubscribe();
+          }
+        });
+        unsubscribe = () => subscription.unsubscribe();
+      }
+    })();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   return {

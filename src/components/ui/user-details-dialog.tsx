@@ -160,7 +160,7 @@ export const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
                 {user.class_id && (
                   <div className="flex items-center gap-2">
                     <Users size={16} className="text-muted-foreground" />
-                    <span className="text-sm">Turma: {user.class_id}</span>
+                    <span className="text-sm">Turma: {user.class_name || 'Não informada'}</span>
                   </div>
                 )}
                 {user.parent_name && (

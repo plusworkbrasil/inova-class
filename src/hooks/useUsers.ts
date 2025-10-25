@@ -25,6 +25,7 @@ export interface User {
   guardian_phone?: string;
   student_id?: string;
   class_id?: string;
+  class_name?: string;
   instructor_subjects?: string[];
   created_at?: string;
   updated_at?: string;
@@ -48,12 +49,28 @@ export const useUsers = () => {
 
       if (error) throw error;
 
-      // Fetch roles for all users
+      // Fetch roles and class names for all users
       const usersWithRoles = await Promise.all(
         (data || []).map(async (user) => {
           const { data: roleData } = await supabase
             .rpc('get_user_role', { user_id: user.id });
-          return { ...user, role: roleData || 'student' };
+          
+          // Fetch class name if class_id exists
+          let className = null;
+          if (user.class_id) {
+            const { data: classData } = await supabase
+              .from('classes')
+              .select('name')
+              .eq('id', user.class_id)
+              .single();
+            className = classData?.name || null;
+          }
+          
+          return { 
+            ...user, 
+            role: roleData || 'student',
+            class_name: className
+          };
         })
       );
       

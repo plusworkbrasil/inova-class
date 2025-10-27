@@ -15,6 +15,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
+import { BatchResetStudentPasswordsForm } from '@/components/forms/BatchResetStudentPasswordsForm';
 import { translateAction, translateTable, getActionBadgeVariant } from '@/lib/auditMappings';
 
 const formatDateTime = (dateString: string) => {
@@ -390,6 +391,17 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {profile?.role === 'admin' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gerenciamento de Senhas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <BatchResetStudentPasswordsForm />
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="logs" className="space-y-6">

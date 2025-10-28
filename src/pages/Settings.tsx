@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
 import { BatchResetStudentPasswordsForm } from '@/components/forms/BatchResetStudentPasswordsForm';
+import { ResetSpecificPasswordsForm } from '@/components/forms/ResetSpecificPasswordsForm';
 import { translateAction, translateTable, getActionBadgeVariant } from '@/lib/auditMappings';
 
 const formatDateTime = (dateString: string) => {
@@ -393,14 +394,28 @@ const Settings = () => {
             </Card>
 
             {profile?.role === 'admin' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gerenciamento de Senhas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BatchResetStudentPasswordsForm />
-                </CardContent>
-              </Card>
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Redefinir Senhas Específicas</CardTitle>
+                    <CardDescription>
+                      Redefina as senhas de usuários específicos com problemas de credenciais
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResetSpecificPasswordsForm />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Gerenciamento de Senhas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <BatchResetStudentPasswordsForm />
+                  </CardContent>
+                </Card>
+              </>
             )}
           </TabsContent>
 

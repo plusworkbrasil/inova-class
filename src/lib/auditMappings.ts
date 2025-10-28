@@ -9,7 +9,9 @@ export const actionMappings: Record<string, string> = {
   'SELECT': 'Consultar',
   'LOGIN': 'Login',
   'LOGOUT': 'Logout',
-  'ACCESS': 'Acessar'
+  'ACCESS': 'Acessar',
+  'BATCH_PASSWORD_RESET': 'Reset de Senha em Lote',
+  'SPECIFIC_PASSWORD_RESET': 'Reset de Senha Específica'
 };
 
 export const tableMappings: Record<string, string> = {

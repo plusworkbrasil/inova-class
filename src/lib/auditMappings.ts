@@ -11,7 +11,9 @@ export const actionMappings: Record<string, string> = {
   'LOGOUT': 'Logout',
   'ACCESS': 'Acessar',
   'BATCH_PASSWORD_RESET': 'Reset de Senha em Lote',
-  'SPECIFIC_PASSWORD_RESET': 'Reset de Senha Específica'
+  'SPECIFIC_PASSWORD_RESET': 'Reset de Senha Específica',
+  'DIAGNOSE_AUTH': 'Diagnóstico de Autenticação',
+  'SYNC_AUTH_EMAIL': 'Sincronização de Email Auth'
 };
 
 export const tableMappings: Record<string, string> = {

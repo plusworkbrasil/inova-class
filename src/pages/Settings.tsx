@@ -17,6 +17,8 @@ import { useAuditLogs } from '@/hooks/useAuditLogs';
 import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
 import { BatchResetStudentPasswordsForm } from '@/components/forms/BatchResetStudentPasswordsForm';
 import { ResetSpecificPasswordsForm } from '@/components/forms/ResetSpecificPasswordsForm';
+import { DiagnoseAuthForm } from '@/components/forms/DiagnoseAuthForm';
+import { SyncAuthEmailsForm } from '@/components/forms/SyncAuthEmailsForm';
 import { translateAction, translateTable, getActionBadgeVariant } from '@/lib/auditMappings';
 
 const formatDateTime = (dateString: string) => {
@@ -397,13 +399,37 @@ const Settings = () => {
               <>
                 <Card>
                   <CardHeader>
+                    <CardTitle>Diagnóstico de Autenticação</CardTitle>
+                    <CardDescription>
+                      Verifique se os emails em profiles estão sincronizados com auth.users
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <DiagnoseAuthForm />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
                     <CardTitle>Redefinir Senhas Específicas</CardTitle>
                     <CardDescription>
-                      Redefina as senhas de usuários específicos com problemas de credenciais
+                      Redefina as senhas de usuários específicos com problemas de credenciais (usa ID da tabela profiles)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ResetSpecificPasswordsForm />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Sincronizar Emails Auth ↔ Profiles</CardTitle>
+                    <CardDescription>
+                      Sincronize emails desalinhados entre auth.users e profiles (pode exigir reconfirmação de email)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SyncAuthEmailsForm />
                   </CardContent>
                 </Card>
 

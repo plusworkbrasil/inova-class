@@ -31,7 +31,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log(`Password reset requested by user: ${user.id}`);
+    console.log(`Email sync requested by user: ${user.id}`);
 
     // Verify user is admin
     const { data: roleData, error: roleError } = await supabaseAdmin
@@ -41,7 +41,7 @@ serve(async (req) => {
       .single();
 
     if (roleError || roleData?.role !== 'admin') {
-      throw new Error('Only admins can reset passwords');
+      throw new Error('Only admins can sync emails');
     }
 
     console.log('Admin verification successful');
@@ -53,9 +53,8 @@ serve(async (req) => {
       throw new Error('Emails array is required');
     }
 
-    console.log(`Resetting passwords for: ${emails.join(', ')}`);
+    console.log(`Syncing emails for: ${emails.join(', ')}`);
 
-    const newPassword = 'J@V3mTech';
     const results = {
       total: emails.length,
       success: 0,
@@ -63,10 +62,10 @@ serve(async (req) => {
       errors: [] as string[]
     };
 
-    // Reset password for each email
+    // Sync email for each provided email
     for (const email of emails) {
       try {
-        // Find user ID in profiles table by email (CRITICAL: buscar por ID, não por email no auth)
+        // Find user in profiles by email
         const { data: profileData, error: profileError } = await supabaseAdmin
           .from('profiles')
           .select('id, email, name')
@@ -80,46 +79,46 @@ serve(async (req) => {
           continue;
         }
 
-        console.log(`Found profile for ${email}: ID ${profileData.id}, Name ${profileData.name}`);
+        console.log(`Syncing email for ${profileData.name} (ID: ${profileData.id}): ${profileData.email}`);
 
-        // Reset password using the user ID from profiles
+        // Update auth.users email to match profiles email
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
           profileData.id,
-          { password: newPassword }
+          { email: profileData.email }
         );
 
         if (updateError) {
           results.failed++;
-          results.errors.push(`Falha ao resetar ${email}: ${updateError.message}`);
-          console.error(`Failed to reset password for ${email} (ID: ${profileData.id}):`, updateError);
+          results.errors.push(`Falha ao sincronizar ${email}: ${updateError.message}`);
+          console.error(`Failed to sync email for ${email}:`, updateError);
         } else {
           results.success++;
-          console.log(`Successfully reset password for ${email} (ID: ${profileData.id})`);
+          console.log(`Successfully synced email for ${email} (ID: ${profileData.id})`);
         }
       } catch (err) {
         results.failed++;
         results.errors.push(`Exceção para ${email}: ${err.message}`);
-        console.error(`Exception resetting password for ${email}:`, err);
+        console.error(`Exception syncing email for ${email}:`, err);
       }
     }
 
-    console.log(`Password reset complete: ${results.success} success, ${results.failed} failed`);
+    console.log(`Email sync complete: ${results.success} success, ${results.failed} failed`);
 
     // Log the operation
     await supabaseAdmin
       .from('audit_logs')
       .insert({
         user_id: user.id,
-        action: 'SPECIFIC_PASSWORD_RESET',
+        action: 'SYNC_AUTH_EMAIL',
         table_name: 'profiles',
         record_id: user.id,
-        accessed_fields: ['password'],
+        accessed_fields: ['email'],
       });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Senhas redefinidas: ${results.success} com sucesso, ${results.failed} com falha`,
+        message: `Emails sincronizados: ${results.success} com sucesso, ${results.failed} com falha`,
         results
       }),
       {
@@ -129,7 +128,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in reset-specific-passwords:', error);
+    console.error('Error in sync-auth-email-with-profiles:', error);
     return new Response(
       JSON.stringify({
         success: false,

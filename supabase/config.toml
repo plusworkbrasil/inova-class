@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.update-own-password]
 verify_jwt = true
+
+[functions.diagnose-auth-profile-emails]
+verify_jwt = true
+
+[functions.sync-auth-email-with-profiles]
+verify_jwt = true
+
+[functions.reset-specific-passwords]
+verify_jwt = true

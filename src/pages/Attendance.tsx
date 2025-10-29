@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, FileText, CalendarIcon, X } from 'lucide-react';
+import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
 import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
@@ -247,13 +247,54 @@ const Attendance = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setSelectedClass('');
-    setSelectedSubject('');
+    setSelectedClass('all');
+    setSelectedSubject('all');
     setSelectedDate(undefined);
   };
 
   const filteredRecords = getFilteredData();
-  const groupedRecords = userRole !== 'student' ? getGroupedAttendance() : [];
+  const getFilteredGroupedRecords = () => {
+    // Primeiro filtrar os dados base
+    let filtered = attendanceData;
+    
+    // Aplicar filtros
+    if (selectedClass && selectedClass !== 'all') {
+      filtered = filtered.filter(record => record.class_id === selectedClass);
+    }
+    
+    if (selectedSubject && selectedSubject !== 'all') {
+      filtered = filtered.filter(record => record.subject_id === selectedSubject);
+    }
+    
+    if (selectedDate) {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      filtered = filtered.filter(record => record.date === dateStr);
+    }
+    
+    // Depois agrupar
+    const grouped = filtered.reduce((acc, record) => {
+      const key = `${record.date}-${record.subject_id}-${record.class_id}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          date: record.date,
+          class_id: record.class_id,
+          subject_id: record.subject_id,
+          records: [],
+          daily_activity: record.daily_activity,
+        };
+      }
+      
+      acc[key].records.push(record);
+      return acc;
+    }, {} as Record<string, any>);
+    
+    return Object.values(grouped).sort((a: any, b: any) => {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    });
+  };
+
+  const groupedRecords = userRole !== 'student' ? getFilteredGroupedRecords() : [];
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -489,20 +530,19 @@ const Attendance = () => {
                     <TableHead>Total</TableHead>
                     <TableHead>Presentes</TableHead>
                     <TableHead>Ausentes</TableHead>
-                    <TableHead>Atividade</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {attendanceLoading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center">
+                      <TableCell colSpan={7} className="text-center">
                         Carregando registros de frequência...
                       </TableCell>
                     </TableRow>
                   ) : groupedRecords.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center">
+                      <TableCell colSpan={7} className="text-center">
                         Nenhum registro de frequência encontrado.
                       </TableCell>
                     </TableRow>
@@ -524,20 +564,6 @@ const Attendance = () => {
                           <Badge variant="destructive">
                             {group.absent_count}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {group.daily_activity ? (
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => handleViewGroupDetails(group)}
-                            >
-                              <FileText size={14} className="mr-1" />
-                              Ver
-                            </Button>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
                         </TableCell>
                         <TableCell>
                           <Button 

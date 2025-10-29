@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { InstructorGradesBySubjectForm } from '@/components/forms/InstructorGradesBySubjectForm';
+import { GradesByClassGroup } from '@/components/grades/GradesByClassGroup';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
@@ -184,13 +185,13 @@ const TeacherGrades = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-foreground">Minhas Notas</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={openBatchGradeForm}>
-              <Users size={16} className="mr-2" />
-              Lançar Turma
+            <Button onClick={openBatchGradeForm} size="lg">
+              <Users size={18} className="mr-2" />
+              Lançar Notas por Turma
             </Button>
-            <Button onClick={openCreateForm}>
+            <Button variant="outline" onClick={openCreateForm}>
               <Plus size={16} className="mr-2" />
-              Lançar Nota Individual
+              Nota Individual
             </Button>
           </div>
         </div>
@@ -248,6 +249,9 @@ const TeacherGrades = () => {
         <Card>
           <CardHeader>
             <CardTitle>Lançamento Rápido de Notas</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Selecione uma disciplina para lançar notas de toda a turma de uma vez.
+            </p>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -352,7 +356,30 @@ const TeacherGrades = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Registro de Notas</CardTitle>
+            <CardTitle>Notas por Turma e Disciplina</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Visualização agrupada das avaliações por turma. Clique para expandir e ver os detalhes de cada aluno.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <GradesByClassGroup
+              grades={instructorGrades}
+              subjects={instructorSubjects || []}
+              classes={instructorClasses || []}
+              onEditGroup={(subjectId, type, date) => {
+                // TODO: Implementar abertura do formulário de edição com dados pré-preenchidos
+                openBatchGradeForm();
+              }}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Notas Lançadas</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Visualização detalhada de todas as notas já registradas. Use "Lançar Notas por Turma" acima para registrar múltiplas notas de uma vez.
+            </p>
           </CardHeader>
           <CardContent>
             <Table>

@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, FileText } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, FileText, CalendarIcon, X } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
 import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
@@ -15,8 +17,11 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
+import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
-import { toBrasiliaDate, formatDateBR } from '@/lib/utils';
+import { toBrasiliaDate, formatDateBR, cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 const Attendance = () => {
@@ -24,6 +29,8 @@ const Attendance = () => {
   const [userName, setUserName] = useState('Admin');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -44,6 +51,7 @@ const Attendance = () => {
     getGroupedAttendance
   } = useSupabaseAttendance();
   const { data: classes } = useSupabaseClasses();
+  const { data: subjects } = useSupabaseSubjects();
 
   useEffect(() => {
     if (profile) {
@@ -225,7 +233,23 @@ const Attendance = () => {
       filtered = filtered.filter(record => record.class_id === selectedClass);
     }
     
+    if (selectedSubject) {
+      filtered = filtered.filter(record => record.subject_id === selectedSubject);
+    }
+    
+    if (selectedDate) {
+      const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      filtered = filtered.filter(record => record.date === dateStr);
+    }
+    
     return filtered;
+  };
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedClass('');
+    setSelectedSubject('');
+    setSelectedDate(undefined);
   };
 
   const filteredRecords = getFilteredData();
@@ -321,8 +345,8 @@ const Attendance = () => {
               <CardTitle>Filtros</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
-                <div className="relative flex-1">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="relative lg:col-span-2">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar aluno..."
@@ -331,20 +355,74 @@ const Attendance = () => {
                     className="pl-10"
                   />
                 </div>
-                  <Select value={selectedClass} onValueChange={setSelectedClass}>
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Selecionar turma" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {classes.map((classItem) => (
-                        <SelectItem key={classItem.id} value={classItem.id}>
-                          {classItem.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                <Button variant="outline">Filtrar</Button>
+                
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as turmas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as turmas</SelectItem>
+                    {classes.map((classItem) => (
+                      <SelectItem key={classItem.id} value={classItem.id}>
+                        {classItem.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas as disciplinas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas as disciplinas</SelectItem>
+                    {subjects.map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !selectedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR }) : "Filtrar por data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      initialFocus
+                      locale={ptBR}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+              
+              {(searchTerm || selectedClass || selectedSubject || selectedDate) && (
+                <div className="mt-4 flex items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8"
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Limpar Filtros
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

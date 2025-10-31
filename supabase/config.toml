@@ -20,3 +20,9 @@ verify_jwt = true
 
 [functions.reset-specific-passwords]
 verify_jwt = true
+
+[functions.update-user-email]
+verify_jwt = true
+
+[functions.diagnose-all-email-mismatches]
+verify_jwt = true

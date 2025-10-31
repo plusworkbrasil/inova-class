@@ -198,16 +198,67 @@ export const useUsers = () => {
 
   const updateUser = async (id: string, updates: Partial<User>) => {
     try {
-      // Separar role dos demais campos
-      const { role: incomingRole, ...profileUpdates } = updates;
+      // Separar role e email dos demais campos
+      const { role: incomingRole, email: newEmail, ...profileUpdates } = updates;
       
       // Normalizar "teacher" para "instructor" (compatibilidade)
       const normalizedRole = incomingRole === 'teacher' ? 'instructor' : incomingRole;
+      
+      // FASE 2: Se o email foi alterado, sincronizar com auth.users ANTES de atualizar profiles
+      if (newEmail) {
+        const { data: currentProfile } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('id', id)
+          .single();
+        
+        // Só sincronizar se o email realmente mudou
+        if (currentProfile?.email !== newEmail) {
+          console.log(`Email change detected: ${currentProfile?.email} → ${newEmail}`);
+          
+          try {
+            // Usar admin API via Edge Function para atualizar auth.users
+            const { data: authUpdateData, error: authUpdateError } = await supabase.functions.invoke(
+              'update-user-email', 
+              {
+                body: { 
+                  userId: id, 
+                  newEmail: newEmail 
+                }
+              }
+            );
+            
+            if (authUpdateError) {
+              console.error('Auth email sync error:', authUpdateError);
+              toast({
+                title: "Aviso",
+                description: "Email atualizado no perfil, mas houve erro ao sincronizar com autenticação. Execute a sincronização manual em Configurações.",
+                variant: "destructive",
+              });
+              // Não bloquear a atualização do perfil
+            } else {
+              console.log('Auth email synced successfully:', authUpdateData);
+              toast({
+                title: "Email sincronizado",
+                description: "O email foi atualizado tanto no perfil quanto na autenticação.",
+              });
+            }
+          } catch (syncError) {
+            console.error('Exception during email sync:', syncError);
+            // Continuar mesmo se a sincronização falhar
+          }
+        }
+      }
       
       // Remove campos undefined
       const cleanUpdates = Object.fromEntries(
         Object.entries(profileUpdates).filter(([_, value]) => value !== undefined)
       );
+      
+      // Adicionar email de volta se foi fornecido
+      if (newEmail) {
+        (cleanUpdates as any).email = newEmail;
+      }
 
       // Compatibilidade: manter 'photo' sincronizado com 'avatar'
       if (Object.prototype.hasOwnProperty.call(cleanUpdates, 'avatar') && !Object.prototype.hasOwnProperty.call(cleanUpdates, 'photo')) {

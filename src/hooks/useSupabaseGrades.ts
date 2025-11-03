@@ -130,12 +130,31 @@ export const useSupabaseGrades = () => {
 
   const deleteGrade = async (id: string) => {
     try {
+      // Buscar dados da nota antes de excluir para auditoria
+      const { data: gradeData } = await supabase
+        .from('grades')
+        .select('student_id, subject_id, value, type')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('grades')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // Registrar auditoria
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && gradeData) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'DELETE',
+          table_name: 'grades',
+          record_id: id,
+          accessed_fields: ['student_id', 'subject_id', 'value', 'type']
+        });
+      }
 
       await fetchGrades();
       toast({

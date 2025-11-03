@@ -45,7 +45,7 @@ export const AttendanceGroupDetailsDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Detalhes da Chamada</span>
-            {userRole === 'admin' && onDelete && (
+            {['admin', 'secretary'].includes(userRole || '') && onDelete && (
               <Button 
                 variant="destructive" 
                 size="sm"

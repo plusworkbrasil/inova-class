@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle, GraduationCap } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, Users, TrendingUp, AlertTriangle, GraduationCap } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { InstructorGradesBySubjectForm } from '@/components/forms/InstructorGradesBySubjectForm';
+import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
@@ -19,7 +20,7 @@ import { UserRole } from '@/types/user';
 
 const Grades = () => {
   const { profile } = useAuth();
-  const { data: grades, loading: gradesLoading, createGrade, updateGrade } = useSupabaseGrades();
+  const { data: grades, loading: gradesLoading, createGrade, updateGrade, deleteGrade } = useSupabaseGrades();
   const { data: classes } = useSupabaseClasses();
   const { data: subjects } = useSupabaseSubjects();
   const { users } = useUsers();
@@ -34,6 +35,8 @@ const Grades = () => {
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [isSubjectGradeFormOpen, setIsSubjectGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [gradeToDelete, setGradeToDelete] = useState<{id: string, studentName: string, subjectName: string} | null>(null);
 
   // Verificar permissões de acesso
   const canManageGrades = ['admin', 'secretary', 'instructor'].includes(userRole);
@@ -132,6 +135,37 @@ const Grades = () => {
   const openCreateForm = () => {
     setEditingGrade(null);
     setIsGradeFormOpen(true);
+  };
+
+  const handleDeleteGrade = (grade: any) => {
+    const student = getStudentData(grade.student_id);
+    const subject = getSubjectData(grade.subject_id);
+    setGradeToDelete({
+      id: grade.id,
+      studentName: student?.name || 'Desconhecido',
+      subjectName: subject?.name || 'Desconhecida'
+    });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteGrade = async () => {
+    if (!gradeToDelete) return;
+    try {
+      await deleteGrade(gradeToDelete.id);
+      toast({
+        title: "Nota excluída!",
+        description: "O registro foi removido com sucesso.",
+      });
+      setDeleteDialogOpen(false);
+      setGradeToDelete(null);
+    } catch (error) {
+      console.error('Error deleting grade:', error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao excluir",
+        description: "Você não tem permissão para excluir esta nota.",
+      });
+    }
   };
 
   const getGradeBadgeVariant = (grade: number, maxGrade: number) => {
@@ -340,6 +374,16 @@ const Grades = () => {
                             >
                               <Edit size={14} />
                             </Button>
+                            
+                            {['admin', 'secretary'].includes(userRole) && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => handleDeleteGrade(grade)}
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -366,6 +410,15 @@ const Grades = () => {
           onOpenChange={setIsSubjectGradeFormOpen}
           onSubmit={handleCreateMultipleGrades}
           onUpdate={handleEditGrade}
+        />
+        
+        <DeleteConfirmation
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={confirmDeleteGrade}
+          title="Excluir Nota"
+          description={`Tem certeza que deseja excluir esta nota? Esta ação não pode ser desfeita e afetará o histórico do aluno.${gradeToDelete ? ` A nota do aluno ${gradeToDelete.studentName} em ${gradeToDelete.subjectName} será removida permanentemente.` : ''}`}
+          itemName={gradeToDelete ? `${gradeToDelete.studentName} - ${gradeToDelete.subjectName}` : ''}
         />
       </div>
     </Layout>

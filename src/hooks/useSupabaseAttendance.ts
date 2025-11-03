@@ -138,12 +138,31 @@ export const useSupabaseAttendance = () => {
 
   const deleteAttendance = async (id: string) => {
     try {
+      // Buscar dados antes de excluir para auditoria
+      const { data: attendanceData } = await supabase
+        .from('attendance')
+        .select('student_id, class_id, subject_id, date, is_present')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('attendance')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+
+      // Registrar auditoria
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && attendanceData) {
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'DELETE',
+          table_name: 'attendance',
+          record_id: id,
+          accessed_fields: ['student_id', 'class_id', 'subject_id', 'date', 'is_present']
+        });
+      }
 
       await fetchAttendance();
       toast({
@@ -207,12 +226,31 @@ export const useSupabaseAttendance = () => {
 
   const deleteBatchAttendance = async (attendanceIds: string[]) => {
     try {
+      // Buscar dados antes de excluir para auditoria
+      const { data: attendanceData } = await supabase
+        .from('attendance')
+        .select('student_id, class_id, subject_id, date, is_present')
+        .in('id', attendanceIds);
+
       const { error } = await supabase
         .from('attendance')
         .delete()
         .in('id', attendanceIds);
 
       if (error) throw error;
+
+      // Registrar auditoria para cada registro excluído
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && attendanceData) {
+        const auditLogs = attendanceIds.map((id, index) => ({
+          user_id: user.id,
+          action: 'DELETE',
+          table_name: 'attendance',
+          record_id: id,
+          accessed_fields: ['student_id', 'class_id', 'subject_id', 'date', 'is_present']
+        }));
+        await supabase.from('audit_logs').insert(auditLogs);
+      }
 
       await fetchAttendance();
       toast({

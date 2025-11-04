@@ -13,7 +13,8 @@ export const actionMappings: Record<string, string> = {
   'BATCH_PASSWORD_RESET': 'Reset de Senha em Lote',
   'SPECIFIC_PASSWORD_RESET': 'Reset de Senha Específica',
   'DIAGNOSE_AUTH': 'Diagnóstico de Autenticação',
-  'SYNC_AUTH_EMAIL': 'Sincronização de Email Auth'
+  'SYNC_AUTH_EMAIL': 'Sincronização de Email Auth',
+  'UPDATE_PASSWORD': 'Atualização de Senha'
 };
 
 export const tableMappings: Record<string, string> = {
@@ -49,6 +50,10 @@ export const getActionBadgeVariant = (action: string): "default" | "secondary" |
     case 'LOGIN':
     case 'LOGOUT':
       return 'outline';
+    case 'UPDATE_PASSWORD':
+    case 'BATCH_PASSWORD_RESET':
+    case 'SPECIFIC_PASSWORD_RESET':
+      return 'secondary';
     default:
       return 'outline';
   }

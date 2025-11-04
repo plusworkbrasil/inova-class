@@ -96,6 +96,23 @@ serve(async (req) => {
 
     if (updateError) throw updateError
 
+    // Log password update in audit_logs
+    const { error: auditError } = await supabaseAdmin
+      .from('audit_logs')
+      .insert({
+        user_id: user.id,
+        action: 'UPDATE_PASSWORD',
+        table_name: 'auth.users',
+        record_id: userId,
+        accessed_fields: ['password']
+      })
+
+    if (auditError) {
+      console.error('Audit log error:', auditError)
+    }
+
+    console.log('Password updated successfully by admin/secretary:', user.email, 'for user:', userId)
+
     return new Response(
       JSON.stringify({ message: 'Password updated successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

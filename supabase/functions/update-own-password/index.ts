@@ -110,9 +110,10 @@ serve(async (req) => {
       .from('audit_logs')
       .insert({
         user_id: user.id,
-        action: 'UPDATE_OWN_PASSWORD',
+        action: 'UPDATE_PASSWORD',
         table_name: 'auth.users',
         record_id: user.id,
+        accessed_fields: ['password']
       });
 
     if (auditError) {

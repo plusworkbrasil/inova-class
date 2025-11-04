@@ -3,18 +3,26 @@ import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Users, ClipboardCheck, GraduationCap } from 'lucide-react';
+import { BookOpen, Users, ClipboardCheck, GraduationCap, Eye } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { useToast } from '@/hooks/use-toast';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
+import { SubjectAttendanceMatrixDialog } from '@/components/ui/subject-attendance-matrix-dialog';
 
 const InstructorSubjects = () => {
   const { profile, user } = useAuth();
   const { subjects, loading } = useInstructorSubjects();
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [viewAttendanceDialogOpen, setViewAttendanceDialogOpen] = useState(false);
+  const [selectedSubjectForView, setSelectedSubjectForView] = useState<{
+    id: string;
+    name: string;
+    class_id: string;
+    class_name: string;
+  } | null>(null);
   const { toast } = useToast();
   const { createAttendance, refetch } = useSupabaseAttendance();
 
@@ -28,6 +36,16 @@ const InstructorSubjects = () => {
   const handleAttendanceClick = (subjectId: string) => {
     setSelectedSubject(subjectId);
     setIsAttendanceFormOpen(true);
+  };
+
+  const handleViewAttendanceClick = (subject: any) => {
+    setSelectedSubjectForView({
+      id: subject.id,
+      name: subject.name,
+      class_id: subject.class_id,
+      class_name: subject.class_name || 'Sem turma'
+    });
+    setViewAttendanceDialogOpen(true);
   };
 
   const handleAttendanceSubmit = async (data: any) => {
@@ -124,13 +142,24 @@ const InstructorSubjects = () => {
                     <Badge variant="outline">Ativa</Badge>
                   </div>
                   
-                  <Button 
-                    className="w-full" 
-                    onClick={() => handleAttendanceClick(subject.id)}
-                  >
-                    <ClipboardCheck className="mr-2 h-4 w-4" />
-                    Fazer Chamada
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      className="flex-1" 
+                      onClick={() => handleAttendanceClick(subject.id)}
+                    >
+                      <ClipboardCheck className="mr-2 h-4 w-4" />
+                      Fazer Chamada
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      className="flex-1" 
+                      onClick={() => handleViewAttendanceClick(subject)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Ver Chamadas
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -141,6 +170,15 @@ const InstructorSubjects = () => {
           open={isAttendanceFormOpen}
           onOpenChange={setIsAttendanceFormOpen}
           onSubmit={handleAttendanceSubmit}
+        />
+
+        <SubjectAttendanceMatrixDialog
+          open={viewAttendanceDialogOpen}
+          onOpenChange={setViewAttendanceDialogOpen}
+          subjectId={selectedSubjectForView?.id || null}
+          classId={selectedSubjectForView?.class_id || null}
+          subjectName={selectedSubjectForView?.name || ''}
+          className={selectedSubjectForView?.class_name || ''}
         />
       </div>
     </Layout>

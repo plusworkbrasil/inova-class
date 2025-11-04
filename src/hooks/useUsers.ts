@@ -55,13 +55,11 @@ export const useUsers = () => {
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize - 1;
       
+      // OPÇÃO 4: Busca em batch (2 queries otimizadas)
+      // 1. Buscar profiles com classes (sem user_roles para evitar erro de relação)
       let query = supabase
         .from('profiles')
-        .select(`
-          *,
-          user_roles!left(role),
-          classes(name)
-        `, { count: 'exact' })
+        .select('*, classes(name)', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(startIndex, endIndex);
 
@@ -75,16 +73,20 @@ export const useUsers = () => {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, error, count } = await query;
+      const { data: profiles, error, count } = await query;
 
       if (error) throw error;
 
-      // Processar dados - user_roles e classes vêm como arrays do JOIN
-      let processedUsers = (data || []).map((user: any) => {
-        const userRole = Array.isArray(user.user_roles) && user.user_roles.length > 0 
-          ? user.user_roles[0].role 
-          : 'student';
-        
+      // 2. Buscar roles para TODOS os usuários de uma vez (batch query)
+      const userIds = (profiles || []).map(p => p.id);
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+
+      // 3. Combinar dados no frontend
+      let processedUsers = (profiles || []).map((user: any) => {
+        const userRole = roles?.find(r => r.user_id === user.id)?.role || 'student';
         const className = Array.isArray(user.classes) && user.classes.length > 0
           ? user.classes[0].name
           : null;
@@ -93,12 +95,11 @@ export const useUsers = () => {
           ...user,
           role: userRole,
           class_name: className,
-          user_roles: undefined,
           classes: undefined
         };
       });
 
-      // Aplicar filtro de role após processamento (já que role vem do JOIN)
+      // 4. Aplicar filtro de role após combinação
       if (roleFilter) {
         processedUsers = processedUsers.filter((user: any) => user.role === roleFilter);
       }

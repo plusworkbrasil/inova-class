@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Edit, Trash2, Eye, Key } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
 import { UserForm } from '@/components/forms/UserForm';
@@ -34,12 +37,27 @@ const Users = () => {
   
   const { 
     users, 
-    loading, 
+    loading,
+    currentPage,
+    pageSize,
+    totalCount,
+    totalPages,
     createUser, 
     updateUser, 
     deleteUser, 
-    inviteStudent 
+    inviteStudent,
+    nextPage,
+    prevPage,
+    goToPage,
+    fetchUsers
   } = useUsers();
+  
+  const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // Buscar quando o termo de busca mudar (com debounce)
+  useEffect(() => {
+    fetchUsers(1, debouncedSearch);
+  }, [debouncedSearch]);
 
   const handleCreateUser = async (data: any) => {
     await createUser({
@@ -149,20 +167,8 @@ const Users = () => {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (loading) {
-    return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-        </div>
-      </Layout>
-    );
-  }
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalCount);
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -213,63 +219,144 @@ const Users = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                       <Badge variant={getRoleBadgeVariant(user.role as UserRole)}>
-                         {roleTranslations[user.role as UserRole] || user.role}
-                       </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="default">
-                        Ativo
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openViewDialog(user)}
-                        >
-                          <Eye size={14} />
-                        </Button>
-                        <UserForm 
-                          onSubmit={(userData) => handleEditUser(userData, user.id)}
-                          initialData={{
-                            ...user,
-                            birth_date: user.birth_date ? new Date(user.birth_date) : undefined
-                          } as any}
-                          mode="edit"
-                          trigger={
-                            <Button variant="outline" size="sm">
-                              <Edit size={14} />
-                            </Button>
-                          }
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openPasswordDialog(user)}
-                          title="Atualizar senha"
-                        >
-                          <Key size={14} />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openDeleteDialog(user)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
+                {loading ? (
+                  Array.from({ length: 10 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-48" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                      <TableCell><Skeleton className="h-8 w-32" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhum usuário encontrado
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                         <Badge variant={getRoleBadgeVariant(user.role as UserRole)}>
+                           {roleTranslations[user.role as UserRole] || user.role}
+                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="default">
+                          Ativo
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openViewDialog(user)}
+                          >
+                            <Eye size={14} />
+                          </Button>
+                          <UserForm 
+                            onSubmit={(userData) => handleEditUser(userData, user.id)}
+                            initialData={{
+                              ...user,
+                              birth_date: user.birth_date ? new Date(user.birth_date) : undefined
+                            } as any}
+                            mode="edit"
+                            trigger={
+                              <Button variant="outline" size="sm">
+                                <Edit size={14} />
+                              </Button>
+                            }
+                          />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openPasswordDialog(user)}
+                            title="Atualizar senha"
+                          >
+                            <Key size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openDeleteDialog(user)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
+            
+            {/* Controles de Paginação */}
+            {!loading && totalCount > 0 && (
+              <div className="flex items-center justify-between py-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  Mostrando <strong>{startIndex}-{endIndex}</strong> de{' '}
+                  <strong>{totalCount}</strong> usuários
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={prevPage}
+                    disabled={currentPage === 1 || loading}
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Anterior
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let page;
+                      if (totalPages <= 5) {
+                        page = i + 1;
+                      } else if (currentPage <= 3) {
+                        page = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        page = totalPages - 4 + i;
+                      } else {
+                        page = currentPage - 2 + i;
+                      }
+                      
+                      return (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => goToPage(page, debouncedSearch)}
+                          disabled={loading}
+                          className="w-9 h-9 p-0"
+                        >
+                          {page}
+                        </Button>
+                      );
+                    })}
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <span className="px-2 text-muted-foreground">...</span>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages || loading}
+                  >
+                    Próxima
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
         

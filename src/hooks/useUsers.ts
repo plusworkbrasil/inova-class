@@ -35,46 +35,63 @@ export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = 1, searchTerm = '') => {
     try {
       setLoading(true);
       setError(null);
       
-      const { data, error } = await supabase
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize - 1;
+      
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false});
+        .select(`
+          *,
+          user_roles!left(role),
+          classes(name)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(startIndex, endIndex);
+
+      // Adicionar busca se houver termo
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+      }
+
+      const { data, error, count } = await query;
 
       if (error) throw error;
 
-      // Fetch roles and class names for all users
-      const usersWithRoles = await Promise.all(
-        (data || []).map(async (user) => {
-          const { data: roleData } = await supabase
-            .rpc('get_user_role', { user_id: user.id });
-          
-          // Fetch class name if class_id exists
-          let className = null;
-          if (user.class_id) {
-            const { data: classData } = await supabase
-              .from('classes')
-              .select('name')
-              .eq('id', user.class_id)
-              .single();
-            className = classData?.name || null;
-          }
-          
-          return { 
-            ...user, 
-            role: roleData || 'student',
-            class_name: className
-          };
-        })
-      );
+      // Processar dados - user_roles e classes vêm como arrays do JOIN
+      const processedUsers = (data || []).map((user: any) => {
+        const userRole = Array.isArray(user.user_roles) && user.user_roles.length > 0 
+          ? user.user_roles[0].role 
+          : 'student';
+        
+        const className = Array.isArray(user.classes) && user.classes.length > 0
+          ? user.classes[0].name
+          : null;
+        
+        return {
+          ...user,
+          role: userRole,
+          class_name: className,
+          user_roles: undefined,
+          classes: undefined
+        };
+      });
+
+      setUsers(processedUsers as User[]);
+      setTotalCount(count || 0);
+      setTotalPages(Math.ceil((count || 0) / pageSize));
+      setCurrentPage(page);
       
-      setUsers(usersWithRoles as User[]);
     } catch (err: any) {
       setError(err.message);
       console.error('Error fetching users:', err);
@@ -85,6 +102,24 @@ export const useUsers = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      fetchUsers(currentPage + 1);
+    }
+  };
+
+  const prevPage = () => {
+    if (currentPage > 1) {
+      fetchUsers(currentPage - 1);
+    }
+  };
+
+  const goToPage = (page: number, searchTerm = '') => {
+    if (page >= 1 && page <= totalPages) {
+      fetchUsers(page, searchTerm);
     }
   };
 
@@ -397,10 +432,17 @@ export const useUsers = () => {
     users,
     loading,
     error,
+    currentPage,
+    pageSize,
+    totalCount,
+    totalPages,
     fetchUsers,
     createUser,
     updateUser,
     deleteUser,
-    inviteStudent
+    inviteStudent,
+    nextPage,
+    prevPage,
+    goToPage
   };
 };

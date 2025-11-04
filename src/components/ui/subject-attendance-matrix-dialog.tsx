@@ -1,12 +1,15 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useInstructorSubjectAttendance } from '@/hooks/useInstructorSubjectAttendance';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, Users, AlertCircle } from 'lucide-react';
+import { CalendarDays, Users, AlertCircle, FileDown, FileSpreadsheet } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { exportAttendanceMatrixToPDF, exportAttendanceMatrixToExcel } from '@/lib/attendanceExport';
+import { toast } from 'sonner';
 
 interface SubjectAttendanceMatrixDialogProps {
   open: boolean;
@@ -35,6 +38,38 @@ export const SubjectAttendanceMatrixDialog = ({
       return format(new Date(dateStr), 'dd/MM', { locale: ptBR });
     } catch {
       return dateStr;
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      toast.info('Gerando PDF...', { duration: 2000 });
+      await exportAttendanceMatrixToPDF({
+        subjectName,
+        className,
+        students,
+        dates
+      });
+      toast.success('PDF gerado com sucesso!');
+    } catch (error) {
+      console.error('Error exporting PDF:', error);
+      toast.error('Erro ao gerar PDF. Tente novamente.');
+    }
+  };
+
+  const handleExportExcel = () => {
+    try {
+      toast.info('Gerando Excel...', { duration: 2000 });
+      exportAttendanceMatrixToExcel({
+        subjectName,
+        className,
+        students,
+        dates
+      });
+      toast.success('Arquivo Excel gerado com sucesso!');
+    } catch (error) {
+      console.error('Error exporting Excel:', error);
+      toast.error('Erro ao gerar Excel. Tente novamente.');
     }
   };
 
@@ -81,25 +116,50 @@ export const SubjectAttendanceMatrixDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] p-0">
         <DialogHeader className="p-6 pb-4 border-b">
-          <DialogTitle className="flex items-center gap-2 text-2xl">
-            <CalendarDays className="h-6 w-6 text-primary" />
-            Chamadas - {subjectName}
-          </DialogTitle>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              <span>{className}</span>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <DialogTitle className="flex items-center gap-2 text-2xl">
+                <CalendarDays className="h-6 w-6 text-primary" />
+                Chamadas - {subjectName}
+              </DialogTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>{className}</span>
+                </div>
+                {!loading && students.length > 0 && (
+                  <Badge variant="outline">
+                    {students.length} {students.length === 1 ? 'aluno' : 'alunos'}
+                  </Badge>
+                )}
+                {!loading && dates.length > 0 && (
+                  <Badge variant="outline">
+                    {dates.length} {dates.length === 1 ? 'chamada' : 'chamadas'}
+                  </Badge>
+                )}
+              </div>
             </div>
-            {!loading && students.length > 0 && (
-              <Badge variant="outline">
-                {students.length} {students.length === 1 ? 'aluno' : 'alunos'}
-              </Badge>
-            )}
-            {!loading && dates.length > 0 && (
-              <Badge variant="outline">
-                {dates.length} {dates.length === 1 ? 'chamada' : 'chamadas'}
-              </Badge>
-            )}
+            
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                disabled={loading || students.length === 0 || dates.length === 0}
+              >
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar PDF
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportExcel}
+                disabled={loading || students.length === 0 || dates.length === 0}
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                Exportar Excel
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 

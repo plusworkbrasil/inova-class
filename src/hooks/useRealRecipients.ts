@@ -34,7 +34,8 @@ export const useRealRecipients = () => {
           class_id,
           classes(name)
         `)
-        .not('class_id', 'is', null);
+        .not('class_id', 'is', null)
+        .eq('status', 'active');
 
       if (studentsError) throw studentsError;
 

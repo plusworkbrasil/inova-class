@@ -13,6 +13,7 @@ import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -24,6 +25,8 @@ const Evasions = () => {
   const [selectedReason, setSelectedReason] = useState('');
   const [isEvasionFormOpen, setIsEvasionFormOpen] = useState(false);
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingEvasionData, setPendingEvasionData] = useState<any>(null);
   const { toast } = useToast();
 
   // Use Supabase hooks
@@ -33,22 +36,29 @@ const Evasions = () => {
   const handleCreateEvasion = async (data: any) => {
     if (!profile?.id) return;
     
+    // Armazenar dados e abrir confirmação
+    setPendingEvasionData(data);
+    setConfirmDialogOpen(true);
+  };
+
+  const confirmCreateEvasion = async () => {
+    if (!profile?.id || !pendingEvasionData) return;
+    
     try {
       await createEvasion({
-        student_id: data.studentId,
-        date: data.evasionDate,
-        reason: data.evasionReason,
+        student_id: pendingEvasionData.studentId,
+        date: pendingEvasionData.evasionDate,
+        reason: pendingEvasionData.evasionReason,
         reported_by: profile.id,
-        observations: data.observations,
+        observations: pendingEvasionData.observations,
         status: 'active'
       });
 
-      toast({
-        title: "Evasão registrada com sucesso!",
-        description: `Evasão de ${data.studentName} foi registrada.`,
-      });
+      setConfirmDialogOpen(false);
+      setPendingEvasionData(null);
+      setIsEvasionFormOpen(false);
     } catch (error) {
-      // Error handling is done in the hook
+      console.error('Erro ao registrar evasão:', error);
     }
   };
 
@@ -292,6 +302,33 @@ const Evasions = () => {
             mode={editingEvasion ? 'edit' : 'create'}
           />
         )}
+
+        <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Registro de Evasão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ao registrar esta evasão, o aluno <strong>{pendingEvasionData?.studentName}</strong> será automaticamente marcado como <strong>INATIVO</strong>.
+                <br/><br/>
+                <strong>Consequências:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>O aluno não aparecerá em novas chamadas</li>
+                  <li>Não poderá ser alocado em novos equipamentos</li>
+                  <li>Não será incluído em novas disciplinas</li>
+                  <li>Todos os dados históricos serão preservados</li>
+                </ul>
+                <br/>
+                Deseja continuar?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmCreateEvasion}>
+                Confirmar Evasão
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

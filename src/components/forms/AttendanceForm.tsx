@@ -84,6 +84,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
         .eq('class_id', classId)
+        .eq('status', 'active')
         .order('name', { ascending: true });
       
       if (error) throw error;

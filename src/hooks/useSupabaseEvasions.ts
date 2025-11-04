@@ -58,16 +58,66 @@ export const useSupabaseEvasions = () => {
 
   const createEvasion = async (evasionData: Omit<Evasion, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { error } = await supabase
+      // 1. Verificar se já existe evasão ativa para este aluno
+      const { data: existingEvasion } = await supabase
+        .from('evasions')
+        .select('id')
+        .eq('student_id', evasionData.student_id)
+        .eq('status', 'active')
+        .maybeSingle();
+
+      if (existingEvasion) {
+        toast({
+          variant: "destructive",
+          title: "Evasão já registrada",
+          description: "Este aluno já possui uma evasão ativa registrada."
+        });
+        throw new Error('Evasão já existe');
+      }
+
+      // 2. Buscar nome do aluno para auditoria
+      const { data: student } = await supabase
+        .from('profiles')
+        .select('name, status')
+        .eq('id', evasionData.student_id)
+        .single();
+
+      // 3. Inserir registro de evasão
+      const { error: evasionError } = await supabase
         .from('evasions')
         .insert([evasionData]);
 
-      if (error) throw error;
+      if (evasionError) throw evasionError;
+
+      // 4. Atualizar status do aluno para "inactive"
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          status: 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', evasionData.student_id);
+
+      if (updateError) throw updateError;
+
+      // 5. Registrar auditoria da mudança de status
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData.user) {
+        await supabase
+          .from('audit_logs')
+          .insert({
+            user_id: authData.user.id,
+            action: 'STUDENT_STATUS_CHANGE_TO_INACTIVE',
+            table_name: 'profiles',
+            record_id: evasionData.student_id,
+            accessed_fields: ['status']
+          });
+      }
 
       await fetchEvasions();
       toast({
-        title: "Sucesso!",
-        description: "Evasão registrada com sucesso."
+        title: "Evasão registrada com sucesso!",
+        description: `${student?.name || 'Aluno'} foi marcado como inativo.`
       });
     } catch (err: any) {
       toast({

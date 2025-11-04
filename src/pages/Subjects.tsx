@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { useUsers } from '@/hooks/useUsers';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
 import { cn, toBrasiliaDate, parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
+import { SubjectAttendanceExportDialog } from '@/components/ui/subject-attendance-export-dialog';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -29,6 +30,13 @@ const Subjects = () => {
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [deletingSubject, setDeletingSubject] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [selectedSubjectForExport, setSelectedSubjectForExport] = useState<{
+    id: string;
+    name: string;
+    class_id: string;
+    class_name: string;
+  } | null>(null);
   const { toast } = useToast();
 
   // Use Supabase hooks
@@ -182,6 +190,16 @@ const Subjects = () => {
     setIsFormOpen(true);
   };
 
+  const handleExportAttendance = (subject: any) => {
+    setSelectedSubjectForExport({
+      id: subject.id,
+      name: subject.name,
+      class_id: subject.class_id,
+      class_name: getClassName(subject.class_id)
+    });
+    setExportDialogOpen(true);
+  };
+
   const filteredSubjects = subjects.filter(subject =>
     subject.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -330,10 +348,11 @@ const Subjects = () => {
                             )}
                             
                             {(subject as any).end_date && (
-                              <div className="flex items-center gap-1 text-warning">
-                                <Calendar className="w-3 h-3" />
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-warning" />
                                 <span>
-                                  Término: {formatDateBR((subject as any).end_date)}
+                                  <span className="text-red-600 font-medium">Término:</span>{' '}
+                                  <span className="text-muted-foreground">{formatDateBR((subject as any).end_date)}</span>
                                 </span>
                               </div>
                             )}
@@ -345,9 +364,21 @@ const Subjects = () => {
                             )}
                           </div>
                         </div>
+
+                        <div className="flex gap-2 mt-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1 text-xs"
+                            onClick={() => handleExportAttendance(subject)}
+                          >
+                            <FileSpreadsheet className="w-3 h-3 mr-1" />
+                            Exportar Chamadas
+                          </Button>
+                        </div>
                       </div>
                     ))}
-                  </div>
+                   </div>
                   
                   {classSubjects.length === 0 && (
                     <p className="text-muted-foreground text-sm text-center py-4">
@@ -441,11 +472,12 @@ const Subjects = () => {
                               {formatDateBR((subject as any).start_date)}
                             </div>
                           )}
-                          {(subject as any).end_date && (
-                            <div className="text-xs text-muted-foreground">
-                              até {formatDateBR((subject as any).end_date)}
-                            </div>
-                          )}
+                           {(subject as any).end_date && (
+                             <div className="text-xs">
+                               <span className="text-red-600 font-medium">até</span>{' '}
+                               <span className="text-muted-foreground">{formatDateBR((subject as any).end_date)}</span>
+                             </div>
+                           )}
                          {!(subject as any).start_date && !(subject as any).end_date && (
                            <span className="text-xs text-muted-foreground">Não definido</span>
                          )}
@@ -470,24 +502,32 @@ const Subjects = () => {
                          )}
                        </div>
                      </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditForm(subject)}
-                        >
-                          <Edit size={14} />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openDeleteDialog(subject)}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="flex gap-2">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleExportAttendance(subject)}
+                           title="Exportar Chamadas"
+                         >
+                           <FileSpreadsheet size={14} />
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => openEditForm(subject)}
+                         >
+                           <Edit size={14} />
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => openDeleteDialog(subject)}
+                         >
+                           <Trash2 size={14} />
+                         </Button>
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -510,6 +550,15 @@ const Subjects = () => {
           title="Excluir Disciplina"
           description="Esta ação não pode ser desfeita. A disciplina será permanentemente removida do sistema."
           itemName={deletingSubject?.name}
+        />
+
+        <SubjectAttendanceExportDialog
+          open={exportDialogOpen}
+          onOpenChange={setExportDialogOpen}
+          subjectId={selectedSubjectForExport?.id || null}
+          classId={selectedSubjectForExport?.class_id || null}
+          subjectName={selectedSubjectForExport?.name || ''}
+          className={selectedSubjectForExport?.class_name || ''}
         />
       </div>
     </Layout>

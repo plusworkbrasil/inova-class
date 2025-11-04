@@ -13,7 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn, parseYMDToLocalDate } from '@/lib/utils';
-import { useUsers } from '@/hooks/useUsers';
+import { useInstructors } from '@/hooks/useInstructors';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 
 const subjectFormSchema = z.object({
@@ -53,13 +53,8 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
   initialData,
   mode
 }) => {
-  const { users } = useUsers();
+  const { instructors: availableTeachers, loading: loadingInstructors } = useInstructors();
   const { data: classes } = useSupabaseClasses();
-
-  // Filter users to only show instructors/teachers
-  const availableTeachers = users.filter(user => 
-    user.role === 'instructor'
-  );
 
   const form = useForm<SubjectFormValues>({
     resolver: zodResolver(subjectFormSchema),
@@ -174,13 +169,23 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
                           <SelectValue placeholder="Selecione o instrutor" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
-                        {availableTeachers.map((teacher) => (
-                          <SelectItem key={teacher.id} value={teacher.id}>
-                            {teacher.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
+                  <SelectContent>
+                    {loadingInstructors ? (
+                      <SelectItem value="" disabled>
+                        Carregando instrutores...
+                      </SelectItem>
+                    ) : availableTeachers.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        Nenhum instrutor cadastrado
+                      </SelectItem>
+                    ) : (
+                      availableTeachers.map((teacher) => (
+                        <SelectItem key={teacher.id} value={teacher.id}>
+                          {teacher.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>

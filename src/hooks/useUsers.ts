@@ -144,101 +144,37 @@ export const useUsers = () => {
 
   const createUser = async (userData: Partial<User> & { password?: string }) => {
     try {
-      // Para criar um usuário com senha, usar diretamente o supabase.auth.signUp
-      if (userData.password) {
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: userData.email!,
-          password: userData.password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              name: userData.name,
-              role: userData.role
-            }
-          }
-        });
-
-        if (authError) throw authError;
-
-        if (authData.user) {
-          // Atualizar o perfil com dados adicionais (SEM role)
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({
-              name: userData.name,
-              phone: userData.phone,
-              birth_date: userData.birth_date || null,
-              cep: userData.cep,
-              street: userData.street,
-              number: userData.number,
-              complement: userData.complement,
-              neighborhood: userData.neighborhood,
-              city: userData.city,
-              state: userData.state,
-              class_id: userData.class_id && userData.class_id !== "" ? userData.class_id : null,
-              cpf: userData.cpf,
-              full_name: userData.full_name,
-              avatar: userData.avatar,
-              parent_name: userData.parent_name,
-              escolaridade: userData.escolaridade,
-              guardian_name: userData.guardian_name,
-              guardian_phone: userData.guardian_phone,
-              student_id: userData.student_id,
-              instructor_subjects: userData.instructor_subjects
-            })
-            .eq('id', authData.user.id);
-
-          if (profileError) {
-            console.error('Error updating profile:', profileError);
-            throw profileError;
-          }
-
-          // Inserir role na tabela user_roles
-          if (userData.role) {
-            const normalizedRole = userData.role === 'teacher' ? 'instructor' : userData.role;
-            const { data: currentUser } = await supabase.auth.getUser();
-            const { error: roleError } = await supabase
-              .from('user_roles')
-              .insert({
-                user_id: authData.user.id,
-                role: normalizedRole,
-                granted_by: currentUser?.user?.id
-              });
-
-            if (roleError) {
-              console.error('Error inserting role:', roleError);
-              throw roleError;
-            }
-          }
-        }
-
-        // Refresh the users list
-        await fetchUsers();
-        
-        toast({
-          title: "Usuário criado com sucesso!",
-          description: `O usuário ${userData.name} foi criado com senha.`,
-        });
-
-        return authData;
-      } else {
-        // Usar a edge function para criação sem senha (convite)
-        const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
-          body: { userData }
-        });
-
-        if (authError) throw authError;
-
-        // Refresh the users list
-        await fetchUsers();
-        
-        toast({
-          title: "Usuário criado com sucesso!",
-          description: `O usuário ${userData.name} foi criado.`,
-        });
-
-        return authData;
+      // ALWAYS use edge function for user creation (unified flow)
+      const { password, ...userDataWithoutPassword } = userData;
+      
+      const requestBody: any = { 
+        userData: userDataWithoutPassword
+      };
+      
+      // Include password if provided
+      if (password) {
+        requestBody.password = password;
       }
+      
+      const { data: authData, error: authError } = await supabase.functions.invoke('create-user', {
+        body: requestBody
+      });
+
+      if (authError) throw authError;
+
+      // Refresh the users list
+      await fetchUsers();
+      
+      const successMessage = authData.temporaryPassword 
+        ? `O usuário ${userData.name} foi criado. Senha temporária: ${authData.temporaryPassword}`
+        : `O usuário ${userData.name} foi criado com sucesso!`;
+      
+      toast({
+        title: "Usuário criado com sucesso!",
+        description: successMessage,
+      });
+
+      return authData;
     } catch (err: any) {
       console.error('Error creating user:', err);
       toast({

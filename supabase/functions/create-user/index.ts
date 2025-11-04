@@ -66,7 +66,7 @@ serve(async (req) => {
       throw new Error('Access denied: Only admins and secretaries can create users')
     }
 
-    const { userData } = await req.json()
+    const { userData, password } = await req.json()
 
     // Validate the requested role - allow all valid roles
     const allowedRoles = ['student', 'instructor', 'teacher', 'secretary']
@@ -80,19 +80,17 @@ serve(async (req) => {
       throw new Error(`Access denied: Cannot create user with role '${userData.role}'`)
     }
 
-    // Generate a secure random password that meets strong password requirements
-    // Include uppercase, lowercase, numbers, and special characters
-    const randomPassword = `Tmp${Array.from(crypto.getRandomValues(new Uint8Array(12)))
-      .map(b => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'[b % 69])
-      .join('')}!`
+    // Use provided password or default temporary password
+    const userPassword = password || 'Trocar@123'
+    const isTemporaryPassword = !password
 
     console.log(`Creating user: ${userData.email} with role: ${userData.role}`)
 
     // Create user in auth with admin privileges
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: userData.email,
-      password: randomPassword,
-      email_confirm: true,
+      password: userPassword,
+      email_confirm: true, // NEVER send confirmation emails
       user_metadata: { 
         name: userData.name,
         role: userData.role
@@ -130,6 +128,9 @@ serve(async (req) => {
     if (userData.instructor_subjects) profileData.instructor_subjects = userData.instructor_subjects
     if (userData.enrollment_number) profileData.enrollment_number = userData.enrollment_number
     if (userData.birth_date) profileData.birth_date = userData.birth_date
+    
+    // Always require password change on first login
+    profileData.must_change_password = true
 
     // Wait a moment for the trigger to create the basic profile
     await new Promise(resolve => setTimeout(resolve, 100))
@@ -163,12 +164,19 @@ serve(async (req) => {
 
     console.log(`Successfully created user: ${userData.email}`)
 
+    const responseData: any = { 
+      user: authUser.user, 
+      profile,
+      message: 'User created successfully. User must change password on first login.'
+    }
+    
+    // Only include temporary password in response if using default password
+    if (isTemporaryPassword) {
+      responseData.temporaryPassword = userPassword
+    }
+
     return new Response(
-      JSON.stringify({ 
-        user: authUser.user, 
-        profile,
-        message: 'User created successfully. A temporary password has been set - user should reset it on first login.'
-      }),
+      JSON.stringify(responseData),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

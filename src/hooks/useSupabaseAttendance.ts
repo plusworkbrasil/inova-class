@@ -19,6 +19,8 @@ export interface Attendance {
   student_number?: string;
   class_name?: string;
   subject_name?: string;
+  is_evaded?: boolean; // Indica se o aluno está evadido
+  student_status?: string; // Status do aluno no perfil
 }
 
 export interface GroupedAttendance {
@@ -49,23 +51,36 @@ export const useSupabaseAttendance = () => {
         .from('attendance')
         .select(`
           *,
-          profiles:student_id(name, enrollment_number, student_id),
+          profiles:student_id(name, enrollment_number, student_id, status),
           classes:class_id(name),
           subjects:subject_id(name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Buscar evasões ativas
+      const { data: evasionsData } = await supabase
+        .from('evasions')
+        .select('student_id')
+        .eq('status', 'active');
+
+      const evadedStudentIds = new Set(evasionsData?.map(e => e.student_id) || []);
       
       // Transform the data to include joined fields
-      const transformedData = (attendance || []).map((record: any) => ({
-        ...record,
-        student_name: record.profiles?.name,
-        student_enrollment: record.profiles?.enrollment_number,
-        student_number: record.profiles?.student_id,
-        class_name: record.classes?.name,
-        subject_name: record.subjects?.name
-      }));
+      const transformedData = (attendance || []).map((record: any) => {
+        const isEvaded = evadedStudentIds.has(record.student_id) || record.profiles?.status === 'inactive';
+        return {
+          ...record,
+          student_name: record.profiles?.name,
+          student_enrollment: record.profiles?.enrollment_number,
+          student_number: record.profiles?.student_id,
+          class_name: record.classes?.name,
+          subject_name: record.subjects?.name,
+          is_evaded: isEvaded,
+          student_status: record.profiles?.status
+        };
+      });
       
       setData(transformedData);
     } catch (err: any) {

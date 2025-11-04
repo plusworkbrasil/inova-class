@@ -25,6 +25,7 @@ interface StudentEdit {
   is_present: boolean;
   justification?: string;
   isModified: boolean;
+  is_evaded?: boolean;
 }
 
 export const BatchAttendanceEditDialog = ({
@@ -45,7 +46,8 @@ export const BatchAttendanceEditDialog = ({
         student_name: record.student_name || 'Nome não disponível',
         is_present: record.is_present,
         justification: record.justification,
-        isModified: false
+        isModified: false,
+        is_evaded: record.is_evaded
       }));
       setStudents(initialStudents);
       setSelectedIds([]);
@@ -53,21 +55,23 @@ export const BatchAttendanceEditDialog = ({
   }, [open, group]);
 
   const handleSelectAll = () => {
-    if (selectedIds.length === students.length) {
+    const selectableStudents = students.filter(s => !s.is_evaded);
+    if (selectedIds.length === selectableStudents.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(students.map(s => s.id));
+      setSelectedIds(selectableStudents.map(s => s.id));
     }
   };
 
   const handleInvertSelection = () => {
     const newSelection = students
-      .filter(s => !selectedIds.includes(s.id))
+      .filter(s => !selectedIds.includes(s.id) && !s.is_evaded)
       .map(s => s.id);
     setSelectedIds(newSelection);
   };
 
-  const toggleStudent = (id: string) => {
+  const toggleStudent = (id: string, isEvaded?: boolean) => {
+    if (isEvaded) return; // Não permitir seleção de evadidos
     setSelectedIds(prev =>
       prev.includes(id)
         ? prev.filter(sid => sid !== id)
@@ -95,7 +99,8 @@ export const BatchAttendanceEditDialog = ({
     );
   };
 
-  const updateStudentStatus = (id: string, is_present: boolean) => {
+  const updateStudentStatus = (id: string, is_present: boolean, isEvaded?: boolean) => {
+    if (isEvaded) return; // Não permitir edição de evadidos
     setStudents(prev =>
       prev.map(s =>
         s.id === id
@@ -110,7 +115,8 @@ export const BatchAttendanceEditDialog = ({
     );
   };
 
-  const updateJustification = (id: string, justification: string) => {
+  const updateJustification = (id: string, justification: string, isEvaded?: boolean) => {
+    if (isEvaded) return; // Não permitir edição de evadidos
     setStudents(prev =>
       prev.map(s =>
         s.id === id
@@ -152,6 +158,7 @@ export const BatchAttendanceEditDialog = ({
   const modifiedCount = students.filter(s => s.isModified).length;
   const presentCount = students.filter(s => s.is_present).length;
   const absentCount = students.length - presentCount;
+  const evadedCount = students.filter(s => s.is_evaded).length;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,6 +186,11 @@ export const BatchAttendanceEditDialog = ({
                 <X size={12} className="mr-1" />
                 Ausentes: {absentCount}
               </Badge>
+              {evadedCount > 0 && (
+                <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                  Evadidos: {evadedCount}
+                </Badge>
+              )}
               {modifiedCount > 0 && (
                 <Badge variant="secondary">
                   <RefreshCw size={12} className="mr-1" />
@@ -245,26 +257,38 @@ export const BatchAttendanceEditDialog = ({
               {students.map((student) => (
                 <TableRow
                   key={student.id}
-                  className={student.isModified ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}
+                  className={`
+                    ${student.isModified ? 'bg-yellow-50 dark:bg-yellow-950/20' : ''}
+                    ${student.is_evaded ? 'opacity-60' : ''}
+                  `}
                 >
                   <TableCell>
                     <Checkbox
                       checked={selectedIds.includes(student.id)}
-                      onCheckedChange={() => toggleStudent(student.id)}
+                      onCheckedChange={() => toggleStudent(student.id, student.is_evaded)}
+                      disabled={student.is_evaded}
                     />
                   </TableCell>
                   <TableCell className="font-medium">
-                    {student.student_name}
-                    {student.isModified && (
-                      <Badge variant="secondary" className="ml-2 text-xs">
-                        Modificado
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {student.student_name}
+                      {student.is_evaded && (
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                          EVADIDO
+                        </Badge>
+                      )}
+                      {student.isModified && (
+                        <Badge variant="secondary" className="text-xs">
+                          Modificado
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Select
                       value={student.is_present ? 'present' : 'absent'}
-                      onValueChange={(value) => updateStudentStatus(student.id, value === 'present')}
+                      onValueChange={(value) => updateStudentStatus(student.id, value === 'present', student.is_evaded)}
+                      disabled={student.is_evaded}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue />
@@ -290,7 +314,8 @@ export const BatchAttendanceEditDialog = ({
                       <Input
                         placeholder="Justificativa da falta..."
                         value={student.justification || ''}
-                        onChange={(e) => updateJustification(student.id, e.target.value)}
+                        onChange={(e) => updateJustification(student.id, e.target.value, student.is_evaded)}
+                        disabled={student.is_evaded}
                         className="max-w-xs"
                       />
                     ) : (

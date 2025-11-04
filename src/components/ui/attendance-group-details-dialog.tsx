@@ -144,7 +144,16 @@ export const AttendanceGroupDetailsDialog = ({
             <TableBody>
               {group.records.map((record) => (
                 <TableRow key={record.id}>
-                  <TableCell className="font-medium">{record.student_name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {record.student_name}
+                      {record.is_evaded && (
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
+                          EVADIDO
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{record.student_id || 'N/A'}</TableCell>
                   <TableCell>
                     {record.is_present ? (
@@ -174,6 +183,8 @@ export const AttendanceGroupDetailsDialog = ({
                         variant="outline"
                         size="sm"
                         onClick={() => onEdit(record.id)}
+                        disabled={record.is_evaded}
+                        title={record.is_evaded ? 'Não é possível editar registros de alunos evadidos' : undefined}
                       >
                         <Edit size={14} />
                       </Button>

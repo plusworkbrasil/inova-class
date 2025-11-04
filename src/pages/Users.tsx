@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
@@ -17,7 +18,7 @@ import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserDetailsDialog } from '@/components/ui/user-details-dialog';
 import { PasswordUpdateDialog } from '@/components/ui/password-update-dialog';
 import { BulkUserDelete } from '@/components/ui/bulk-user-delete';
-import { roleTranslations } from '@/lib/roleTranslations';
+import { roleTranslations, getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
 
@@ -27,6 +28,8 @@ const Users = () => {
   const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [editingUser, setEditingUser] = useState<any>(null);
   const [deletingUser, setDeletingUser] = useState<any>(null);
   const [viewingUser, setViewingUser] = useState<any>(null);
@@ -54,10 +57,10 @@ const Users = () => {
   
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Buscar quando o termo de busca mudar (com debounce)
+  // Buscar quando filtros mudarem (com debounce para search)
   useEffect(() => {
-    fetchUsers(1, debouncedSearch);
-  }, [debouncedSearch]);
+    fetchUsers(1, debouncedSearch, selectedRole, selectedStatus);
+  }, [debouncedSearch, selectedRole, selectedStatus]);
 
   const handleCreateUser = async (data: any) => {
     await createUser({
@@ -167,6 +170,27 @@ const Users = () => {
     }
   };
 
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge variant="default">Ativo</Badge>;
+      case 'inactive':
+        return <Badge variant="secondary">Inativo</Badge>;
+      case 'evaded':
+        return <Badge variant="destructive">Evadido</Badge>;
+      default:
+        return <Badge variant="default">Ativo</Badge>;
+    }
+  };
+
+  const clearFilters = () => {
+    setSelectedRole('');
+    setSelectedStatus('');
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = selectedRole || selectedStatus || searchTerm;
+
   const startIndex = (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, totalCount);
 
@@ -185,21 +209,67 @@ const Users = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Filtros</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Filtros de Busca
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
                 <Input
                   placeholder="Buscar por nome ou email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
                 />
               </div>
-              <Button variant="outline">Filtrar</Button>
+              
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Filtrar por perfil" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="coordinator">Coordenador</SelectItem>
+                  <SelectItem value="secretary">Secretaria</SelectItem>
+                  <SelectItem value="tutor">Tutor</SelectItem>
+                  <SelectItem value="instructor">Instrutor</SelectItem>
+                  <SelectItem value="student">Aluno</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Ativo</SelectItem>
+                  <SelectItem value="inactive">Inativo</SelectItem>
+                  <SelectItem value="evaded">Evadido</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  onClick={clearFilters}
+                  className="w-full md:w-auto"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Limpar
+                </Button>
+              )}
             </div>
+            
+            {hasActiveFilters && (
+              <div className="mt-3 text-sm text-muted-foreground">
+                Filtros ativos: {[
+                  searchTerm && `Busca: "${searchTerm}"`,
+                  selectedRole && `Perfil: ${getRoleTranslation(selectedRole as UserRole)}`,
+                  selectedStatus && `Status: ${selectedStatus === 'active' ? 'Ativo' : selectedStatus === 'inactive' ? 'Inativo' : 'Evadido'}`
+                ].filter(Boolean).join(' • ')}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -244,12 +314,10 @@ const Users = () => {
                          <Badge variant={getRoleBadgeVariant(user.role as UserRole)}>
                            {roleTranslations[user.role as UserRole] || user.role}
                          </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="default">
-                          Ativo
-                        </Badge>
-                      </TableCell>
+                       </TableCell>
+                       <TableCell>
+                         {getStatusBadge(user.status)}
+                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Button 
@@ -307,7 +375,7 @@ const Users = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={prevPage}
+                    onClick={() => prevPage(debouncedSearch, selectedRole, selectedStatus)}
                     disabled={currentPage === 1 || loading}
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
@@ -332,7 +400,7 @@ const Users = () => {
                           key={page}
                           variant={currentPage === page ? "default" : "outline"}
                           size="sm"
-                          onClick={() => goToPage(page, debouncedSearch)}
+                          onClick={() => goToPage(page, debouncedSearch, selectedRole, selectedStatus)}
                           disabled={loading}
                           className="w-9 h-9 p-0"
                         >
@@ -348,7 +416,7 @@ const Users = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={nextPage}
+                    onClick={() => nextPage(debouncedSearch, selectedRole, selectedStatus)}
                     disabled={currentPage === totalPages || loading}
                   >
                     Próxima

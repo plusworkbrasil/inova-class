@@ -27,6 +27,7 @@ export interface User {
   class_id?: string;
   class_name?: string;
   instructor_subjects?: string[];
+  status?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -41,7 +42,12 @@ export const useUsers = () => {
   const [totalPages, setTotalPages] = useState(0);
   const { toast } = useToast();
 
-  const fetchUsers = async (page = 1, searchTerm = '') => {
+  const fetchUsers = async (
+    page = 1, 
+    searchTerm = '',
+    roleFilter = '',
+    statusFilter = ''
+  ) => {
     try {
       setLoading(true);
       setError(null);
@@ -64,12 +70,17 @@ export const useUsers = () => {
         query = query.or(`name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
       }
 
+      // Adicionar filtro de status se fornecido
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
       const { data, error, count } = await query;
 
       if (error) throw error;
 
       // Processar dados - user_roles e classes vêm como arrays do JOIN
-      const processedUsers = (data || []).map((user: any) => {
+      let processedUsers = (data || []).map((user: any) => {
         const userRole = Array.isArray(user.user_roles) && user.user_roles.length > 0 
           ? user.user_roles[0].role 
           : 'student';
@@ -87,9 +98,16 @@ export const useUsers = () => {
         };
       });
 
+      // Aplicar filtro de role após processamento (já que role vem do JOIN)
+      if (roleFilter) {
+        processedUsers = processedUsers.filter((user: any) => user.role === roleFilter);
+      }
+
       setUsers(processedUsers as User[]);
-      setTotalCount(count || 0);
-      setTotalPages(Math.ceil((count || 0) / pageSize));
+      // Ajustar contagem se filtro de role foi aplicado
+      const finalCount = roleFilter ? processedUsers.length : (count || 0);
+      setTotalCount(finalCount);
+      setTotalPages(Math.ceil(finalCount / pageSize));
       setCurrentPage(page);
       
     } catch (err: any) {
@@ -105,21 +123,21 @@ export const useUsers = () => {
     }
   };
 
-  const nextPage = () => {
+  const nextPage = (searchTerm = '', roleFilter = '', statusFilter = '') => {
     if (currentPage < totalPages) {
-      fetchUsers(currentPage + 1);
+      fetchUsers(currentPage + 1, searchTerm, roleFilter, statusFilter);
     }
   };
 
-  const prevPage = () => {
+  const prevPage = (searchTerm = '', roleFilter = '', statusFilter = '') => {
     if (currentPage > 1) {
-      fetchUsers(currentPage - 1);
+      fetchUsers(currentPage - 1, searchTerm, roleFilter, statusFilter);
     }
   };
 
-  const goToPage = (page: number, searchTerm = '') => {
+  const goToPage = (page: number, searchTerm = '', roleFilter = '', statusFilter = '') => {
     if (page >= 1 && page <= totalPages) {
-      fetchUsers(page, searchTerm);
+      fetchUsers(page, searchTerm, roleFilter, statusFilter);
     }
   };
 

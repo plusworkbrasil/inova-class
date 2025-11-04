@@ -306,6 +306,51 @@ export const useSupabaseAttendance = () => {
     );
   };
 
+  const updateBatchAttendance = async (
+    updates: Array<{ id: string; updates: Partial<Attendance> }>
+  ) => {
+    try {
+      const promises = updates.map(({ id, updates: recordUpdates }) =>
+        supabase
+          .from('attendance')
+          .update(recordUpdates)
+          .eq('id', id)
+      );
+
+      const results = await Promise.all(promises);
+      
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw new Error(`Erro ao atualizar ${errors.length} registro(s)`);
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const auditLogs = updates.map(({ id }) => ({
+          user_id: user.id,
+          action: 'BATCH_UPDATE',
+          table_name: 'attendance',
+          record_id: id,
+          accessed_fields: ['is_present', 'justification']
+        }));
+        await supabase.from('audit_logs').insert(auditLogs);
+      }
+
+      await fetchAttendance();
+      toast({
+        title: "Sucesso!",
+        description: `${updates.length} registro(s) atualizado(s).`
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao atualizar registros."
+      });
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchAttendance();
   }, []);
@@ -321,6 +366,7 @@ export const useSupabaseAttendance = () => {
     deleteBatchAttendance,
     createBatchAttendance,
     checkDuplicateAttendance,
-    getGroupedAttendance
+    getGroupedAttendance,
+    updateBatchAttendance
   };
 };

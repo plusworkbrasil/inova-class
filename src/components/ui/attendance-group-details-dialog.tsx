@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Check, X, Edit, FileText, Trash2 } from 'lucide-react';
-import { GroupedAttendance } from '@/hooks/useSupabaseAttendance';
+import { GroupedAttendance, Attendance } from '@/hooks/useSupabaseAttendance';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { formatDateBR } from '@/lib/utils';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
+import { BatchAttendanceEditDialog } from './batch-attendance-edit-dialog';
 
 interface AttendanceGroupDetailsDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface AttendanceGroupDetailsDialogProps {
   group: GroupedAttendance | null;
   onEdit?: (attendanceId: string) => void;
   onDelete?: (group: GroupedAttendance) => void;
+  onBatchUpdate?: (updates: Array<{ id: string; updates: Partial<Attendance> }>) => Promise<void>;
   userRole?: string;
 }
 
@@ -25,9 +27,11 @@ export const AttendanceGroupDetailsDialog = ({
   group,
   onEdit,
   onDelete,
+  onBatchUpdate,
   userRole
 }: AttendanceGroupDetailsDialogProps) => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [batchEditOpen, setBatchEditOpen] = useState(false);
 
   if (!group) return null;
 
@@ -45,16 +49,28 @@ export const AttendanceGroupDetailsDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Detalhes da Chamada</span>
-            {['admin', 'secretary'].includes(userRole || '') && onDelete && (
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => setDeleteConfirmOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Excluir Chamada
-              </Button>
-            )}
+            <div className="flex gap-2">
+              {['admin', 'secretary', 'tutor', 'coordinator'].includes(userRole || '') && onBatchUpdate && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setBatchEditOpen(true)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Editar em Lote
+                </Button>
+              )}
+              {['admin', 'secretary'].includes(userRole || '') && onDelete && (
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Chamada
+                </Button>
+              )}
+            </div>
           </DialogTitle>
         </DialogHeader>
 
@@ -175,6 +191,18 @@ export const AttendanceGroupDetailsDialog = ({
           onConfirm={handleDelete}
           title="Excluir Registro de Chamada"
           description={`Tem certeza que deseja excluir esta chamada? Esta ação excluirá ${group.total_students} registro(s) de frequência e não poderá ser desfeita.`}
+        />
+
+        <BatchAttendanceEditDialog
+          open={batchEditOpen}
+          onOpenChange={setBatchEditOpen}
+          group={group}
+          onSave={async (updates) => {
+            if (onBatchUpdate) {
+              await onBatchUpdate(updates);
+            }
+          }}
+          userRole={userRole}
         />
       </DialogContent>
     </Dialog>

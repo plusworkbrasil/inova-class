@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X } from 'lucide-react';
+import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X, Check } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
 import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
@@ -45,6 +45,7 @@ const Attendance = () => {
     createAttendance, 
     updateAttendance, 
     deleteBatchAttendance,
+    updateBatchAttendance,
     refetch,
     createBatchAttendance,
     checkDuplicateAttendance,
@@ -158,6 +159,26 @@ const Attendance = () => {
     const attendance = attendanceData.find(a => a.id === attendanceId);
     if (attendance) {
       handleEditAttendance(attendance);
+    }
+  };
+
+  const handleBatchUpdateAttendance = async (
+    updates: Array<{ id: string; updates: Partial<Attendance> }>
+  ) => {
+    try {
+      await updateBatchAttendance(updates);
+      toast({
+        title: "Alterações salvas!",
+        description: `${updates.length} registro(s) atualizado(s) com sucesso.`,
+      });
+      setGroupDetailsOpen(false);
+      refetch();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao salvar alterações",
+        description: "Ocorreu um erro ao atualizar os registros.",
+      });
     }
   };
 
@@ -527,22 +548,20 @@ const Attendance = () => {
                     <TableHead>Data</TableHead>
                     <TableHead>Turma</TableHead>
                     <TableHead>Disciplina</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Presentes</TableHead>
-                    <TableHead>Ausentes</TableHead>
+                    <TableHead className="text-center">Estatísticas</TableHead>
                     <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {attendanceLoading ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">
+                      <TableCell colSpan={5} className="text-center">
                         Carregando registros de frequência...
                       </TableCell>
                     </TableRow>
                   ) : groupedRecords.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center">
+                      <TableCell colSpan={5} className="text-center">
                         Nenhum registro de frequência encontrado.
                       </TableCell>
                     </TableRow>
@@ -550,20 +569,31 @@ const Attendance = () => {
                     groupedRecords.map((group) => (
                       <TableRow key={`${group.date}-${group.subject_id}-${group.class_id}`}>
                         <TableCell>{formatDateBR(group.date)}</TableCell>
-                        <TableCell>{group.class_name}</TableCell>
-                        <TableCell>{group.subject_name}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{group.total_students}</Badge>
+                          <div className="font-medium">{group.class_name}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="default" className="bg-green-600">
-                            {group.present_count}
-                          </Badge>
+                          <div className="font-medium">{group.subject_name}</div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="destructive">
-                            {group.absent_count}
-                          </Badge>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-center gap-2">
+                              <Badge variant="outline" className="text-xs">
+                                <Users size={12} className="mr-1" />
+                                Total: {group.total_students}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-center gap-2">
+                              <Badge variant="default" className="bg-green-600 text-xs">
+                                <Check size={12} className="mr-1" />
+                                {group.present_count}
+                              </Badge>
+                              <Badge variant="destructive" className="text-xs">
+                                <X size={12} className="mr-1" />
+                                {group.absent_count}
+                              </Badge>
+                            </div>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Button 
@@ -611,6 +641,7 @@ const Attendance = () => {
               group={selectedGroup}
               onEdit={handleEditFromGroup}
               onDelete={handleDeleteGroup}
+              onBatchUpdate={handleBatchUpdateAttendance}
               userRole={profile?.role}
             />
           </>

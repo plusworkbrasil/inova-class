@@ -73,8 +73,8 @@ serve(async (req) => {
       );
     }
 
-    // Generate a secure random password
-    const password = crypto.randomUUID().replace(/-/g, '').substring(0, 12);
+    // Use fixed temporary password to avoid email sending limits
+    const password = 'Trocar@123';
 
     // Create the user in Supabase Auth
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -155,23 +155,14 @@ serve(async (req) => {
       // Don't fail if role already exists
     }
 
-    // Send password reset email instead of returning the password
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: email,
-    });
-
-    if (resetError) {
-      console.warn('Failed to send password reset email:', resetError);
-    }
-
-    console.log(`Student invited successfully: ${email}`);
+    console.log(`Student created successfully: ${email}`);
 
     return new Response(
       JSON.stringify({ 
-        message: 'Convite enviado com sucesso!',
+        message: 'Aluno criado com sucesso!',
         user: newUser.user,
-        profile: profile || { id: newUser.user.id, name, email }
+        profile: profile || { id: newUser.user.id, name, email },
+        temporaryPassword: password
       }),
       {
         status: 200,

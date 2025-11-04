@@ -429,15 +429,12 @@ export const useUsers = () => {
       if (error) throw error;
 
       await fetchUsers();
-      toast({
-        title: "Sucesso!",
-        description: "Convite enviado com sucesso."
-      });
+      return data;
     } catch (err: any) {
       toast({
         variant: "destructive", 
         title: "Erro",
-        description: err.message || "Erro ao enviar convite."
+        description: err.message || "Erro ao criar aluno."
       });
       throw err;
     }

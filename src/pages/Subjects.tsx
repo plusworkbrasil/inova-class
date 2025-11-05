@@ -14,7 +14,7 @@ import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
-import { useUsers } from '@/hooks/useUsers';
+import { useInstructors } from '@/hooks/useInstructors';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
 import { cn, toBrasiliaDate, parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
@@ -41,14 +41,14 @@ const Subjects = () => {
 
   // Use Supabase hooks
   const { data: subjects, loading, createSubject, updateSubject, deleteSubject } = useSupabaseSubjects();
-  const { users } = useUsers();
+  const { instructors } = useInstructors();
   const { data: classes } = useSupabaseClasses();
   const { stats: classStats } = useRealClassData();
 
   // Helper functions to get names from IDs
   const getTeacherName = (teacherId: string | null) => {
     if (!teacherId) return 'Não atribuído';
-    const teacher = users.find(user => user.id === teacherId);
+    const teacher = instructors.find(instructor => instructor.id === teacherId);
     return teacher?.name || 'Não encontrado';
   };
 

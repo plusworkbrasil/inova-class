@@ -53,20 +53,29 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const { data: subjectsAll, loading: loadingSubjectsAll } = useSupabaseSubjects();
   const { subjects: instructorSubjects, loading: loadingInstructorSubjects } = useInstructorSubjects();
   
-  // Selecionar dados baseado no role do usuário
-  const classes = isInstructor ? instructorClasses : allClasses;
-  const loadingClasses = isInstructor ? loadingInstructorClasses : loadingAllClasses;
+  // Selecionar dados baseado no role do usuário (com fallback para evitar listas vazias)
+  const classes = isInstructor
+    ? (instructorClasses && instructorClasses.length > 0 ? instructorClasses : allClasses)
+    : allClasses;
+  const loadingClasses = isInstructor
+    ? (loadingInstructorClasses || (instructorClasses.length === 0 && loadingAllClasses))
+    : loadingAllClasses;
   
-  // Normalizar subjects para um formato comum
+  // Normalizar subjects para um formato comum, usando fonte com fallback
   type MinimalSubject = { id: string; name: string; class_id: string; teacher_id?: string };
-  const normalizedSubjects: MinimalSubject[] = (isInstructor ? instructorSubjects : subjectsAll)?.map((s: any) => ({
+  const sourceSubjects: any[] = isInstructor
+    ? ((instructorSubjects && instructorSubjects.length > 0) ? instructorSubjects : (subjectsAll || []))
+    : (subjectsAll || []);
+  const normalizedSubjects: MinimalSubject[] = sourceSubjects.map((s: any) => ({
     id: s.id,
     name: s.name,
     class_id: s.class_id,
     teacher_id: s.teacher_id
-  })) || [];
+  }));
   
-  const loadingSubjects = isInstructor ? loadingInstructorSubjects : loadingSubjectsAll;
+  const loadingSubjects = isInstructor
+    ? (loadingInstructorSubjects || (instructorSubjects.length === 0 && loadingSubjectsAll))
+    : loadingSubjectsAll;
 
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),

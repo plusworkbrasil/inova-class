@@ -44,12 +44,13 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const { profile } = useAuth();
   
   // Usar hook apropriado baseado no role
-  const { data: allClasses } = useSupabaseClasses();
-  const { classes: instructorClasses } = useInstructorClasses();
-  const { data: subjects } = useSupabaseSubjects();
+  const { data: allClasses, loading: loadingAllClasses } = useSupabaseClasses();
+  const { classes: instructorClasses, loading: loadingInstructorClasses } = useInstructorClasses();
+  const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
   
   // Selecionar turmas baseado no role do usuário
   const classes = profile?.role === 'instructor' ? instructorClasses : allClasses;
+  const loadingClasses = profile?.role === 'instructor' ? loadingInstructorClasses : loadingAllClasses;
 
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),
@@ -191,11 +192,17 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {classes.map((classItem) => (
-                          <SelectItem key={classItem.id} value={classItem.id}>
-                            {classItem.name} - {classItem.year}
-                          </SelectItem>
-                        ))}
+                        {loadingClasses ? (
+                          <SelectItem value="" disabled>Carregando turmas...</SelectItem>
+                        ) : classes.length === 0 ? (
+                          <SelectItem value="" disabled>Nenhuma turma disponível</SelectItem>
+                        ) : (
+                          classes.map((classItem) => (
+                            <SelectItem key={classItem.id} value={classItem.id}>
+                              {classItem.name} - {classItem.year}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -226,11 +233,19 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {classSubjects.map((subject) => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
+                        {loadingSubjects ? (
+                          <SelectItem value="" disabled>Carregando disciplinas...</SelectItem>
+                        ) : !selectedClassId ? (
+                          <SelectItem value="" disabled>Selecione uma turma primeiro</SelectItem>
+                        ) : classSubjects.length === 0 ? (
+                          <SelectItem value="" disabled>Nenhuma disciplina disponível</SelectItem>
+                        ) : (
+                          classSubjects.map((subject) => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />

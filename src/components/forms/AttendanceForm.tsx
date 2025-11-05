@@ -17,6 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getTodayInBrasilia, toBrasiliaDate } from '@/lib/utils';
 import { useInstructorClasses } from '@/hooks/useInstructorClasses';
+import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
 
 const attendanceFormSchema = z.object({
   classId: z.string().min(1, 'Turma é obrigatória'),
@@ -43,14 +44,29 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const [loadingStudents, setLoadingStudents] = useState(false);
   const { profile } = useAuth();
   
-  // Usar hook apropriado baseado no role
+  // Flag para verificar se é instrutor
+  const isInstructor = profile?.role === 'instructor';
+  
+  // Usar hooks apropriados baseado no role
   const { data: allClasses, loading: loadingAllClasses } = useSupabaseClasses();
   const { classes: instructorClasses, loading: loadingInstructorClasses } = useInstructorClasses();
-  const { data: subjects, loading: loadingSubjects } = useSupabaseSubjects();
+  const { data: subjectsAll, loading: loadingSubjectsAll } = useSupabaseSubjects();
+  const { subjects: instructorSubjects, loading: loadingInstructorSubjects } = useInstructorSubjects();
   
-  // Selecionar turmas baseado no role do usuário
-  const classes = profile?.role === 'instructor' ? instructorClasses : allClasses;
-  const loadingClasses = profile?.role === 'instructor' ? loadingInstructorClasses : loadingAllClasses;
+  // Selecionar dados baseado no role do usuário
+  const classes = isInstructor ? instructorClasses : allClasses;
+  const loadingClasses = isInstructor ? loadingInstructorClasses : loadingAllClasses;
+  
+  // Normalizar subjects para um formato comum
+  type MinimalSubject = { id: string; name: string; class_id: string; teacher_id?: string };
+  const normalizedSubjects: MinimalSubject[] = (isInstructor ? instructorSubjects : subjectsAll)?.map((s: any) => ({
+    id: s.id,
+    name: s.name,
+    class_id: s.class_id,
+    teacher_id: s.teacher_id
+  })) || [];
+  
+  const loadingSubjects = isInstructor ? loadingInstructorSubjects : loadingSubjectsAll;
 
   const form = useForm<AttendanceFormValues>({
     resolver: zodResolver(attendanceFormSchema),
@@ -61,19 +77,11 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     },
   });
 
-  // Filtrar disciplinas pela turma selecionada
+  // Filtrar disciplinas pela turma selecionada usando dados normalizados
   const selectedClassId = form.watch('classId');
-  const classSubjects = subjects?.filter(subject => {
-    // Para admin/secretary: mostrar todas as disciplinas da turma
-    if (profile?.role === 'admin' || profile?.role === 'secretary') {
-      return subject.class_id === selectedClassId;
-    }
-    // Para instructors: apenas disciplinas que eles ministram na turma selecionada
-    return subject.class_id === selectedClassId && (
-      subject.teacher_id === profile?.id || 
-      profile?.instructor_subjects?.includes(subject.name)
-    );
-  }) || [];
+  const classSubjects = normalizedSubjects.filter(
+    (subject) => subject.class_id === selectedClassId
+  );
 
   // Buscar alunos da turma selecionada
   const fetchStudentsFromClass = async (classId: string) => {
@@ -178,6 +186,15 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Mensagem quando instrutor não tem disciplinas atribuídas */}
+            {isInstructor && !loadingClasses && classes.length === 0 && (
+              <div className="p-4 bg-muted rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground">
+                  Você ainda não foi atribuído a nenhuma turma/disciplina. Peça a um administrador para associá-lo em Disciplinas.
+                </p>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}

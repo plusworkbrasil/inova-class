@@ -316,6 +316,11 @@ const Attendance = () => {
   };
 
   const groupedRecords = userRole !== 'student' ? getFilteredGroupedRecords() : [];
+  
+  // Debug log para instrutores
+  if (userRole === 'instructor' && !attendanceLoading) {
+    console.log('Attendance (instrutor):', { total: attendanceData.length, grouped: groupedRecords.length });
+  }
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -562,7 +567,18 @@ const Attendance = () => {
                   ) : groupedRecords.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center">
-                        Nenhum registro de frequência encontrado.
+                        {userRole === 'instructor' ? (
+                          <div className="py-4">
+                            <p className="text-muted-foreground">
+                              Nenhum registro visível para você.
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Se você acabou de registrar uma chamada e ela não aparece, verifique se você está vinculado à disciplina correspondente.
+                            </p>
+                          </div>
+                        ) : (
+                          'Nenhum registro de frequência encontrado.'
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (

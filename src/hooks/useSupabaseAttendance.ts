@@ -47,15 +47,9 @@ export const useSupabaseAttendance = () => {
       setLoading(true);
       setError(null);
       
+      // Usar RPC function que bypassa RLS para joins mantendo autorização
       const { data: attendance, error } = await supabase
-        .from('attendance')
-        .select(`
-          *,
-          profiles:student_id(name, enrollment_number, student_id, status),
-          classes:class_id(name),
-          subjects:subject_id(name)
-        `)
-        .order('created_at', { ascending: false });
+        .rpc('get_attendance_with_details');
 
       if (error) throw error;
 
@@ -67,18 +61,12 @@ export const useSupabaseAttendance = () => {
 
       const evadedStudentIds = new Set(evasionsData?.map(e => e.student_id) || []);
       
-      // Transform the data to include joined fields
+      // Transform the data to include evasion status
       const transformedData = (attendance || []).map((record: any) => {
-        const isEvaded = evadedStudentIds.has(record.student_id) || record.profiles?.status === 'inactive';
+        const isEvaded = evadedStudentIds.has(record.student_id) || record.student_status === 'inactive';
         return {
           ...record,
-          student_name: record.profiles?.name,
-          student_enrollment: record.profiles?.enrollment_number,
-          student_number: record.profiles?.student_id,
-          class_name: record.classes?.name,
-          subject_name: record.subjects?.name,
-          is_evaded: isEvaded,
-          student_status: record.profiles?.status
+          is_evaded: isEvaded
         };
       });
       

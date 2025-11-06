@@ -35,8 +35,10 @@ export const useStudentSearch = (searchTerm: string) => {
             enrollment_number,
             class_id,
             status,
-            classes:class_id(name)
+            classes:class_id(name),
+            user_roles!inner(role)
           `)
+          .eq('user_roles.role', 'student')
           .ilike('name', `%${debouncedSearch}%`)
           .order('name')
           .limit(10);
@@ -54,8 +56,9 @@ export const useStudentSearch = (searchTerm: string) => {
         }));
 
         setStudents(formatted);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Erro ao buscar alunos:', err);
+        console.error('Detalhes:', err?.message, err?.details);
         setStudents([]);
       } finally {
         setLoading(false);

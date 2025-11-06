@@ -8,8 +8,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudentSearchCombobox } from '@/components/ui/student-search-combobox';
 import { useStudentHistory } from '@/hooks/useStudentHistory';
+import { useStudentHistoryCharts } from '@/hooks/useStudentHistoryCharts';
 import { StudentSearchResult } from '@/hooks/useStudentSearch';
-import { BookOpen, Calendar, User, CheckCircle, XCircle } from 'lucide-react';
+import { GradesEvolutionChart } from '@/components/charts/GradesEvolutionChart';
+import { AttendanceChart } from '@/components/charts/AttendanceChart';
+import { SubjectPerformanceChart } from '@/components/charts/SubjectPerformanceChart';
+import { BookOpen, Calendar, User, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -17,6 +21,7 @@ const StudentHistory = () => {
   const { profile } = useAuth();
   const [selectedStudent, setSelectedStudent] = useState<StudentSearchResult | null>(null);
   const { data: historyData, loading } = useStudentHistory(selectedStudent?.id || null);
+  const chartData = useStudentHistoryCharts(historyData);
 
   // Verificar permissão
   const hasAccess = profile && ['admin', 'coordinator', 'tutor'].includes(profile.role);
@@ -93,8 +98,9 @@ const StudentHistory = () => {
 
         {!loading && historyData && (
           <Tabs defaultValue="summary" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="summary">Resumo</TabsTrigger>
+              <TabsTrigger value="charts">Gráficos</TabsTrigger>
               <TabsTrigger value="grades">Notas</TabsTrigger>
               <TabsTrigger value="attendance">Frequência</TabsTrigger>
             </TabsList>
@@ -168,6 +174,23 @@ const StudentHistory = () => {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Aba Gráficos */}
+            <TabsContent value="charts" className="space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Visualização de Desempenho</h2>
+              </div>
+              
+              {/* Evolução da Média */}
+              <GradesEvolutionChart data={chartData.averageGradesByMonth} />
+              
+              {/* Frequência Mensal */}
+              <AttendanceChart data={chartData.attendanceByMonth} />
+              
+              {/* Desempenho por Disciplina */}
+              <SubjectPerformanceChart data={chartData.subjectPerformance} />
             </TabsContent>
 
             {/* Aba Notas */}

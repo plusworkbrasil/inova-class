@@ -27,6 +27,7 @@ import Profile from "./pages/Profile";
 import Notices from "./pages/Notices";
 import InstructorSubjects from "./pages/InstructorSubjects";
 import ClassTimeline from "./pages/ClassTimeline";
+import StudentHistory from "./pages/StudentHistory";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/notices" element={<Notices />} />
           <Route path="/instructor-subjects" element={<InstructorSubjects />} />
           <Route path="/class-timeline" element={<ClassTimeline />} />
+          <Route path="/student-history" element={<StudentHistory />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

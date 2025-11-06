@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleTranslation } from '@/lib/roleTranslations';
@@ -53,6 +53,10 @@ const menuItems = {
     label: 'Relatórios',
     path: '/reports'
   }, {
+    icon: History,
+    label: 'Histórico do Aluno',
+    path: '/student-history'
+  }, {
     icon: Settings,
     label: 'Configurações',
     path: '/settings'
@@ -85,6 +89,10 @@ const menuItems = {
     icon: FileText,
     label: 'Relatórios',
     path: '/reports'
+  }, {
+    icon: History,
+    label: 'Histórico do Aluno',
+    path: '/student-history'
   }],
   secretary: [{
     icon: LayoutDashboard,
@@ -167,6 +175,10 @@ const menuItems = {
     icon: FileText,
     label: 'Relatórios',
     path: '/reports'
+  }, {
+    icon: History,
+    label: 'Histórico do Aluno',
+    path: '/student-history'
   }],
   teacher: [{
     icon: LayoutDashboard,

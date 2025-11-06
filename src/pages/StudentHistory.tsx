@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { StudentSearchCombobox } from '@/components/ui/student-search-combobox';
 import { useStudentHistory } from '@/hooks/useStudentHistory';
 import { useStudentHistoryCharts } from '@/hooks/useStudentHistoryCharts';
@@ -13,13 +14,17 @@ import { StudentSearchResult } from '@/hooks/useStudentSearch';
 import { GradesEvolutionChart } from '@/components/charts/GradesEvolutionChart';
 import { AttendanceChart } from '@/components/charts/AttendanceChart';
 import { SubjectPerformanceChart } from '@/components/charts/SubjectPerformanceChart';
-import { BookOpen, Calendar, User, CheckCircle, XCircle, BarChart3 } from 'lucide-react';
+import { BookOpen, Calendar, User, CheckCircle, XCircle, BarChart3, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { exportStudentHistoryToPDF } from '@/lib/studentHistoryExport';
+import { useToast } from '@/hooks/use-toast';
 
 const StudentHistory = () => {
   const { profile } = useAuth();
   const [selectedStudent, setSelectedStudent] = useState<StudentSearchResult | null>(null);
+  const [exportingPDF, setExportingPDF] = useState(false);
+  const { toast } = useToast();
   const { data: historyData, loading } = useStudentHistory(selectedStudent?.id || null);
   const chartData = useStudentHistoryCharts(historyData);
 
@@ -38,6 +43,39 @@ const StudentHistory = () => {
     );
   }
 
+  const handleExportPDF = async () => {
+    if (!selectedStudent || !historyData) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Nenhum aluno selecionado para exportar.'
+      });
+      return;
+    }
+
+    setExportingPDF(true);
+    try {
+      await exportStudentHistoryToPDF({
+        student: selectedStudent,
+        historyData: historyData
+      });
+      
+      toast({
+        title: 'Sucesso',
+        description: 'Histórico exportado com sucesso!'
+      });
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Erro ao exportar histórico em PDF.'
+      });
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   const getGradeColor = (percentage: number) => {
     if (percentage >= 7) return 'text-green-600';
     if (percentage >= 5) return 'text-yellow-600';
@@ -48,9 +86,22 @@ const StudentHistory = () => {
     <Layout>
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-6">
-          <User className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-bold">Histórico do Aluno</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <User className="h-6 w-6 text-primary" />
+            <h1 className="text-3xl font-bold">Histórico do Aluno</h1>
+          </div>
+          
+          {selectedStudent && historyData && !loading && (
+            <Button 
+              onClick={handleExportPDF}
+              disabled={exportingPDF}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              {exportingPDF ? 'Exportando...' : 'Exportar PDF'}
+            </Button>
+          )}
         </div>
 
         {/* Busca de Aluno */}

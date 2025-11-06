@@ -282,11 +282,13 @@ const Attendance = () => {
       );
     }
     
-    if (selectedClass) {
+    // Só filtrar se não for "all"
+    if (selectedClass && selectedClass !== 'all') {
       filtered = filtered.filter(record => record.class_id === selectedClass);
     }
     
-    if (selectedSubject) {
+    // Só filtrar se não for "all"
+    if (selectedSubject && selectedSubject !== 'all') {
       filtered = filtered.filter(record => record.subject_id === selectedSubject);
     }
     
@@ -307,44 +309,26 @@ const Attendance = () => {
 
   const filteredRecords = getFilteredData();
   const getFilteredGroupedRecords = () => {
-    // Primeiro filtrar os dados base
-    let filtered = attendanceData;
+    // Usar getGroupedAttendance() que já inclui class_name, subject_name e estatísticas
+    const baseGroups = getGroupedAttendance();
     
-    // Aplicar filtros
+    // Aplicar filtros sobre os grupos
+    let filteredGroups = baseGroups;
+    
     if (selectedClass && selectedClass !== 'all') {
-      filtered = filtered.filter(record => record.class_id === selectedClass);
+      filteredGroups = filteredGroups.filter(group => group.class_id === selectedClass);
     }
     
     if (selectedSubject && selectedSubject !== 'all') {
-      filtered = filtered.filter(record => record.subject_id === selectedSubject);
+      filteredGroups = filteredGroups.filter(group => group.subject_id === selectedSubject);
     }
     
     if (selectedDate) {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      filtered = filtered.filter(record => record.date === dateStr);
+      filteredGroups = filteredGroups.filter(group => group.date === dateStr);
     }
     
-    // Depois agrupar
-    const grouped = filtered.reduce((acc, record) => {
-      const key = `${record.date}-${record.subject_id}-${record.class_id}`;
-      
-      if (!acc[key]) {
-        acc[key] = {
-          date: record.date,
-          class_id: record.class_id,
-          subject_id: record.subject_id,
-          records: [],
-          daily_activity: record.daily_activity,
-        };
-      }
-      
-      acc[key].records.push(record);
-      return acc;
-    }, {} as Record<string, any>);
-    
-    return Object.values(grouped).sort((a: any, b: any) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    });
+    return filteredGroups;
   };
 
   const groupedRecords = userRole !== 'student' ? getFilteredGroupedRecords() : [];

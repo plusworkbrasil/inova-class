@@ -95,19 +95,20 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   );
 
   // Buscar alunos da turma selecionada
-  const fetchStudentsFromClass = async (classId: string) => {
+  const fetchStudentsFromClass = async (classId: string, attendanceDate?: string) => {
     if (!classId) return;
     
     setLoadingStudents(true);
     setLoadingError(null);
     try {
-      console.log('🔍 Buscando alunos da turma:', classId, 'Usuário:', user?.id, 'Role:', profile?.role);
+      console.log('🔍 Buscando alunos da turma:', classId, 'Usuário:', user?.id, 'Role:', profile?.role, 'Data:', attendanceDate);
       
-      // Para instrutores, usar função RPC segura
+      // Para instrutores, usar função RPC segura com filtro de data de evasão
       const { data, error } = isInstructor 
         ? await supabase.rpc('get_instructor_class_students', {
             instructor_id: user?.id,
-            target_class_id: classId
+            target_class_id: classId,
+            attendance_date: attendanceDate || getTodayInBrasilia()
           })
         : await supabase
             .from('profiles')
@@ -146,14 +147,15 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
 
   useEffect(() => {
     const classId = form.watch('classId');
-    if (classId) {
-      fetchStudentsFromClass(classId);
+    const date = form.watch('date');
+    if (classId && date) {
+      fetchStudentsFromClass(classId, date);
       // Reset subject selection when class changes
       form.setValue('subjectId', '');
     } else {
       setStudents([]);
     }
-  }, [form.watch('classId')]);
+  }, [form.watch('classId'), form.watch('date')]);
 
   const toggleStudentAttendance = (studentId: string) => {
     setStudentAttendance(prev => ({

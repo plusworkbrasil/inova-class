@@ -912,7 +912,11 @@ export type Database = {
         }[]
       }
       get_instructor_class_students: {
-        Args: { instructor_id: string; target_class_id: string }
+        Args: {
+          attendance_date?: string
+          instructor_id: string
+          target_class_id: string
+        }
         Returns: {
           enrollment_number: string
           id: string

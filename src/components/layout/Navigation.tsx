@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleTranslation } from '@/lib/roleTranslations';
@@ -57,6 +57,10 @@ const menuItems = {
     label: 'Histórico do Aluno',
     path: '/student-history'
   }, {
+    icon: AlertTriangle,
+    label: 'Alunos Faltosos',
+    path: '/student-absences'
+  }, {
     icon: Settings,
     label: 'Configurações',
     path: '/settings'
@@ -93,6 +97,10 @@ const menuItems = {
     icon: History,
     label: 'Histórico do Aluno',
     path: '/student-history'
+  }, {
+    icon: AlertTriangle,
+    label: 'Alunos Faltosos',
+    path: '/student-absences'
   }],
   secretary: [{
     icon: LayoutDashboard,
@@ -179,6 +187,10 @@ const menuItems = {
     icon: History,
     label: 'Histórico do Aluno',
     path: '/student-history'
+  }, {
+    icon: AlertTriangle,
+    label: 'Alunos Faltosos',
+    path: '/student-absences'
   }],
   teacher: [{
     icon: LayoutDashboard,

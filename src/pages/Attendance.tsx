@@ -15,6 +15,8 @@ import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
 import { AttendanceGroupDetailsDialog } from '@/components/ui/attendance-group-details-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { useInstructorClasses } from '@/hooks/useInstructorClasses';
+import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
 import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
@@ -53,6 +55,8 @@ const Attendance = () => {
   } = useSupabaseAttendance();
   const { data: classes } = useSupabaseClasses();
   const { data: subjects } = useSupabaseSubjects();
+  const { classes: instructorClasses } = useInstructorClasses();
+  const { subjects: instructorSubjects } = useInstructorSubjects();
 
   useEffect(() => {
     if (profile) {
@@ -60,6 +64,34 @@ const Attendance = () => {
       setUserName(profile.name);
     }
   }, [profile]);
+
+  const handleOpenAttendanceForm = () => {
+    // Para instrutores, verificar se tem subjects antes de abrir
+    if (userRole === 'instructor') {
+      const hasClasses = instructorClasses && instructorClasses.length > 0;
+      const hasSubjects = instructorSubjects && instructorSubjects.length > 0;
+      
+      console.log('📋 Abrindo formulário de frequência:', {
+        role: profile?.role,
+        userId: user?.id,
+        classesCount: instructorClasses?.length || 0,
+        subjectsCount: instructorSubjects?.length || 0,
+        hasClasses,
+        hasSubjects,
+      });
+
+      if (!hasClasses && !hasSubjects) {
+        toast({
+          variant: "destructive",
+          title: "Sem permissões",
+          description: "Você não tem turmas ou disciplinas atribuídas. Contate o administrador.",
+        });
+        return;
+      }
+    }
+    
+    setIsAttendanceFormOpen(true);
+  };
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
@@ -332,7 +364,7 @@ const Attendance = () => {
           {userRole !== 'student' && (
             <Button 
               className="flex items-center gap-2"
-              onClick={() => setIsAttendanceFormOpen(true)}
+              onClick={handleOpenAttendanceForm}
             >
               <Plus size={16} />
               Registrar Chamada

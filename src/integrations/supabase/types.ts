@@ -911,6 +911,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_instructor_class_students: {
+        Args: { instructor_id: string; target_class_id: string }
+        Returns: {
+          enrollment_number: string
+          id: string
+          name: string
+          student_id: string
+        }[]
+      }
       get_instructor_students: {
         Args: never
         Returns: {

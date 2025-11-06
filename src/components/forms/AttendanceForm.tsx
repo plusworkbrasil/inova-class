@@ -10,7 +10,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Calendar, Users, Check, X, CheckCheck, XCircle, RotateCcw, FileText } from 'lucide-react';
+import { Calendar, Users, Check, X, CheckCheck, XCircle, RotateCcw, FileText, AlertCircle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
@@ -42,7 +43,8 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
   const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string}>>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const { profile } = useAuth();
+  const [loadingError, setLoadingError] = useState<string | null>(null);
+  const { profile, user } = useAuth();
   
   // Flag para verificar se é instrutor
   const isInstructor = profile?.role === 'instructor';
@@ -97,19 +99,46 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
     if (!classId) return;
     
     setLoadingStudents(true);
+    setLoadingError(null);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, name, student_id, enrollment_number')
-        .eq('class_id', classId)
-        .eq('status', 'active')
-        .order('name', { ascending: true });
+      console.log('🔍 Buscando alunos da turma:', classId, 'Usuário:', user?.id, 'Role:', profile?.role);
       
-      if (error) throw error;
+      // Para instrutores, usar função RPC segura
+      const { data, error } = isInstructor 
+        ? await supabase.rpc('get_instructor_class_students', {
+            instructor_id: user?.id,
+            target_class_id: classId
+          })
+        : await supabase
+            .from('profiles')
+            .select('id, name, student_id, enrollment_number')
+            .eq('class_id', classId)
+            .eq('status', 'active')
+            .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Erro ao buscar alunos:', error);
+        setLoadingError(`Erro ao carregar alunos: ${error.message}`);
+        throw error;
+      }
+      
+      console.log('✅ Alunos encontrados:', data?.length || 0);
+      
+      if (!data || data.length === 0) {
+        if (isInstructor) {
+          setLoadingError('Nenhum aluno encontrado. Verifique se você tem disciplinas atribuídas nesta turma.');
+        } else {
+          setLoadingError('Nenhum aluno encontrado nesta turma.');
+        }
+      }
+      
       setStudents(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar alunos:', error);
+    } catch (error: any) {
+      console.error('❌ Erro crítico ao buscar alunos:', error);
       setStudents([]);
+      if (!loadingError) {
+        setLoadingError(error.message || 'Erro desconhecido ao carregar alunos');
+      }
     } finally {
       setLoadingStudents(false);
     }
@@ -298,11 +327,31 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
               />
             </div>
 
+            {/* Mostrar erro se houver */}
+            {loadingError && (
+              <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                <p className="text-sm text-destructive font-medium flex items-center gap-2">
+                  <AlertCircle size={16} />
+                  {loadingError}
+                </p>
+                {isInstructor && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Contate o administrador para atribuir disciplinas para você nesta turma.
+                  </p>
+                )}
+              </div>
+            )}
+
             {loadingStudents && selectedClass && (
               <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center text-muted-foreground">
-                    Carregando alunos da turma...
+                <CardContent className="pt-6 space-y-3">
+                  <div className="text-center space-y-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <p className="text-sm text-muted-foreground">
+                      Carregando alunos da turma...
+                    </p>
                   </div>
                 </CardContent>
               </Card>

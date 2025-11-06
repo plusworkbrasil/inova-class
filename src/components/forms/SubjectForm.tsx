@@ -171,11 +171,11 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({
                       </FormControl>
                   <SelectContent>
                     {loadingInstructors ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="__loading__" disabled>
                         Carregando instrutores...
                       </SelectItem>
                     ) : availableTeachers.length === 0 ? (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="__none__" disabled>
                         Nenhum instrutor cadastrado
                       </SelectItem>
                     ) : (

@@ -46,7 +46,7 @@ export const useAuditLogs = () => {
         .order('created_at', { ascending: false });
 
       // Aplicar filtros
-      if (actionFilter && actionFilter !== 'all') {
+      if (actionFilter && actionFilter !== '__all__') {
         query = query.eq('action', actionFilter);
       }
 

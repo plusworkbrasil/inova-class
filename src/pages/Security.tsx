@@ -22,7 +22,7 @@ export default function Security() {
   const { metrics, alerts, loading: metricsLoading, fetchSecurityMetrics } = useSecurityMetrics();
   const [currentPage, setCurrentPage] = useState(1);
   const [userFilter, setUserFilter] = useState('');
-  const [actionFilter, setActionFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('__all__');
   const pageSize = 20;
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export default function Security() {
 
   const handleClearFilters = () => {
     setUserFilter('');
-    setActionFilter('');
+    setActionFilter('__all__');
     setCurrentPage(1);
     fetchLogs(1, pageSize);
   };
@@ -242,7 +242,7 @@ export default function Security() {
                     <SelectValue placeholder="Selecione uma ação..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todas as ações</SelectItem>
+                    <SelectItem value="__all__">Todas as ações</SelectItem>
                     <SelectItem value="VIEW_MEDICAL">Visualizar Dados Médicos</SelectItem>
                     <SelectItem value="VIEW_PERSONAL">Visualizar Dados Pessoais</SelectItem>
                     <SelectItem value="LOGIN">Login</SelectItem>

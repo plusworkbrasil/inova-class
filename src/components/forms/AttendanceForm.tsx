@@ -248,9 +248,9 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {loadingClasses ? (
-                          <SelectItem value="" disabled>Carregando turmas...</SelectItem>
+                          <SelectItem value="__loading__" disabled>Carregando turmas...</SelectItem>
                         ) : classes.length === 0 ? (
-                          <SelectItem value="" disabled>Nenhuma turma disponível</SelectItem>
+                          <SelectItem value="__none__" disabled>Nenhuma turma disponível</SelectItem>
                         ) : (
                           classes.map((classItem) => (
                             <SelectItem key={classItem.id} value={classItem.id}>
@@ -289,11 +289,11 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                       </FormControl>
                       <SelectContent>
                         {loadingSubjects ? (
-                          <SelectItem value="" disabled>Carregando disciplinas...</SelectItem>
+                          <SelectItem value="__loading__" disabled>Carregando disciplinas...</SelectItem>
                         ) : !selectedClassId ? (
-                          <SelectItem value="" disabled>Selecione uma turma primeiro</SelectItem>
+                          <SelectItem value="__select_class__" disabled>Selecione uma turma primeiro</SelectItem>
                         ) : classSubjects.length === 0 ? (
-                          <SelectItem value="" disabled>Nenhuma disciplina disponível</SelectItem>
+                          <SelectItem value="__none__" disabled>Nenhuma disciplina disponível</SelectItem>
                         ) : (
                           classSubjects.map((subject) => (
                             <SelectItem key={subject.id} value={subject.id}>

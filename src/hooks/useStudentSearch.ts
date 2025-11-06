@@ -35,11 +35,10 @@ export const useStudentSearch = (searchTerm: string) => {
             enrollment_number,
             class_id,
             status,
-            classes:class_id(name),
-            user_roles!inner(role)
+            classes:class_id(name)
           `)
-          .eq('user_roles.role', 'student')
           .ilike('name', `%${debouncedSearch}%`)
+          .or('class_id.not.is.null,student_id.not.is.null,enrollment_number.not.is.null')
           .order('name')
           .limit(10);
 

@@ -1,8 +1,9 @@
 import { ReactNode, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,17 +15,38 @@ interface LayoutProps {
 const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      navigate('/auth');
+      // Mostrar toast informativo
+      toast.error('Sessão expirada', {
+        description: 'Por favor, faça login novamente para continuar.',
+      });
+      
+      // Redirecionar com informações do contexto
+      navigate('/auth', { 
+        state: { 
+          from: location.pathname,
+          reason: 'session_expired'
+        },
+        replace: true
+      });
     }
-  }, [loading, isAuthenticated, navigate]);
+  }, [loading, isAuthenticated, navigate, location.pathname]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <div className="space-y-2">
+            <p className="text-lg font-medium">Verificando sua sessão...</p>
+            <p className="text-sm text-muted-foreground">
+              Se demorar muito, recarregue a página
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

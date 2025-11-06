@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { AlertCircle } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -14,7 +16,12 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, login, loading: authLoading } = useAuth();
+  
+  // Detectar motivo do redirecionamento
+  const redirectReason = (location.state as any)?.reason;
+  const fromPath = (location.state as any)?.from;
 
   useEffect(() => {
     // Só redireciona se o usuário estiver autenticado E não estiver carregando
@@ -61,7 +68,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl text-center">
@@ -71,7 +78,24 @@ const Auth = () => {
             Entre com suas credenciais
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {redirectReason === 'session_expired' && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Sua sessão expirou. Faça login novamente para continuar.
+                {fromPath && ` Você será redirecionado para ${fromPath}.`}
+              </AlertDescription>
+            </Alert>
+          )}
+          {redirectReason === 'not_authenticated' && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Você precisa estar autenticado para acessar esta página.
+              </AlertDescription>
+            </Alert>
+          )}
           <form onSubmit={handleSignIn} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

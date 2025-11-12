@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet, FileBarChart } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +19,7 @@ import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useRealClassData } from '@/hooks/useRealClassData';
 import { cn, toBrasiliaDate, parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
 import { SubjectAttendanceExportDialog } from '@/components/ui/subject-attendance-export-dialog';
+import { SubjectGradesExportDialog } from '@/components/ui/subject-grades-export-dialog';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -32,6 +33,13 @@ const Subjects = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [selectedSubjectForExport, setSelectedSubjectForExport] = useState<{
+    id: string;
+    name: string;
+    class_id: string;
+    class_name: string;
+  } | null>(null);
+  const [gradesExportDialogOpen, setGradesExportDialogOpen] = useState(false);
+  const [selectedSubjectForGradesExport, setSelectedSubjectForGradesExport] = useState<{
     id: string;
     name: string;
     class_id: string;
@@ -200,6 +208,16 @@ const Subjects = () => {
     setExportDialogOpen(true);
   };
 
+  const handleExportGrades = (subject: any) => {
+    setSelectedSubjectForGradesExport({
+      id: subject.id,
+      name: subject.name,
+      class_id: subject.class_id,
+      class_name: getClassName(subject.class_id)
+    });
+    setGradesExportDialogOpen(true);
+  };
+
   const filteredSubjects = subjects.filter(subject =>
     subject.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -365,15 +383,24 @@ const Subjects = () => {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 mt-3">
+                        <div className="flex flex-col gap-2 mt-3">
                           <Button 
                             variant="outline" 
                             size="sm"
-                            className="flex-1 text-xs"
+                            className="w-full text-xs"
                             onClick={() => handleExportAttendance(subject)}
                           >
                             <FileSpreadsheet className="w-3 h-3 mr-1" />
                             Exportar Chamadas
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={() => handleExportGrades(subject)}
+                          >
+                            <FileBarChart className="w-3 h-3 mr-1" />
+                            Exportar Notas
                           </Button>
                         </div>
                       </div>
@@ -502,32 +529,40 @@ const Subjects = () => {
                          )}
                        </div>
                      </TableCell>
-                     <TableCell>
-                       <div className="flex gap-2">
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => handleExportAttendance(subject)}
-                           title="Exportar Chamadas"
-                         >
-                           <FileSpreadsheet size={14} />
-                         </Button>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => openEditForm(subject)}
-                         >
-                           <Edit size={14} />
-                         </Button>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => openDeleteDialog(subject)}
-                         >
-                           <Trash2 size={14} />
-                         </Button>
-                       </div>
-                     </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleExportAttendance(subject)}
+                            title="Exportar Chamadas"
+                          >
+                            <FileSpreadsheet size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleExportGrades(subject)}
+                            title="Exportar Notas"
+                          >
+                            <FileBarChart size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditForm(subject)}
+                          >
+                            <Edit size={14} />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openDeleteDialog(subject)}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -559,6 +594,15 @@ const Subjects = () => {
           classId={selectedSubjectForExport?.class_id || null}
           subjectName={selectedSubjectForExport?.name || ''}
           className={selectedSubjectForExport?.class_name || ''}
+        />
+
+        <SubjectGradesExportDialog
+          open={gradesExportDialogOpen}
+          onOpenChange={setGradesExportDialogOpen}
+          subjectId={selectedSubjectForGradesExport?.id || null}
+          classId={selectedSubjectForGradesExport?.class_id || null}
+          subjectName={selectedSubjectForGradesExport?.name || ''}
+          className={selectedSubjectForGradesExport?.class_name || ''}
         />
       </div>
     </Layout>

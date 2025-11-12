@@ -29,16 +29,28 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [isHealthy, setIsHealthy] = useState<boolean>(true);
 
-  const { generateAnalysis, loading, error } = useVirtualSecretary();
+  const { generateAnalysis, loading, error, getCachedAnalysis, checkHealth, cacheAge } = useVirtualSecretary();
   const { data: classes } = useClasses();
 
-  const handleGenerateAnalysis = async () => {
-    const result = await generateAnalysis({
+  const handleGenerateAnalysis = async (forceRefresh: boolean = false) => {
+    const options = {
       period,
       classId: analysisType === 'class' ? selectedClassId : null,
-    });
+      analysisDate: new Date(),
+    };
 
+    // Verificar se existe cache antes de gerar
+    if (!forceRefresh) {
+      const cached = getCachedAnalysis(options);
+      if (cached) {
+        setAnalysisResult(cached.data);
+        return;
+      }
+    }
+
+    const result = await generateAnalysis(options, forceRefresh);
     if (result) {
       setAnalysisResult(result);
     }
@@ -73,11 +85,18 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
     html2pdf().set(opt).from(element).save();
   };
 
-  // Auto-gerar análise ao abrir o dialog
+  // Health check e auto-generate analysis quando dialog abre
   useEffect(() => {
-    if (open && !analysisResult && !loading) {
-      handleGenerateAnalysis();
+    if (open) {
+      // Health check
+      checkHealth().then(setIsHealthy);
+      
+      // Auto-generate apenas se não houver resultado ou se não estiver carregando
+      if (!analysisResult && !loading) {
+        handleGenerateAnalysis(false);
+      }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (
@@ -102,6 +121,26 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
           <TabsContent value="general" className="space-y-4">
             <Card>
               <CardContent className="pt-6 space-y-4">
+                {!isHealthy && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
+                    ⚠️ Serviço temporariamente indisponível. Aguarde alguns segundos.
+                  </div>
+                )}
+                
+                {cacheAge !== null && cacheAge > 0 && analysisResult && (
+                  <div className="p-3 bg-muted border border-border rounded-md text-sm flex items-center justify-between">
+                    <span>📦 Análise gerada há {cacheAge} min (cache)</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleGenerateAnalysis(true)}
+                      disabled={loading}
+                    >
+                      🔄 Forçar nova análise
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4">
                   <div className="flex-1">
                     <label className="text-sm font-medium mb-2 block">Período de Análise</label>
@@ -132,8 +171,8 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
                     </Select>
                   </div>
                   <Button
-                    onClick={handleGenerateAnalysis}
-                    disabled={loading}
+                    onClick={() => handleGenerateAnalysis(false)}
+                    disabled={loading || !isHealthy}
                     className="mt-6"
                   >
                     {loading ? (
@@ -156,6 +195,26 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
           <TabsContent value="class" className="space-y-4">
             <Card>
               <CardContent className="pt-6 space-y-4">
+                {!isHealthy && (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive">
+                    ⚠️ Serviço temporariamente indisponível. Aguarde alguns segundos.
+                  </div>
+                )}
+                
+                {cacheAge !== null && cacheAge > 0 && analysisResult && (
+                  <div className="p-3 bg-muted border border-border rounded-md text-sm flex items-center justify-between">
+                    <span>📦 Análise gerada há {cacheAge} min (cache)</span>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleGenerateAnalysis(true)}
+                      disabled={loading}
+                    >
+                      🔄 Forçar nova análise
+                    </Button>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium mb-2 block">Turma</label>
@@ -187,8 +246,8 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
                   </div>
                 </div>
                 <Button
-                  onClick={handleGenerateAnalysis}
-                  disabled={loading || !selectedClassId}
+                  onClick={() => handleGenerateAnalysis(false)}
+                  disabled={loading || !selectedClassId || !isHealthy}
                   className="w-full"
                 >
                   {loading ? (
@@ -230,7 +289,7 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
                   <p className="font-medium text-destructive">Erro ao Gerar Análise</p>
                   <p className="text-sm text-muted-foreground">{error}</p>
                 </div>
-                <Button onClick={handleGenerateAnalysis} variant="outline">
+                <Button onClick={() => handleGenerateAnalysis(false)} variant="outline">
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Tentar Novamente
                 </Button>

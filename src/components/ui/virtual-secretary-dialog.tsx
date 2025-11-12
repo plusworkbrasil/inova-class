@@ -63,7 +63,7 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
     element.innerHTML = `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h1 style="color: #6366f1; border-bottom: 3px solid #6366f1; padding-bottom: 10px;">
-          🤖 Secretária Virtual - Análise Educacional
+          🤖 SecretárIA - Análise Educacional
         </h1>
         <p style="color: #666; margin-bottom: 20px;">
           Gerado em: ${new Date(analysisResult.generatedAt).toLocaleString('pt-BR')}
@@ -105,7 +105,7 @@ export const VirtualSecretaryDialog = ({ open, onOpenChange }: VirtualSecretaryD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
             <span className="text-3xl">🤖</span>
-            Secretária Virtual - Análise com IA
+            SecretárIA
           </DialogTitle>
           <DialogDescription>
             Análise inteligente dos dados educacionais com insights e recomendações

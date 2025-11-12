@@ -26,7 +26,7 @@ export const VirtualSecretaryButton = () => {
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left" className="bg-card text-card-foreground border-border">
-            <p className="font-medium">🤖 Secretária Virtual</p>
+            <p className="font-medium">🤖 SecretárIA</p>
             <p className="text-xs text-muted-foreground">Análise com Inteligência Artificial</p>
           </TooltipContent>
         </Tooltip>

@@ -163,7 +163,7 @@ export const useVirtualSecretary = () => {
 
           toast({
             title: 'Análise Gerada',
-            description: 'A Secretária Virtual concluiu a análise dos dados.',
+            description: 'A SecretárIA concluiu a análise dos dados.',
           });
 
           return result;

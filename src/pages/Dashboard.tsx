@@ -20,6 +20,7 @@ import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
 import { BirthdayCard } from '@/components/dashboard/BirthdayCard';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+import { VirtualSecretaryButton } from '@/components/ui/virtual-secretary-button';
 
 const Dashboard = () => {
   const { profile, loading: authLoading, isAuthenticated } = useAuth();
@@ -62,6 +63,7 @@ const Dashboard = () => {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
         <AdminDashboard />
+        <VirtualSecretaryButton />
       </Layout>
     );
   }

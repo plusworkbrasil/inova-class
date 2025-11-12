@@ -44,13 +44,15 @@ export const useVirtualSecretary = () => {
     try {
       const { data, error } = await supabase.functions.invoke('ping');
       if (error) {
-        console.error('Health check failed:', error);
-        return false;
+        console.warn('Health check failed, proceeding optimistically:', error);
+        // Proceed optimistically to avoid blocking the UI when ping endpoint is unreachable
+        return true;
       }
       return data?.status === 'ok';
     } catch (err) {
-      console.error('Health check error:', err);
-      return false;
+      console.warn('Health check error, proceeding optimistically:', err);
+      // Network/CORS issues should not block the analysis flow
+      return true;
     }
   }, []);
 
@@ -84,7 +86,7 @@ export const useVirtualSecretary = () => {
       // Health check antes de tentar análise
       const isHealthy = await checkHealth();
       if (!isHealthy) {
-        throw new Error('Serviço temporariamente indisponível. Aguarde 30s e tente novamente.');
+        console.warn('Health check reported unavailable; attempting analysis anyway.');
       }
 
       console.log('Generating new analysis with options:', options);

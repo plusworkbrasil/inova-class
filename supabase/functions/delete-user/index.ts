@@ -40,18 +40,23 @@ serve(async (req) => {
       throw new Error('Invalid or expired token')
     }
 
-    // Only admins can delete users
-    const { data: callerProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
+    // Only admins can delete users - validate via user_roles
+    const { data: roleRow, error: roleError } = await supabaseAdmin
+      .from('user_roles')
       .select('role')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
+      .order('granted_at', { ascending: false })
+      .limit(1)
       .single()
 
-    if (profileError || !callerProfile) {
-      throw new Error('Could not verify user permissions')
+    console.log('Permission check - callerId:', user.id, 'foundRole:', roleRow?.role)
+
+    if (roleError || !roleRow) {
+      console.error('Role validation error:', roleError)
+      throw new Error('Access denied: caller role not found in user_roles')
     }
 
-    if (callerProfile.role !== 'admin') {
+    if (roleRow.role !== 'admin') {
       throw new Error('Access denied: Only admins can delete users')
     }
 

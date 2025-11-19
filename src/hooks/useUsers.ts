@@ -356,6 +356,28 @@ export const useUsers = () => {
     }
   };
 
+  const toggleUserStatus = async (userId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+      
+      await updateUser(userId, { status: newStatus });
+      
+      toast({
+        title: "Status atualizado",
+        description: `Usuário ${newStatus === 'active' ? 'ativado' : 'desativado'} com sucesso.`,
+      });
+      
+      await fetchUsers(currentPage, '', '', '');
+    } catch (err: any) {
+      console.error('Error toggling user status:', err);
+      toast({
+        title: "Erro ao atualizar status",
+        description: err.message || "Não foi possível atualizar o status do usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const inviteStudent = async (email: string, name: string, classId?: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('invite-student', {
@@ -392,6 +414,7 @@ export const useUsers = () => {
     createUser,
     updateUser,
     deleteUser,
+    toggleUserStatus,
     inviteStudent,
     nextPage,
     prevPage,

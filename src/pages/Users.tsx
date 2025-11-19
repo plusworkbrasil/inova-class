@@ -21,6 +21,23 @@ import { BulkUserDelete } from '@/components/ui/bulk-user-delete';
 import { roleTranslations, getRoleTranslation } from '@/lib/roleTranslations';
 import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
+import { Switch } from '@/components/ui/switch';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from '@/components/ui/tooltip';
 
 const Users = () => {
   const { profile } = useAuth();
@@ -37,6 +54,8 @@ const Users = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [deactivatingUser, setDeactivatingUser] = useState<any>(null);
+  const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
   
   const { 
     users, 
@@ -48,6 +67,7 @@ const Users = () => {
     createUser, 
     updateUser, 
     deleteUser, 
+    toggleUserStatus,
     inviteStudent,
     nextPage,
     prevPage,
@@ -156,6 +176,23 @@ const Users = () => {
   const openPasswordDialog = (user: any) => {
     setPasswordUser(user);
     setIsPasswordDialogOpen(true);
+  };
+
+  const handleToggleStatus = (user: any) => {
+    if (user.status === 'active') {
+      setDeactivatingUser(user);
+      setIsDeactivateDialogOpen(true);
+    } else {
+      toggleUserStatus(user.id, user.status);
+    }
+  };
+
+  const confirmDeactivate = async () => {
+    if (deactivatingUser) {
+      await toggleUserStatus(deactivatingUser.id, deactivatingUser.status);
+      setIsDeactivateDialogOpen(false);
+      setDeactivatingUser(null);
+    }
   };
 
   const getRoleBadgeVariant = (role: UserRole) => {
@@ -319,7 +356,32 @@ const Users = () => {
                          {getStatusBadge(user.status)}
                        </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center">
+                                  <Switch
+                                    checked={user.status === 'active'}
+                                    onCheckedChange={() => handleToggleStatus(user)}
+                                    disabled={user.id === profile?.id}
+                                    className="data-[state=checked]:bg-green-500"
+                                  />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {user.id === profile?.id 
+                                    ? 'Você não pode desativar sua própria conta' 
+                                    : user.status === 'active' 
+                                      ? 'Desativar usuário' 
+                                      : 'Ativar usuário'
+                                  }
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -449,6 +511,30 @@ const Users = () => {
           description="Esta ação não pode ser desfeita. O usuário será permanentemente removido do sistema."
           itemName={deletingUser?.name}
         />
+        
+        <AlertDialog open={isDeactivateDialogOpen} onOpenChange={setIsDeactivateDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Desativar usuário?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja desativar o usuário{' '}
+                <strong>{deactivatingUser?.name}</strong>?
+                <br /><br />
+                O usuário não poderá mais fazer login no sistema até ser reativado.
+                Você pode reativá-lo a qualquer momento clicando no mesmo botão.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeactivate}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Desativar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

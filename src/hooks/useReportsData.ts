@@ -70,7 +70,17 @@ export const useReportsData = () => {
       console.log('🔍 [useReportsData] Buscando frequência dos últimos 7 dias...');
       const { data: attendanceLast7Days, error: attendanceLast7DaysError } = await supabase
         .from('attendance')
-        .select('*')
+        .select(`
+          *,
+          profiles!student_id (
+            id,
+            name,
+            class_id,
+            classes (
+              name
+            )
+          )
+        `)
         .gte('date', sevenDaysAgoISO);
       
       if (attendanceLast7DaysError) {
@@ -249,13 +259,14 @@ export const useReportsData = () => {
 
     attendance.forEach(record => {
       if (!studentAbsences[record.student_id]) {
-        const student = profiles.find(p => p.id === record.student_id);
+        // Usar dados do JOIN direto da query de attendance
+        const studentData = record.profiles;
         studentAbsences[record.student_id] = {
           student_id: record.student_id,
           absences: 0,
           total: 0,
-          name: student?.name || 'Aluno Desconhecido',
-          class: student?.classes?.name || 'Sem Turma'
+          name: studentData?.name || 'Aluno Desconhecido',
+          class: studentData?.classes?.name || 'Sem Turma'
         };
       }
       

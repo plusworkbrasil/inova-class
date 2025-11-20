@@ -13,6 +13,11 @@ import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dia
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  
+  const handleViewStudentHistory = (studentId: string) => {
+    navigate(`/student-history?studentId=${studentId}`);
+  };
+  
   const {
     stats,
     loading: statsLoading
@@ -187,9 +192,9 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               {reportsLoading ? <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">Carregando dados...</p>
-                </div> : reportsData.topAbsentStudents.length > 0 ? reportsData.topAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <p className="font-medium">{student.name}</p>
+                </div> : reportsData.topAbsentStudents.length > 0 ? reportsData.topAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                    <div className="flex-1 cursor-pointer" onClick={() => handleViewStudentHistory(student.student_id)}>
+                      <p className="font-medium text-primary hover:underline">{student.name}</p>
                       <p className="text-sm text-muted-foreground">{student.class}</p>
                     </div>
                     <div className="text-right">

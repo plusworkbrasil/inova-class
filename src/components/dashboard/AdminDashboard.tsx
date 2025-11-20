@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key } from 'lucide-react';
+import { useClasses } from '@/hooks/useClasses';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
@@ -13,6 +15,7 @@ import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dia
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<string>('all');
   
   const handleViewStudentHistory = (studentId: string) => {
     navigate(`/student-history?studentId=${studentId}`);
@@ -26,14 +29,41 @@ const AdminDashboard = () => {
     data: reportsData,
     loading: reportsLoading
   } = useReportsData();
+  
+  const { data: classes, loading: classesLoading } = useClasses();
+  
+  // Filtrar alunos com faltas por turma selecionada
+  const filteredTopAbsentStudents = useMemo(() => {
+    if (selectedClass === 'all') {
+      return reportsData.topAbsentStudents;
+    }
+    return reportsData.topAbsentStudents.filter(student => student.class === selectedClass);
+  }, [reportsData.topAbsentStudents, selectedClass]);
+  
   return <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard do Administrador</h1>
           <p className="text-muted-foreground mt-1">Visão geral do sistema acadêmico</p>
         </div>
-        <div className="flex space-x-2 mt-4 md:mt-0">
+        <div className="flex flex-col sm:flex-row gap-2">
+          {/* Filtro de Turma */}
+          <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <SelectTrigger className="w-[200px]">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filtrar por turma" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Turmas</SelectItem>
+              {!classesLoading && classes?.map((cls) => (
+                <SelectItem key={cls.id} value={cls.name}>
+                  {cls.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
           <Button 
             variant="outline" 
             onClick={() => setIsChangePasswordOpen(true)}
@@ -182,6 +212,11 @@ const AdminDashboard = () => {
                 <div className="flex items-center">
                   <ClipboardX className="w-5 h-5 mr-2 text-destructive" />
                   Alunos com Maior Número de Faltas
+                  {selectedClass !== 'all' && (
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">
+                      • {selectedClass}
+                    </span>
+                  )}
                 </div>
                 <span className="text-sm font-normal text-muted-foreground">
                   {reportsData.topAbsentStudentsPeriod || 'Últimos 7 dias'}
@@ -192,7 +227,7 @@ const AdminDashboard = () => {
             <div className="space-y-4">
               {reportsLoading ? <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">Carregando dados...</p>
-                </div> : reportsData.topAbsentStudents.length > 0 ? reportsData.topAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                </div> : filteredTopAbsentStudents.length > 0 ? filteredTopAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                     <div className="flex-1 cursor-pointer" onClick={() => handleViewStudentHistory(student.student_id)}>
                       <p className="font-medium text-primary hover:underline">{student.name}</p>
                       <p className="text-sm text-muted-foreground">{student.class}</p>
@@ -202,7 +237,11 @@ const AdminDashboard = () => {
                       <p className="text-xs text-muted-foreground">{student.percentage}% de faltas</p>
                     </div>
                   </div>) : <div className="text-center py-8">
-                  <p className="text-muted-foreground">Nenhum dado de faltas encontrado</p>
+                  <p className="text-muted-foreground">
+                    {selectedClass === 'all' 
+                      ? 'Nenhum dado de faltas encontrado' 
+                      : `Nenhum aluno com faltas na turma ${selectedClass}`}
+                  </p>
                 </div>}
             </div>
           </CardContent>

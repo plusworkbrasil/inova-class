@@ -83,6 +83,19 @@ export const useReportsData = () => {
         `)
         .gte('date', sevenDaysAgoISO);
       
+      // DEBUG: Verificar estrutura dos dados retornados
+      if (attendanceLast7Days && attendanceLast7Days.length > 0) {
+        console.log('🔍 [useReportsData] Estrutura do primeiro registro:', {
+          student_id: attendanceLast7Days[0].student_id,
+          profiles: attendanceLast7Days[0].profiles,
+          profiles_type: typeof attendanceLast7Days[0].profiles,
+          profiles_is_array: Array.isArray(attendanceLast7Days[0].profiles),
+          has_classes: !!attendanceLast7Days[0].profiles?.classes,
+          classes_structure: attendanceLast7Days[0].profiles?.classes,
+          full_record: attendanceLast7Days[0]
+        });
+      }
+      
       if (attendanceLast7DaysError) {
         console.error('❌ [useReportsData] Erro ao buscar frequência dos últimos 7 dias:', attendanceLast7DaysError.message);
       } else {
@@ -261,12 +274,35 @@ export const useReportsData = () => {
       if (!studentAbsences[record.student_id]) {
         // Usar dados do JOIN direto da query de attendance
         const studentData = record.profiles;
+        
+        // DEBUG: Ver estrutura do registro
+        console.log('🔍 [processTopAbsentStudents] Processando:', {
+          student_id: record.student_id,
+          has_profiles: !!record.profiles,
+          profiles_structure: record.profiles,
+          profiles_classes: record.profiles?.classes,
+          class_name: record.profiles?.classes?.name
+        });
+        
+        // Tentar acessar de múltiplas formas (acesso defensivo)
+        const className = 
+          studentData?.classes?.name ||           // Forma 1: objeto direto
+          studentData?.classes?.[0]?.name ||      // Forma 2: se classes for array
+          profiles.find(p => p.id === record.student_id)?.classes?.name || // Forma 3: fallback para profiles
+          'Sem Turma';
+
+        console.log('✅ [processTopAbsentStudents] Turma encontrada:', {
+          student_id: record.student_id,
+          name: studentData?.name,
+          className
+        });
+        
         studentAbsences[record.student_id] = {
           student_id: record.student_id,
           absences: 0,
           total: 0,
           name: studentData?.name || 'Aluno Desconhecido',
-          class: studentData?.classes?.name || 'Sem Turma'
+          class: className
         };
       }
       

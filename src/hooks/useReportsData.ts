@@ -6,7 +6,7 @@ export interface ReportData {
   attendanceTotals: Array<{ name: string; value: number; count: number; color: string }>;
   gradesBySubject: Array<{ subject: string; average: number }>;
   classDistribution: Array<{ name: string; value: number; color: string }>;
-  topAbsentStudents: Array<{ name: string; class: string; absences: number; percentage: number }>;
+  topAbsentStudents: Array<{ student_id: string; name: string; class: string; absences: number; percentage: number }>;
   topAbsentStudentsPeriod?: string;
   evasionData: Array<{ name: string; value: number; color: string }>;
   activeSubjects: Array<{ 
@@ -102,8 +102,7 @@ export const useReportsData = () => {
         .select(`
           *,
           classes(name)
-        `)
-        .not('class_id', 'is', null);
+        `);
 
       // Fetch evasions data
       const { data: evasions } = await supabase
@@ -246,12 +245,13 @@ export const useReportsData = () => {
   };
 
   const processTopAbsentStudents = (attendance: any[], profiles: any[]) => {
-    const studentAbsences: Record<string, { absences: number; total: number; name: string; class: string }> = {};
+    const studentAbsences: Record<string, { student_id: string; absences: number; total: number; name: string; class: string }> = {};
 
     attendance.forEach(record => {
       if (!studentAbsences[record.student_id]) {
         const student = profiles.find(p => p.id === record.student_id);
         studentAbsences[record.student_id] = {
+          student_id: record.student_id,
           absences: 0,
           total: 0,
           name: student?.name || 'Aluno Desconhecido',
@@ -267,6 +267,7 @@ export const useReportsData = () => {
 
     return Object.values(studentAbsences)
       .map(student => ({
+        student_id: student.student_id,
         name: student.name,
         class: student.class,
         absences: student.absences,

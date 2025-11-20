@@ -172,12 +172,17 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Frequent Absentees */}
         <Card className="shadow-[var(--shadow-card)]">
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <ClipboardX className="w-5 h-5 mr-2 text-destructive" />
-              Alunos com Maior Número de Faltas
-            </CardTitle>
-          </CardHeader>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <ClipboardX className="w-5 h-5 mr-2 text-destructive" />
+                  Alunos com Maior Número de Faltas
+                </div>
+                <span className="text-sm font-normal text-muted-foreground">
+                  {reportsData.topAbsentStudentsPeriod || 'Últimos 7 dias'}
+                </span>
+              </CardTitle>
+            </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {reportsLoading ? <div className="flex items-center justify-center h-32">

@@ -7,6 +7,7 @@ export interface ReportData {
   gradesBySubject: Array<{ subject: string; average: number }>;
   classDistribution: Array<{ name: string; value: number; color: string }>;
   topAbsentStudents: Array<{ name: string; class: string; absences: number; percentage: number }>;
+  topAbsentStudentsPeriod?: string;
   evasionData: Array<{ name: string; value: number; color: string }>;
   activeSubjects: Array<{ 
     subjectName: string; 
@@ -47,6 +48,12 @@ export const useReportsData = () => {
         console.log('🔒 [useReportsData] User role:', roleData?.role);
       }
 
+      // Calcular data de 7 dias atrás
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const sevenDaysAgoISO = sevenDaysAgo.toISOString().split('T')[0];
+      console.log('📅 [useReportsData] Filtrando faltas desde:', sevenDaysAgoISO);
+
       // Fetch attendance data
       console.log('🔍 [useReportsData] Buscando dados de frequência...');
       const { data: attendance, error: attendanceError } = await supabase
@@ -57,6 +64,19 @@ export const useReportsData = () => {
         console.error('❌ [useReportsData] Erro ao buscar frequência:', attendanceError.message);
       } else {
         console.log(`✅ [useReportsData] Frequência carregada: ${attendance?.length || 0} registros`);
+      }
+
+      // Fetch attendance data for last 7 days (for top absent students)
+      console.log('🔍 [useReportsData] Buscando frequência dos últimos 7 dias...');
+      const { data: attendanceLast7Days, error: attendanceLast7DaysError } = await supabase
+        .from('attendance')
+        .select('*')
+        .gte('date', sevenDaysAgoISO);
+      
+      if (attendanceLast7DaysError) {
+        console.error('❌ [useReportsData] Erro ao buscar frequência dos últimos 7 dias:', attendanceLast7DaysError.message);
+      } else {
+        console.log(`✅ [useReportsData] Frequência dos últimos 7 dias: ${attendanceLast7Days?.length || 0} registros`);
       }
 
       // Fetch grades data
@@ -112,7 +132,7 @@ export const useReportsData = () => {
       const classDistribution = classes && profiles ? processClassDistribution(classes, profiles) : [];
 
       // Process top absent students
-      const topAbsentStudents = attendance && profiles ? processTopAbsentStudents(attendance, profiles) : [];
+      const topAbsentStudents = attendanceLast7Days && profiles ? processTopAbsentStudents(attendanceLast7Days, profiles) : [];
 
       // Process evasion data
       const evasionData = evasions ? processEvasionData(evasions) : [];
@@ -126,6 +146,7 @@ export const useReportsData = () => {
         gradesBySubject,
         classDistribution,
         topAbsentStudents,
+        topAbsentStudentsPeriod: 'Últimos 7 dias',
         evasionData,
         activeSubjects
       });

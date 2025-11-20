@@ -252,12 +252,29 @@ export const useReportsData = () => {
         // Buscar dados do aluno no array profiles que TEM o JOIN com classes
         const studentData = profiles.find(p => p.id === record.student_id);
         
+        // DEBUG TEMPORÁRIO: Ver estrutura real para João Gabriel
+        if (record.student_id === '3ccb329b-2383-495e-9e87-0fdd484a50ec') {
+          console.log('🔍 [DEBUG] João Gabriel - estrutura completa:', {
+            studentData,
+            classes: studentData?.classes,
+            classes_type: typeof studentData?.classes,
+            is_array: Array.isArray(studentData?.classes),
+            classes_name_direct: studentData?.classes?.name,
+            classes_name_array: studentData?.classes?.[0]?.name
+          });
+        }
+        
+        // Acesso robusto: funciona se classes for objeto ou array
+        const className = Array.isArray(studentData?.classes)
+          ? studentData?.classes[0]?.name  // Se for array, pega primeiro elemento
+          : studentData?.classes?.name;    // Se for objeto, acessa direto
+        
         studentAbsences[record.student_id] = {
           student_id: record.student_id,
           absences: 0,
           total: 0,
           name: studentData?.name || 'Aluno Desconhecido',
-          class: studentData?.classes?.name || 'Sem Turma'
+          class: className || 'Sem Turma'
         };
       }
       

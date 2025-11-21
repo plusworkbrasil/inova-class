@@ -108,7 +108,7 @@ export const useReportsData = () => {
           auto_student_id,
           class_id,
           status,
-          classes(name)
+          classes!profiles_class_id_fkey(name)
         `);
 
       if (profilesError) {
@@ -132,8 +132,8 @@ export const useReportsData = () => {
         .from('subjects')
         .select(`
           *,
-          classes(name),
-          profiles(name)
+          classes!subjects_class_id_fkey(name),
+          profiles!subjects_teacher_id_fkey(name)
         `);
 
       // Process attendance by month

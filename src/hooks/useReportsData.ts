@@ -96,13 +96,31 @@ export const useReportsData = () => {
         console.log(`✅ [useReportsData] Turmas carregadas: ${classes?.length || 0}`);
       }
 
-      // Fetch profiles (students) data
-      const { data: profiles } = await supabase
+      // Fetch profiles (students) data com error handling robusto
+      console.log('🔍 [useReportsData] Buscando profiles com classes...');
+      const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
-          *,
+          id,
+          name,
+          email,
+          student_id,
+          auto_student_id,
+          class_id,
+          status,
           classes(name)
         `);
+
+      if (profilesError) {
+        console.error('❌ [useReportsData] Erro ao buscar profiles:', {
+          message: profilesError.message,
+          code: profilesError.code,
+          details: profilesError.details
+        });
+      }
+
+      console.log(`✅ [useReportsData] Profiles carregados: ${profiles?.length || 0} registros`);
+      console.log('📊 [useReportsData] Exemplo de profile com classes:', profiles?.[0]);
 
       // Fetch evasions data
       const { data: evasions } = await supabase
@@ -129,9 +147,13 @@ export const useReportsData = () => {
 
       // Process class distribution
       const classDistribution = classes && profiles ? processClassDistribution(classes, profiles) : [];
+      console.log(`📊 [useReportsData] Class Distribution processado: ${classDistribution.length} turmas`);
+      console.log('📊 [useReportsData] Amostra:', classDistribution.slice(0, 3));
 
       // Process top absent students
       const topAbsentStudents = attendanceLast7Days && profiles ? processTopAbsentStudents(attendanceLast7Days, profiles) : [];
+      console.log(`📊 [useReportsData] Top Absent Students: ${topAbsentStudents.length} alunos`);
+      console.log('📊 [useReportsData] Amostra:', topAbsentStudents.slice(0, 3));
 
       // Process evasion data
       const evasionData = evasions ? processEvasionData(evasions) : [];
@@ -229,28 +251,53 @@ export const useReportsData = () => {
   };
 
   const processClassDistribution = (classes: any[], profiles: any[]) => {
+    console.log('🔄 [processClassDistribution] Iniciando processamento...');
+    console.log('📊 [processClassDistribution] Total profiles:', profiles.length);
+    
     const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
     const classCount: Record<string, number> = {};
 
     profiles.forEach(profile => {
-      const className = profile.classes?.name || 'Sem Turma';
+      // Tentar múltiplos formatos de acesso ao nome da turma
+      let className = 'Sem Turma';
+      
+      if (profile.classes && typeof profile.classes === 'object' && profile.classes.name) {
+        className = profile.classes.name;
+      } else if (profile.class_name) {
+        className = profile.class_name;
+      }
+      
       classCount[className] = (classCount[className] || 0) + 1;
     });
 
-    return Object.entries(classCount).map(([name, value], index) => ({
+    console.log('📊 [processClassDistribution] Contagem por turma:', classCount);
+
+    const result = Object.entries(classCount).map(([name, value], index) => ({
       name,
       value,
       color: colors[index % colors.length]
     }));
+    
+    console.log('✅ [processClassDistribution] Resultado final:', result.length, 'turmas');
+    return result;
   };
 
   const processTopAbsentStudents = (attendance: any[], profiles: any[]) => {
+    console.log('🔄 [processTopAbsentStudents] Iniciando processamento...');
+    console.log('📊 [processTopAbsentStudents] Total attendance:', attendance.length);
+    console.log('📊 [processTopAbsentStudents] Total profiles:', profiles.length);
+    
     const studentAbsences: Record<string, { student_id: string; absences: number; total: number; name: string; class: string; studentId: string }> = {};
 
     attendance.forEach(record => {
       if (!studentAbsences[record.student_id]) {
         // Buscar dados do aluno no array profiles que TEM o JOIN com classes
         const studentData = profiles.find(p => p.id === record.student_id);
+        
+        if (!studentData) {
+          console.warn(`⚠️ [processTopAbsentStudents] Aluno não encontrado: ${record.student_id}`);
+          return; // Pular este registro
+        }
         
         // Acesso correto ao nome da turma: classes retorna como objeto ou null do JOIN
         let className = 'Sem Turma';
@@ -278,7 +325,10 @@ export const useReportsData = () => {
       }
     });
 
-    return Object.values(studentAbsences)
+    console.log('📊 [processTopAbsentStudents] Total alunos com registros:', Object.keys(studentAbsences).length);
+
+    const result = Object.values(studentAbsences)
+      .filter(student => student.absences > 0) // Apenas alunos com faltas
       .map(student => ({
         student_id: student.student_id,
         name: student.name,
@@ -289,6 +339,11 @@ export const useReportsData = () => {
       }))
       .sort((a, b) => b.absences - a.absences)
       .slice(0, 10);
+    
+    console.log('✅ [processTopAbsentStudents] Top alunos com faltas:', result.length);
+    console.log('📊 [processTopAbsentStudents] Amostra:', result.slice(0, 3));
+    
+    return result;
   };
 
   const processEvasionData = (evasions: any[]) => {

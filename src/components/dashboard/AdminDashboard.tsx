@@ -181,17 +181,35 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  {reportsLoading ? <div className="flex items-center justify-center h-full">
+                  {reportsLoading ? (
+                    <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Carregando dados...</p>
-                    </div> : <PieChart>
-                      <Pie data={reportsData.classDistribution} cx="50%" cy="50%" outerRadius={100} fill="#8884d8" dataKey="value" label={({
-                    name,
-                    value
-                  }) => `${name}: ${value}`}>
-                        {reportsData.classDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
+                    </div>
+                  ) : reportsData.classDistribution.length > 0 ? (
+                    <PieChart>
+                      <Pie 
+                        data={reportsData.classDistribution} 
+                        cx="50%" 
+                        cy="50%" 
+                        outerRadius={100} 
+                        fill="#8884d8" 
+                        dataKey="value" 
+                        label={({ name, value }) => `${name}: ${value}`}
+                      >
+                        {reportsData.classDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
                       </Pie>
                       <Tooltip />
-                    </PieChart>}
+                    </PieChart>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-2">
+                      <p className="text-muted-foreground">Nenhum dado disponível</p>
+                      <p className="text-sm text-muted-foreground">
+                        Verifique se há alunos cadastrados
+                      </p>
+                    </div>
+                  )}
                 </ResponsiveContainer>
               </CardContent>
             </Card>

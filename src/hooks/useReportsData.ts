@@ -150,8 +150,10 @@ export const useReportsData = () => {
       console.log(`📊 [useReportsData] Class Distribution processado: ${classDistribution.length} turmas`);
       console.log('📊 [useReportsData] Amostra:', classDistribution.slice(0, 3));
 
-      // Process top absent students
-      const topAbsentStudents = attendanceLast7Days && profiles ? processTopAbsentStudents(attendanceLast7Days, profiles) : [];
+      // Process top absent students (excluindo evadidos)
+      const topAbsentStudents = attendanceLast7Days && profiles && evasions 
+        ? processTopAbsentStudents(attendanceLast7Days, profiles, evasions) 
+        : [];
       console.log(`📊 [useReportsData] Top Absent Students: ${topAbsentStudents.length} alunos`);
       console.log('📊 [useReportsData] Amostra:', topAbsentStudents.slice(0, 3));
 
@@ -282,7 +284,7 @@ export const useReportsData = () => {
     return result;
   };
 
-  const processTopAbsentStudents = (attendance: any[], profiles: any[]) => {
+  const processTopAbsentStudents = (attendance: any[], profiles: any[], evasions: any[]) => {
     console.log('🔄 [processTopAbsentStudents] Iniciando processamento...');
     console.log('📊 [processTopAbsentStudents] Total attendance:', attendance.length);
     console.log('📊 [processTopAbsentStudents] Total profiles:', profiles.length);
@@ -327,8 +329,28 @@ export const useReportsData = () => {
 
     console.log('📊 [processTopAbsentStudents] Total alunos com registros:', Object.keys(studentAbsences).length);
 
+    // Criar Set de IDs de alunos evadidos (para lookup rápido)
+    const evadedStudentIds = new Set(
+      evasions
+        .filter(evasion => evasion.status === 'active')
+        .map(evasion => evasion.student_id)
+    );
+
+    console.log(`🚫 [processTopAbsentStudents] Total alunos evadidos: ${evadedStudentIds.size}`);
+
     const result = Object.values(studentAbsences)
-      .filter(student => student.absences > 0) // Apenas alunos com faltas
+      .filter(student => {
+        // Excluir alunos com faltas = 0
+        if (student.absences === 0) return false;
+        
+        // Excluir alunos evadidos
+        if (evadedStudentIds.has(student.student_id)) {
+          console.log(`🚫 [processTopAbsentStudents] Excluindo aluno evadido: ${student.name}`);
+          return false;
+        }
+        
+        return true;
+      })
       .map(student => ({
         student_id: student.student_id,
         name: student.name,

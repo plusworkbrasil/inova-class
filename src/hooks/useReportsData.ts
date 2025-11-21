@@ -6,7 +6,7 @@ export interface ReportData {
   attendanceTotals: Array<{ name: string; value: number; count: number; color: string }>;
   gradesBySubject: Array<{ subject: string; average: number }>;
   classDistribution: Array<{ name: string; value: number; color: string }>;
-  topAbsentStudents: Array<{ student_id: string; name: string; class: string; absences: number; percentage: number }>;
+  topAbsentStudents: Array<{ student_id: string; name: string; class: string; absences: number; percentage: number; studentId: string }>;
   topAbsentStudentsPeriod?: string;
   evasionData: Array<{ name: string; value: number; color: string }>;
   activeSubjects: Array<{ 
@@ -245,36 +245,30 @@ export const useReportsData = () => {
   };
 
   const processTopAbsentStudents = (attendance: any[], profiles: any[]) => {
-    const studentAbsences: Record<string, { student_id: string; absences: number; total: number; name: string; class: string }> = {};
+    const studentAbsences: Record<string, { student_id: string; absences: number; total: number; name: string; class: string; studentId: string }> = {};
 
     attendance.forEach(record => {
       if (!studentAbsences[record.student_id]) {
         // Buscar dados do aluno no array profiles que TEM o JOIN com classes
         const studentData = profiles.find(p => p.id === record.student_id);
         
-        // DEBUG TEMPORÁRIO: Ver estrutura real para João Gabriel
-        if (record.student_id === '3ccb329b-2383-495e-9e87-0fdd484a50ec') {
-          console.log('🔍 [DEBUG] João Gabriel - estrutura completa:', {
-            studentData,
-            classes: studentData?.classes,
-            classes_type: typeof studentData?.classes,
-            is_array: Array.isArray(studentData?.classes),
-            classes_name_direct: studentData?.classes?.name,
-            classes_name_array: studentData?.classes?.[0]?.name
-          });
+        // Acesso correto ao nome da turma: classes retorna como objeto ou null do JOIN
+        let className = 'Sem Turma';
+        if (studentData?.classes && typeof studentData.classes === 'object') {
+          className = studentData.classes.name || 'Sem Turma';
         }
         
-        // Acesso robusto: funciona se classes for objeto ou array
-        const className = Array.isArray(studentData?.classes)
-          ? studentData?.classes[0]?.name  // Se for array, pega primeiro elemento
-          : studentData?.classes?.name;    // Se for objeto, acessa direto
+        // ID amigável: prioriza student_id, depois auto_student_id formatado
+        const studentId = studentData?.student_id || 
+                         (studentData?.auto_student_id ? `#${studentData.auto_student_id}` : 'S/N');
         
         studentAbsences[record.student_id] = {
           student_id: record.student_id,
           absences: 0,
           total: 0,
           name: studentData?.name || 'Aluno Desconhecido',
-          class: className || 'Sem Turma'
+          class: className,
+          studentId: studentId
         };
       }
       
@@ -290,7 +284,8 @@ export const useReportsData = () => {
         name: student.name,
         class: student.class,
         absences: student.absences,
-        percentage: parseFloat(((student.absences / student.total) * 100).toFixed(1))
+        percentage: parseFloat(((student.absences / student.total) * 100).toFixed(1)),
+        studentId: student.studentId
       }))
       .sort((a, b) => b.absences - a.absences)
       .slice(0, 10);

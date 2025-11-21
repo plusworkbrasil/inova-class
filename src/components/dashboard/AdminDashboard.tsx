@@ -231,7 +231,15 @@ const AdminDashboard = () => {
                 </div> : filteredTopAbsentStudents.length > 0 ? filteredTopAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
                     <div className="flex-1 cursor-pointer" onClick={() => handleViewStudentHistory(student.student_id)}>
                       <p className="font-medium text-primary hover:underline">{student.name}</p>
-                      <p className="text-sm text-muted-foreground">{student.class}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{student.class}</span>
+                        {student.studentId && (
+                          <>
+                            <span>•</span>
+                            <span className="font-mono">ID: {student.studentId}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-destructive">{student.absences} faltas</p>

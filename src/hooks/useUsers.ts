@@ -59,7 +59,7 @@ export const useUsers = () => {
       // 1. Buscar profiles com classes (sem user_roles para evitar erro de relação)
       let query = supabase
         .from('profiles')
-        .select('*, classes(name)', { count: 'exact' })
+        .select('*, classes!profiles_class_id_fkey(name)', { count: 'exact' })
         .order('created_at', { ascending: false })
         .range(startIndex, endIndex);
 

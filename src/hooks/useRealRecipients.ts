@@ -32,7 +32,7 @@ export const useRealRecipients = () => {
           name,
           email,
           class_id,
-          classes(name)
+          classes!profiles_class_id_fkey(name)
         `)
         .not('class_id', 'is', null)
         .eq('status', 'active');

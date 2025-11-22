@@ -155,17 +155,14 @@ const AdminDashboard = () => {
                         cy="50%" 
                         outerRadius={100} 
                         dataKey="value"
-                        label={({ name, value, count }) => `${name}: ${value}% (${count})`}
+                        label={({ name, value }) => `${name}: ${value}%`}
                       >
                         {reportsData.attendanceTotals.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
                       <Tooltip 
-                        formatter={(value: number, name: string, props: any) => [
-                          `${value}% (${props.payload.count} registros)`,
-                          name
-                        ]}
+                        formatter={(value: number) => `${value}%`}
                       />
                     </PieChart> : <div className="flex items-center justify-center h-full">
                       <p className="text-muted-foreground">Sem dados de frequência</p>

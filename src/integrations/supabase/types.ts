@@ -413,6 +413,69 @@ export type Database = {
           },
         ]
       }
+      equipment_incidents: {
+        Row: {
+          allocation_id: string | null
+          created_at: string
+          description: string
+          equipment_id: string
+          id: string
+          reported_by: string
+          resolution: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: Database["public"]["Enums"]["incident_severity"]
+          status: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_id?: string | null
+          created_at?: string
+          description: string
+          equipment_id: string
+          id?: string
+          reported_by: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          status?: Database["public"]["Enums"]["incident_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_id?: string | null
+          created_at?: string
+          description?: string
+          equipment_id?: string
+          id?: string
+          reported_by?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: Database["public"]["Enums"]["incident_severity"]
+          status?: Database["public"]["Enums"]["incident_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_incidents_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_incidents_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evasions: {
         Row: {
           created_at: string
@@ -1105,6 +1168,8 @@ export type Database = {
         | "teacher"
         | "coordinator"
         | "tutor"
+      incident_severity: "baixa" | "media" | "alta" | "critica"
+      incident_status: "aberto" | "em_analise" | "resolvido" | "fechado"
       shift_type: "manha" | "tarde" | "noite"
     }
     CompositeTypes: {
@@ -1243,6 +1308,8 @@ export const Constants = {
         "coordinator",
         "tutor",
       ],
+      incident_severity: ["baixa", "media", "alta", "critica"],
+      incident_status: ["aberto", "em_analise", "resolvido", "fechado"],
       shift_type: ["manha", "tarde", "noite"],
     },
   },

@@ -2,13 +2,27 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import StatsCard from './StatsCard';
-import { Users, BookOpen, CheckCircle, AlertTriangle, Key } from 'lucide-react';
+import { Users, BookOpen, CheckCircle, AlertTriangle, Key, Monitor } from 'lucide-react';
 import { useInstructorDashboardStats } from '@/hooks/useInstructorDashboardStats';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+import { useEquipmentAllocations } from '@/hooks/useEquipmentAllocations';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 const InstructorDashboard = () => {
   const { stats, loading, error } = useInstructorDashboardStats();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const { data: allAllocations } = useEquipmentAllocations();
+  const navigate = useNavigate();
+  
+  // Filtrar alocações do instrutor (simplificado - idealmente verificar pelo ID do usuário autenticado)
+  const myAllocations = allAllocations.filter(
+    a => a.status === 'ativo'
+  );
+  
+  const pendingReturns = myAllocations.filter(
+    a => new Date(a.end_date) < new Date()
+  ).length;
 
   if (loading) {
     return (
@@ -79,7 +93,38 @@ const InstructorDashboard = () => {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Monitor className="h-5 w-5" />
+              Minhas Alocações
+            </CardTitle>
+            <CardDescription>
+              Equipamentos que você alocou
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Alocações Ativas</span>
+                <Badge variant="default">{myAllocations.length}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Devoluções Pendentes</span>
+                <Badge variant="destructive">{pendingReturns}</Badge>
+              </div>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/equipment')}
+              >
+                Gerenciar Equipamentos
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
         <Card>
           <CardHeader>
             <CardTitle>Minhas Disciplinas</CardTitle>

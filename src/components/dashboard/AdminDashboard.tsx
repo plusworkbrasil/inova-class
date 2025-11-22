@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
@@ -11,6 +12,7 @@ import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX,
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+import { useEquipmentStats } from '@/hooks/useEquipmentStats';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -31,6 +33,7 @@ const AdminDashboard = () => {
   } = useReportsData();
   
   const { data: classes, loading: classesLoading } = useClasses();
+  const { stats: equipmentStats } = useEquipmentStats();
   
   // Filtrar alunos com faltas por turma selecionada
   const filteredTopAbsentStudents = useMemo(() => {
@@ -221,6 +224,43 @@ const AdminDashboard = () => {
           <BirthdayCard />
         </div>
       </div>
+
+      {/* Equipment Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Equipamentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Alocações Ativas</span>
+              <Badge variant="default">{equipmentStats.activeAllocations}</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Equipamentos Disponíveis</span>
+              <Badge variant="secondary">{equipmentStats.available}</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Alocações Atrasadas</span>
+              <Badge variant="destructive">{equipmentStats.overdue}</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Em Manutenção</span>
+              <Badge variant="outline">{equipmentStats.inMaintenance}</Badge>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full mt-2"
+              onClick={() => navigate('/equipment')}
+            >
+              Ver Detalhes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tables Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

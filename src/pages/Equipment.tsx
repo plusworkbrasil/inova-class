@@ -14,10 +14,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEquipment } from '@/hooks/useEquipment';
-import { Plus, Search, Edit, Trash2, Loader2, Users } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Loader2, Users, AlertCircle } from 'lucide-react';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
 import { EquipmentAllocationDialog } from '@/components/ui/equipment-allocation-dialog';
 import { EquipmentAllocationsView } from '@/components/ui/equipment-allocations-view';
+import { EquipmentAllocationsHistory } from '@/components/ui/equipment-allocations-history';
+import { EquipmentIncidentsDialog } from '@/components/ui/equipment-incidents-dialog';
 import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -46,6 +48,8 @@ const Equipment = () => {
   const [editingEquipment, setEditingEquipment] = useState<any | null>(null);
   const [allocationDialogOpen, setAllocationDialogOpen] = useState(false);
   const [selectedEquipmentForAllocation, setSelectedEquipmentForAllocation] = useState<any | null>(null);
+  const [incidentsDialogOpen, setIncidentsDialogOpen] = useState(false);
+  const [selectedEquipmentForIncidents, setSelectedEquipmentForIncidents] = useState<any | null>(null);
   
   const { data, loading, createEquipment, updateEquipment, deleteEquipment } = useEquipment();
 
@@ -374,11 +378,12 @@ const Equipment = () => {
 
         <CardContent>
           <Tabs defaultValue={userRole === 'instructor' ? 'allocations' : 'equipments'} className="w-full">
-            <TabsList className={`grid w-full ${userRole === 'instructor' ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            <TabsList className={`grid w-full ${userRole === 'instructor' ? 'grid-cols-2' : 'grid-cols-3'}`}>
               {(userRole === 'admin' || userRole === 'secretary') && (
                 <TabsTrigger value="equipments">Equipamentos</TabsTrigger>
               )}
               <TabsTrigger value="allocations">Alocações</TabsTrigger>
+              <TabsTrigger value="history">Histórico</TabsTrigger>
             </TabsList>
             
             <TabsContent value="equipments" className="mt-6">
@@ -437,6 +442,17 @@ const Equipment = () => {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => {
+                                setSelectedEquipmentForIncidents(equipment);
+                                setIncidentsDialogOpen(true);
+                              }}
+                              title="Ver ocorrências"
+                            >
+                              <AlertCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleAllocate(equipment)}
                               title="Alocar para aluno"
                             >
@@ -474,9 +490,23 @@ const Equipment = () => {
             <TabsContent value="allocations" className="mt-6">
               <EquipmentAllocationsView />
             </TabsContent>
+
+            <TabsContent value="history" className="mt-6">
+              <EquipmentAllocationsHistory />
+            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>
+
+      {/* Incidents Dialog */}
+      {selectedEquipmentForIncidents && (
+        <EquipmentIncidentsDialog
+          open={incidentsDialogOpen}
+          onOpenChange={setIncidentsDialogOpen}
+          equipmentId={selectedEquipmentForIncidents.id}
+          equipmentName={selectedEquipmentForIncidents.name}
+        />
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editingEquipment} onOpenChange={(open) => !open && setEditingEquipment(null)}>

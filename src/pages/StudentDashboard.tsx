@@ -15,6 +15,7 @@ import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+import { StudentEquipmentCard } from '@/components/dashboard/StudentEquipmentCard';
 
 const StudentDashboard = () => {
   const { studentId } = useParams();
@@ -397,6 +398,9 @@ const StudentDashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Student Equipment Card */}
+        <StudentEquipmentCard />
 
         {/* Módulo de Avisos Completo para Alunos */}
         <StudentNotificationCenter studentRole="student" />

@@ -356,13 +356,18 @@ const Grades = () => {
                         <TableCell>{teacher?.name || 'N/A'}</TableCell>
                         <TableCell>
                           <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => openEditForm(grade)}
-                            >
-                              <Edit size={14} />
-                            </Button>
+                            {(
+                              ['admin', 'secretary'].includes(userRole) || 
+                              (userRole === 'instructor' && grade.teacher_id === profile?.id)
+                            ) && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => openEditForm(grade)}
+                              >
+                                <Edit size={14} />
+                              </Button>
+                            )}
                             
                             {(
                               ['admin', 'secretary'].includes(userRole) || 

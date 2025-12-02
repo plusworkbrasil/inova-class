@@ -20,7 +20,7 @@ import { UserRole } from '@/types/user';
 
 const Grades = () => {
   const { profile } = useAuth();
-  const { data: grades, loading: gradesLoading, createGrade, updateGrade, deleteGrade } = useSupabaseGrades();
+  const { data: grades, loading: gradesLoading, createGrade, createBatchGrades, updateGrade, deleteGrade } = useSupabaseGrades();
   const { data: classes } = useSupabaseClasses();
   const { data: subjects } = useSupabaseSubjects();
   const { users } = useUsers();
@@ -93,20 +93,9 @@ const Grades = () => {
 
   const handleCreateMultipleGrades = async (gradesData: any[]) => {
     try {
-      for (const gradeData of gradesData) {
-        await createGrade(gradeData);
-      }
-      toast({
-        title: "Notas lançadas com sucesso!",
-        description: `${gradesData.length} notas foram adicionadas.`,
-      });
+      await createBatchGrades(gradesData);
     } catch (error) {
       console.error('Error creating multiple grades:', error);
-      toast({
-        variant: "destructive",
-        title: "Erro ao lançar notas",
-        description: "Ocorreu um erro ao salvar as notas.",
-      });
     }
   };
 
@@ -375,7 +364,10 @@ const Grades = () => {
                               <Edit size={14} />
                             </Button>
                             
-                            {['admin', 'secretary'].includes(userRole) && (
+                            {(
+                              ['admin', 'secretary'].includes(userRole) || 
+                              (userRole === 'instructor' && grade.teacher_id === profile?.id)
+                            ) && (
                               <Button 
                                 variant="destructive" 
                                 size="sm"

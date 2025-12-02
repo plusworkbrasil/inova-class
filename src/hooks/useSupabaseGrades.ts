@@ -104,6 +104,49 @@ export const useSupabaseGrades = () => {
     }
   };
 
+  const createBatchGrades = async (gradesData: Omit<Grade, 'id' | 'created_at' | 'updated_at'>[]) => {
+    try {
+      console.log('Hook createBatchGrades - dados recebidos:', gradesData);
+      
+      // Validar dados antes de enviar
+      if (!gradesData.length) {
+        throw new Error('Nenhuma nota para inserir');
+      }
+
+      const { data, error } = await supabase
+        .from('grades')
+        .insert(gradesData)
+        .select();
+
+      console.log('Resultado da inserção em lote:', { data, error });
+
+      if (error) {
+        console.error('Erro do Supabase:', error);
+        throw error;
+      }
+
+      await fetchGrades();
+      console.log('Notas criadas com sucesso em lote');
+      
+      toast({
+        title: "Sucesso!",
+        description: `${gradesData.length} notas lançadas com sucesso.`
+      });
+
+      return data;
+    } catch (err: any) {
+      console.error('Erro completo no createBatchGrades:', err);
+      const errorMessage = err?.message || err?.error_description || "Erro desconhecido ao lançar notas em lote.";
+      
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: errorMessage
+      });
+      throw err;
+    }
+  };
+
   const updateGrade = async (id: string, updates: Partial<Grade>) => {
     try {
       const { error } = await supabase
@@ -181,6 +224,7 @@ export const useSupabaseGrades = () => {
     error,
     refetch: fetchGrades,
     createGrade,
+    createBatchGrades,
     updateGrade,
     deleteGrade
   };

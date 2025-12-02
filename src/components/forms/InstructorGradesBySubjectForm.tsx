@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Users, BookOpen, Edit } from 'lucide-react';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -60,6 +61,7 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
   const [selectedSubject, setSelectedSubject] = useState<any>(null);
 
   const { data: subjects } = useSupabaseSubjects();
+  const { data: classes } = useSupabaseClasses();
   const { profile } = useAuth();
   const { toast } = useToast();
 
@@ -268,7 +270,8 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
                       <SelectContent>
                         {instructorSubjects.map((subject) => {
                           const classData = subjects?.find(s => s.id === subject.id);
-                          const className = classData?.class_id ? ` - Turma ID: ${classData.class_id}` : '';
+                          const classInfo = classes?.find(c => c.id === classData?.class_id);
+                          const className = classInfo ? ` - ${classInfo.name}` : '';
                           return (
                             <SelectItem key={subject.id} value={subject.id}>
                               {subject.name}{className}

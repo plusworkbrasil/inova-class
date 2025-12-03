@@ -193,12 +193,21 @@ export const SubjectAttendanceMatrixDialog = ({
             </div>
           ) : (
             <>
-              <ScrollArea className="w-full">
+              {/* Total de alunos da chamada */}
+              <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-3">
+                <Users className="h-5 w-5 text-primary" />
+                <span className="font-semibold text-primary">
+                  Total de Alunos na Chamada: {students.length}
+                </span>
+              </div>
+
+              {/* Tabela com barra de rolagem vertical e horizontal */}
+              <ScrollArea className="h-[400px] w-full border rounded-lg">
                 <div className="min-w-max">
                   <table className="w-full border-collapse">
-                    <thead>
+                    <thead className="sticky top-0 z-20 bg-background">
                       <tr className="border-b">
-                        <th className="sticky left-0 z-10 bg-background px-4 py-3 text-left font-semibold min-w-[200px]">
+                        <th className="sticky left-0 z-30 bg-background px-4 py-3 text-left font-semibold min-w-[200px]">
                           Aluno
                         </th>
                         {dates.map((date) => (

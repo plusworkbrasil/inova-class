@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +7,7 @@ import { useInstructorSubjectAttendance } from '@/hooks/useInstructorSubjectAtte
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarDays, Users, AlertCircle, FileDown, FileSpreadsheet } from 'lucide-react';
+import { CalendarDays, Users, AlertCircle, FileDown, FileSpreadsheet, BarChart3, TrendingUp, CheckCircle, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { exportAttendanceMatrixToPDF, exportAttendanceMatrixToExcel } from '@/lib/attendanceExport';
 import { toast } from 'sonner';
@@ -32,6 +33,18 @@ export const SubjectAttendanceMatrixDialog = ({
     open ? subjectId : null,
     open ? classId : null
   );
+
+  // Calcular estatísticas gerais da turma
+  const classStats = useMemo(() => {
+    if (students.length === 0) {
+      return { averageAttendance: 0, totalPresent: 0, totalAbsent: 0, totalRecords: 0 };
+    }
+    const totalPresent = students.reduce((sum, s) => sum + s.total_present, 0);
+    const totalAbsent = students.reduce((sum, s) => sum + s.total_absent, 0);
+    const totalRecords = totalPresent + totalAbsent;
+    const averageAttendance = totalRecords > 0 ? (totalPresent / totalRecords) * 100 : 0;
+    return { averageAttendance, totalPresent, totalAbsent, totalRecords };
+  }, [students]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -193,12 +206,42 @@ export const SubjectAttendanceMatrixDialog = ({
             </div>
           ) : (
             <>
-              {/* Total de alunos da chamada */}
-              <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-3">
-                <Users className="h-5 w-5 text-primary" />
-                <span className="font-semibold text-primary">
-                  Total de Alunos na Chamada: {students.length}
-                </span>
+              {/* Resumo de presença geral da turma */}
+              <div className="mb-4 p-4 bg-muted/50 border rounded-lg">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Resumo da Turma
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                    <Users className="h-8 w-8 text-primary" />
+                    <div>
+                      <div className="text-2xl font-bold">{students.length}</div>
+                      <div className="text-xs text-muted-foreground">Alunos</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                    <TrendingUp className="h-8 w-8 text-blue-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{classStats.averageAttendance.toFixed(1)}%</div>
+                      <div className="text-xs text-muted-foreground">Média de Presença</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{classStats.totalPresent}</div>
+                      <div className="text-xs text-muted-foreground">Presenças</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                    <XCircle className="h-8 w-8 text-red-500" />
+                    <div>
+                      <div className="text-2xl font-bold">{classStats.totalAbsent}</div>
+                      <div className="text-xs text-muted-foreground">Faltas</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Tabela com barra de rolagem vertical e horizontal */}

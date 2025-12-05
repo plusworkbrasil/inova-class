@@ -268,8 +268,19 @@ export const SubjectAttendanceMatrixDialog = ({
                     </thead>
                     <tbody>
                       {students.map((student) => (
-                        <tr key={student.student_id} className="border-b hover:bg-muted/50">
-                          <td className="sticky left-0 z-10 bg-background px-4 py-2">
+                        <tr 
+                          key={student.student_id} 
+                          className={`border-b hover:bg-muted/50 ${
+                            student.attendance_percentage < 75 
+                              ? 'bg-red-50 dark:bg-red-950/30' 
+                              : ''
+                          }`}
+                        >
+                          <td className={`sticky left-0 z-10 px-4 py-2 ${
+                            student.attendance_percentage < 75 
+                              ? 'bg-red-50 dark:bg-red-950/30' 
+                              : 'bg-background'
+                          }`}>
                             <div>
                               <div className="font-medium">{student.student_name}</div>
                               {student.student_number && (
@@ -326,6 +337,10 @@ export const SubjectAttendanceMatrixDialog = ({
                       -
                     </div>
                     <span>Sem registro</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800"></div>
+                    <span>Frequência abaixo de 75%</span>
                   </div>
                 </div>
               </div>

@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart } from 'lucide-react';
+import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart, Undo2 } from 'lucide-react';
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
@@ -30,8 +30,10 @@ const Evasions = () => {
   const { toast } = useToast();
 
   // Use Supabase hooks
-  const { data: evasions, loading, createEvasion, updateEvasion } = useSupabaseEvasions();
+  const { data: evasions, loading, createEvasion, updateEvasion, cancelEvasion } = useSupabaseEvasions();
   const { classes: realClasses } = useRealRecipients();
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [evasionToCancel, setEvasionToCancel] = useState<any>(null);
 
   const handleCreateEvasion = async (data: any) => {
     if (!profile?.id) return;
@@ -89,6 +91,23 @@ const Evasions = () => {
   const openCreateForm = () => {
     setEditingEvasion(null);
     setIsEvasionFormOpen(true);
+  };
+
+  const handleCancelEvasion = async () => {
+    if (!evasionToCancel) return;
+    
+    try {
+      await cancelEvasion(evasionToCancel.id, evasionToCancel.student_id);
+      setCancelDialogOpen(false);
+      setEvasionToCancel(null);
+    } catch (error) {
+      console.error('Erro ao cancelar evasão:', error);
+    }
+  };
+
+  const openCancelDialog = (evasion: any) => {
+    setEvasionToCancel(evasion);
+    setCancelDialogOpen(true);
   };
 
   const getReasonColor = (reason: string) => {
@@ -261,6 +280,7 @@ const Evasions = () => {
                   <TableHead>Motivo</TableHead>
                   <TableHead>Data da Evasão</TableHead>
                   <TableHead>Registrado por</TableHead>
+                  <TableHead>Status</TableHead>
                   {(userRole === 'admin' || userRole === 'secretary') && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
@@ -275,15 +295,34 @@ const Evasions = () => {
                     </TableCell>
                     <TableCell>{new Date(evasion.date).toLocaleDateString('pt-BR')}</TableCell>
                     <TableCell>{evasion.reporter_profile?.name || 'N/A'}</TableCell>
+                    <TableCell>
+                      <Badge variant={evasion.status === 'active' ? 'destructive' : 'secondary'}>
+                        {evasion.status === 'active' ? 'Ativa' : 'Cancelada'}
+                      </Badge>
+                    </TableCell>
                     {(userRole === 'admin' || userRole === 'secretary') && (
                       <TableCell>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => openEditForm(evasion)}
-                        >
-                          <Edit size={14} />
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditForm(evasion)}
+                            title="Editar"
+                          >
+                            <Edit size={14} />
+                          </Button>
+                          {evasion.status === 'active' && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openCancelDialog(evasion)}
+                              title="Cancelar Evasão"
+                              className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            >
+                              <Undo2 size={14} />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -325,6 +364,34 @@ const Evasions = () => {
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={confirmCreateEvasion}>
                 Confirmar Evasão
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancelar Evasão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja cancelar a evasão de <strong>{evasionToCancel?.profiles?.name}</strong>?
+                <br/><br/>
+                <strong>O que acontecerá:</strong>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>O status da evasão será alterado para "Cancelada"</li>
+                  <li>O aluno será reativado automaticamente</li>
+                  <li>O aluno voltará a aparecer nas listas de frequência</li>
+                  <li>O aluno poderá receber novas alocações de equipamentos</li>
+                </ul>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Voltar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleCancelEvasion}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Confirmar Cancelamento
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

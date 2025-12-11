@@ -177,6 +177,67 @@ export const useSupabaseEvasions = () => {
     }
   };
 
+  const cancelEvasion = async (id: string, studentId: string) => {
+    try {
+      // 1. Buscar nome do aluno para feedback
+      const { data: student } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('id', studentId)
+        .single();
+
+      // 2. Cancelar a evasão
+      const { error: evasionError } = await supabase
+        .from('evasions')
+        .update({ 
+          status: 'cancelled',
+          observations: `[Cancelado em ${new Date().toLocaleDateString('pt-BR')}: Evasão registrada por engano]`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (evasionError) throw evasionError;
+
+      // 3. Reativar o perfil do aluno
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', studentId);
+
+      if (profileError) throw profileError;
+
+      // 4. Registrar auditoria
+      const { data: authData } = await supabase.auth.getUser();
+      if (authData.user) {
+        await supabase
+          .from('audit_logs')
+          .insert({
+            user_id: authData.user.id,
+            action: 'EVASION_CANCELLED',
+            table_name: 'evasions',
+            record_id: id,
+            accessed_fields: ['status']
+          });
+      }
+
+      await fetchEvasions();
+      toast({
+        title: "Evasão cancelada!",
+        description: `${student?.name || 'Aluno'} foi reativado com sucesso.`
+      });
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: err.message || "Erro ao cancelar evasão."
+      });
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchEvasions();
   }, []);
@@ -188,6 +249,7 @@ export const useSupabaseEvasions = () => {
     refetch: fetchEvasions,
     createEvasion,
     updateEvasion,
-    deleteEvasion
+    deleteEvasion,
+    cancelEvasion
   };
 };

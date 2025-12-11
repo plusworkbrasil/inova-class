@@ -2,10 +2,24 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 
+export interface SubjectHistoryData {
+  name: string;
+  attendance_count: number;
+  present_count: number;
+  absent_count: number;
+  attendance_percentage: number;
+  grade_average: number;
+  total_grades: number;
+}
+
 export interface StudentHistoryData {
   attendance: any[];
   grades: any[];
-  subjects: Map<string, { name: string; attendance_count: number; grade_average: number; total_grades: number }>;
+  subjects: Map<string, SubjectHistoryData>;
+  totalAttendance: number;
+  totalPresent: number;
+  totalAbsent: number;
+  overallAttendancePercentage: number;
 }
 
 export const useStudentHistory = (studentId: string | null) => {
@@ -69,7 +83,7 @@ export const useStudentHistory = (studentId: string | null) => {
         }));
 
         // Agrupar por disciplina
-        const subjectsMap = new Map();
+        const subjectsMap = new Map<string, SubjectHistoryData>();
 
         // Processar frequência por disciplina
         formattedAttendance.forEach((att: any) => {
@@ -77,12 +91,22 @@ export const useStudentHistory = (studentId: string | null) => {
             subjectsMap.set(att.subject_id, {
               name: att.subject_name,
               attendance_count: 0,
+              present_count: 0,
+              absent_count: 0,
+              attendance_percentage: 0,
               grade_average: 0,
               total_grades: 0
             });
           }
-          const subject = subjectsMap.get(att.subject_id);
+          const subject = subjectsMap.get(att.subject_id)!;
           subject.attendance_count++;
+          
+          // Contar presenças e ausências
+          if (att.is_present) {
+            subject.present_count++;
+          } else {
+            subject.absent_count++;
+          }
         });
 
         // Processar notas por disciplina
@@ -91,26 +115,44 @@ export const useStudentHistory = (studentId: string | null) => {
             subjectsMap.set(grade.subject_id, {
               name: grade.subjects.name,
               attendance_count: 0,
+              present_count: 0,
+              absent_count: 0,
+              attendance_percentage: 0,
               grade_average: 0,
               total_grades: 0
             });
           }
-          const subject = subjectsMap.get(grade.subject_id);
+          const subject = subjectsMap.get(grade.subject_id)!;
           subject.total_grades++;
           subject.grade_average += (grade.value / grade.max_value) * 10;
         });
 
-        // Calcular médias
+        // Calcular médias e percentuais por disciplina
         subjectsMap.forEach((subject) => {
           if (subject.total_grades > 0) {
             subject.grade_average = subject.grade_average / subject.total_grades;
           }
+          if (subject.attendance_count > 0) {
+            subject.attendance_percentage = (subject.present_count / subject.attendance_count) * 100;
+          }
         });
+
+        // Calcular totais gerais do curso
+        const totalPresent = formattedAttendance.filter((a: any) => a.is_present).length;
+        const totalAbsent = formattedAttendance.filter((a: any) => !a.is_present).length;
+        const totalAttendance = formattedAttendance.length;
+        const overallAttendancePercentage = totalAttendance > 0 
+          ? (totalPresent / totalAttendance) * 100 
+          : 0;
 
         setData({
           attendance: formattedAttendance,
           grades: gradesData || [],
-          subjects: subjectsMap
+          subjects: subjectsMap,
+          totalAttendance,
+          totalPresent,
+          totalAbsent,
+          overallAttendancePercentage
         });
       } catch (err: any) {
         console.error('Erro ao buscar histórico:', err);

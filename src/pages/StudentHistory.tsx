@@ -297,43 +297,155 @@ const StudentHistory = () => {
                   </CardContent>
                 </Card>
               ) : (
-                historyData.attendance.map((record: any) => (
-                  <Card key={record.id}>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <BookOpen className="h-4 w-4" />
-                            <span className="font-semibold">{record.subject_name}</span>
-                            <span className="text-sm text-muted-foreground">| {record.class_name}</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(record.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                          </div>
-                          {record.justification && (
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Justificativa: {record.justification}
-                            </p>
-                          )}
+                <>
+                  {/* Resumo Geral de Frequência do Curso */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Resumo Geral de Frequência do Curso
+                      </CardTitle>
+                      <CardDescription>
+                        Análise combinada de todas as disciplinas frequentadas
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="p-4 bg-muted/50 rounded-lg text-center">
+                          <div className="text-2xl font-bold">{historyData.totalAttendance}</div>
+                          <div className="text-sm text-muted-foreground">Total de Chamadas</div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {record.is_present ? (
-                            <Badge className="bg-green-500">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Presente
-                            </Badge>
+                        
+                        <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-green-600">{historyData.totalPresent}</div>
+                          <div className="text-sm text-green-600 font-medium">
+                            {historyData.overallAttendancePercentage.toFixed(1)}% presente
+                          </div>
+                          <div className="text-xs text-muted-foreground">Presenças</div>
+                        </div>
+                        
+                        <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg text-center">
+                          <div className="text-2xl font-bold text-red-600">{historyData.totalAbsent}</div>
+                          <div className="text-sm text-red-600 font-medium">
+                            {(100 - historyData.overallAttendancePercentage).toFixed(1)}% ausente
+                          </div>
+                          <div className="text-xs text-muted-foreground">Faltas</div>
+                        </div>
+                        
+                        <div className={`p-4 rounded-lg text-center ${
+                          historyData.overallAttendancePercentage >= 75 
+                            ? 'bg-green-100 dark:bg-green-900/30' 
+                            : 'bg-red-100 dark:bg-red-900/30'
+                        }`}>
+                          {historyData.overallAttendancePercentage >= 75 ? (
+                            <CheckCircle className="h-8 w-8 mx-auto text-green-600" />
                           ) : (
-                            <Badge variant="destructive">
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Ausente
-                            </Badge>
+                            <XCircle className="h-8 w-8 mx-auto text-red-600" />
                           )}
+                          <div className="text-sm font-medium mt-1">
+                            {historyData.overallAttendancePercentage >= 75 ? 'Aprovado' : 'Em Risco'}
+                          </div>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))
+
+                  {/* Frequência por Disciplina */}
+                  {historyData.subjects.size > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <BookOpen className="h-5 w-5" />
+                          Frequência por Disciplina
+                        </CardTitle>
+                        <CardDescription>
+                          Detalhamento da frequência em cada matéria
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {Array.from(historyData.subjects.entries())
+                            .filter(([_, subject]) => subject.attendance_count > 0)
+                            .map(([subjectId, subject]) => (
+                            <div key={subjectId} className="p-4 border rounded-lg">
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold">{subject.name}</h4>
+                                <Badge variant={subject.attendance_percentage >= 75 ? 'default' : 'destructive'}>
+                                  {subject.attendance_percentage.toFixed(1)}%
+                                </Badge>
+                              </div>
+                              
+                              {/* Barra de progresso visual */}
+                              <div className="w-full bg-muted rounded-full h-2.5 mb-2">
+                                <div 
+                                  className={`h-2.5 rounded-full transition-all ${
+                                    subject.attendance_percentage >= 75 ? 'bg-green-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${Math.min(subject.attendance_percentage, 100)}%` }}
+                                />
+                              </div>
+                              
+                              <div className="flex gap-4 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <CheckCircle className="h-3 w-3 text-green-500" />
+                                  {subject.present_count} presenças
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <XCircle className="h-3 w-3 text-red-500" />
+                                  {subject.absent_count} faltas
+                                </span>
+                                <span>| {subject.attendance_count} chamadas</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Lista de Registros */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Histórico Detalhado</CardTitle>
+                      <CardDescription>Todos os registros de frequência</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {historyData.attendance.map((record: any) => (
+                        <div key={record.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <BookOpen className="h-4 w-4" />
+                              <span className="font-semibold">{record.subject_name}</span>
+                              <span className="text-sm text-muted-foreground">| {record.class_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(record.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                            </div>
+                            {record.justification && (
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Justificativa: {record.justification}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {record.is_present ? (
+                              <Badge className="bg-green-500">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Presente
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">
+                                <XCircle className="h-3 w-3 mr-1" />
+                                Ausente
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </>
               )}
             </TabsContent>
           </Tabs>

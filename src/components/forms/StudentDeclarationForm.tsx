@@ -7,16 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileUpload } from '@/components/ui/file-upload';
 import { useSupabaseStorage } from '@/hooks/useSupabaseStorage';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Upload, User } from 'lucide-react';
+import { FileText, Upload, User, Calendar, AlertCircle } from 'lucide-react';
 
 const studentDeclarationSchema = z.object({
-  type: z.string().min(1, 'Tipo de declaração é obrigatório'),
+  type: z.string().min(1, 'Tipo de justificativa é obrigatório'),
+  absence_date: z.string().min(1, 'Data da falta é obrigatória'),
   observations: z.string().optional(),
-  attachMedicalCertificate: z.boolean().default(false),
 });
 
 type StudentDeclarationValues = z.infer<typeof studentDeclarationSchema>;
@@ -39,73 +40,47 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
   currentUser
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [showMedicalUpload, setShowMedicalUpload] = useState(false);
   const { uploadFile, uploading } = useSupabaseStorage();
 
   const form = useForm<StudentDeclarationValues>({
     resolver: zodResolver(studentDeclarationSchema),
     defaultValues: {
       type: '',
+      absence_date: '',
       observations: '',
-      attachMedicalCertificate: false,
     },
   });
 
-  const declarationTypes = [
+  const justificationTypes = [
     {
-      value: 'Declaração de Matrícula',
-      label: 'Declaração de Matrícula',
-      description: 'Comprova que você está matriculado na instituição',
-      icon: '📄'
-    },
-    {
-      value: 'Declaração de Frequência',
-      label: 'Declaração de Frequência',
-      description: 'Atesta sua frequência nas aulas',
-      icon: '📊'
-    },
-    {
-      value: 'Histórico Escolar',
-      label: 'Histórico Escolar',
-      description: 'Documento com seu histórico completo de notas',
-      icon: '📋'
-    },
-    {
-      value: 'Declaração de Conclusão',
-      label: 'Declaração de Conclusão',
-      description: 'Comprova a conclusão do seu curso',
-      icon: '🎓'
-    },
-    {
-      value: 'Declaração de Escolaridade',
-      label: 'Declaração de Escolaridade',
-      description: 'Atesta seu nível de escolaridade atual',
-      icon: '📚'
-    },
-    {
-      value: 'Boletim Escolar',
-      label: 'Boletim Escolar',
-      description: 'Relatório das suas notas do período letivo',
-      icon: '📈'
-    },
-    {
-      value: 'Justificativa de Falta',
-      label: 'Justificativa de Falta',
-      description: 'Solicitação para justificar faltas com atestado médico',
+      value: 'atestado_medico',
+      label: 'Atestado Médico',
+      description: 'Justificativa de falta por motivo de saúde com atestado médico',
       icon: '🏥'
+    },
+    {
+      value: 'atestado_trabalho',
+      label: 'Atestado de Trabalho',
+      description: 'Justificativa de falta por motivo profissional com declaração da empresa',
+      icon: '💼'
+    },
+    {
+      value: 'outros',
+      label: 'Outros',
+      description: 'Outros motivos de falta com documentação comprobatória',
+      icon: '📄'
     }
   ];
 
   const selectedType = form.watch('type');
-  const selectedDeclaration = declarationTypes.find(d => d.value === selectedType);
-  const isMedicalJustification = selectedType === 'Justificativa de Falta';
+  const selectedJustification = justificationTypes.find(j => j.value === selectedType);
 
   const handleSubmit = async (data: StudentDeclarationValues) => {
     let filePath = '';
     
-    // Upload file if selected (medical certificate)
+    // Upload file if selected
     if (selectedFile) {
-      const uploadedPath = await uploadFile(selectedFile, 'declarations', 'medical-certificates');
+      const uploadedPath = await uploadFile(selectedFile, 'declarations', 'justificativas');
       if (uploadedPath) {
         filePath = uploadedPath;
       } else {
@@ -119,9 +94,9 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
       studentName: currentUser?.name || '',
       studentId: currentUser?.studentId || '',
       requestedBy: 'Aluno',
-      urgency: isMedicalJustification ? 'normal' : 'baixa',
-      title: isMedicalJustification ? 'Justificativa de Falta com Atestado Médico' : data.type,
-      purpose: isMedicalJustification ? 'Justificar faltas por motivo médico' : '',
+      urgency: 'normal',
+      title: `Justificativa de Falta - ${selectedJustification?.label || data.type}`,
+      purpose: `Justificar falta do dia ${data.absence_date}`,
       file: selectedFile || undefined,
       filePath
     };
@@ -130,18 +105,6 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
     onOpenChange(false);
     form.reset();
     setSelectedFile(null);
-    setShowMedicalUpload(false);
-  };
-
-  const handleTypeChange = (value: string) => {
-    form.setValue('type', value);
-    const isMedical = value === 'Justificativa de Falta';
-    setShowMedicalUpload(isMedical);
-    form.setValue('attachMedicalCertificate', isMedical);
-    
-    if (!isMedical) {
-      setSelectedFile(null);
-    }
   };
 
   return (
@@ -150,7 +113,7 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Nova Solicitação de Declaração
+            Enviar Justificativa de Falta
           </DialogTitle>
         </DialogHeader>
         
@@ -180,7 +143,7 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
               </CardContent>
             </Card>
 
-            {/* Tipo de Declaração */}
+            {/* Tipo de Justificativa */}
             <Card>
               <CardContent className="pt-6">
                 <FormField
@@ -188,15 +151,15 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-lg font-medium">Tipo de Declaração</FormLabel>
-                      <Select onValueChange={handleTypeChange} value={field.value}>
+                      <FormLabel className="text-lg font-medium">Tipo de Justificativa *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Selecione o tipo de declaração que você precisa" />
+                            <SelectValue placeholder="Selecione o tipo de justificativa" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="max-h-80">
-                          {declarationTypes.map((type) => (
+                        <SelectContent>
+                          {justificationTypes.map((type) => (
                             <SelectItem key={type.value} value={type.value} className="py-3">
                               <div className="flex items-start gap-3">
                                 <span className="text-lg">{type.icon}</span>
@@ -213,24 +176,17 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
                       </Select>
                       <FormMessage />
                       
-                      {selectedDeclaration && (
+                      {selectedJustification && (
                         <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-lg">{selectedDeclaration.icon}</span>
+                            <span className="text-lg">{selectedJustification.icon}</span>
                             <Badge variant="secondary" className="text-primary">
-                              {selectedDeclaration.label}
+                              {selectedJustification.label}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            {selectedDeclaration.description}
+                            {selectedJustification.description}
                           </p>
-                          {isMedicalJustification && (
-                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                              <p className="text-sm text-blue-800 font-medium">
-                                📋 Para justificativa de faltas, você precisará anexar o atestado médico.
-                              </p>
-                            </div>
-                          )}
                         </div>
                       )}
                     </FormItem>
@@ -239,43 +195,74 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
               </CardContent>
             </Card>
 
-            {/* Upload de Atestado Médico */}
-            {showMedicalUpload && (
-              <Card className="border-blue-200 bg-blue-50/50">
-                <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4 flex items-center gap-2 text-blue-800">
-                    <Upload className="h-5 w-5" />
-                    Anexar Atestado Médico
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="p-4 bg-white border border-blue-200 rounded-lg">
-                      <h4 className="font-medium text-blue-800 mb-2">📋 Instruções Importantes:</h4>
-                      <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• O atestado deve estar legível e completo</li>
-                        <li>• Deve conter data, CRM do médico e período de afastamento</li>
-                        <li>• Formatos aceitos: PDF, JPG, PNG</li>
-                        <li>• Tamanho máximo: 10MB</li>
-                      </ul>
-                    </div>
-                    
-                    <FileUpload
-                      onFileSelect={setSelectedFile}
-                      currentFile={selectedFile}
-                      onRemoveFile={() => setSelectedFile(null)}
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      maxSize={10}
-                      disabled={uploading}
-                    />
-                    
-                    {!selectedFile && (
-                      <p className="text-sm text-muted-foreground text-center mt-2">
-                        📎 Clique na área acima para anexar seu atestado médico
+            {/* Data da Falta */}
+            <Card>
+              <CardContent className="pt-6">
+                <FormField
+                  control={form.control}
+                  name="absence_date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-medium flex items-center gap-2">
+                        <Calendar className="h-5 w-5 text-muted-foreground" />
+                        Data da Falta *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          className="h-12"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Informe a data em que você faltou e precisa justificar
                       </p>
-                    )}
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Upload de Documento */}
+            <Card className="border-blue-200 bg-blue-50/50 dark:bg-blue-950/20">
+              <CardContent className="pt-6">
+                <h3 className="text-lg font-medium mb-4 flex items-center gap-2 text-blue-800 dark:text-blue-300">
+                  <Upload className="h-5 w-5" />
+                  Anexar Documento Comprobatório *
+                </h3>
+                <div className="space-y-4">
+                  <div className="p-4 bg-white dark:bg-background border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      Instruções Importantes
+                    </h4>
+                    <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                      <li>• O documento deve estar legível e completo</li>
+                      <li>• Atestados médicos devem conter CRM e período de afastamento</li>
+                      <li>• Declarações de trabalho devem estar em papel timbrado</li>
+                      <li>• Formatos aceitos: PDF, JPG, PNG</li>
+                      <li>• Tamanho máximo: 10MB</li>
+                    </ul>
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                  
+                  <FileUpload
+                    onFileSelect={setSelectedFile}
+                    currentFile={selectedFile}
+                    onRemoveFile={() => setSelectedFile(null)}
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    maxSize={10}
+                    disabled={uploading}
+                  />
+                  
+                  {!selectedFile && (
+                    <p className="text-sm text-muted-foreground text-center mt-2">
+                      📎 Clique na área acima para anexar seu documento
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Observações */}
             <Card>
@@ -288,21 +275,14 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
                       <FormLabel className="text-lg font-medium">Observações</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder={
-                            isMedicalJustification 
-                              ? "Descreva brevemente o motivo das faltas ou informações adicionais sobre o atestado..."
-                              : "Informações adicionais que podem ajudar no processamento da sua solicitação..."
-                          }
-                          className="min-h-[120px] resize-none"
+                          placeholder="Informações adicionais sobre a justificativa (opcional)..."
+                          className="min-h-[100px] resize-none"
                           {...field} 
                         />
                       </FormControl>
                       <FormMessage />
                       <p className="text-xs text-muted-foreground mt-2">
-                        {isMedicalJustification 
-                          ? "Opcional: Você pode adicionar informações sobre o período das faltas ou outros detalhes relevantes."
-                          : "Opcional: Inclua qualquer informação adicional que possa ser útil para o processamento da declaração."
-                        }
+                        Opcional: Você pode adicionar informações adicionais relevantes
                       </p>
                     </FormItem>
                   )}
@@ -315,13 +295,11 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
               <Button 
                 type="submit" 
                 className="flex-1" 
-                disabled={uploading || (isMedicalJustification && !selectedFile)}
+                disabled={uploading || !selectedFile}
               >
                 {uploading 
                   ? 'Enviando...' 
-                  : isMedicalJustification
-                    ? 'Enviar Justificativa'
-                    : 'Solicitar Declaração'
+                  : 'Enviar Justificativa'
                 }
               </Button>
               <Button 
@@ -335,21 +313,18 @@ export const StudentDeclarationForm: React.FC<StudentDeclarationFormProps> = ({
               </Button>
             </div>
 
-            {/* Informação sobre prazo */}
-            {selectedType && (
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  ⏰ <strong>Prazo de processamento:</strong> {' '}
-                  {isMedicalJustification 
-                    ? "Até 2 dias úteis após análise do documento"
-                    : "Entre 3 a 5 dias úteis, dependendo do tipo de declaração"
-                  }
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  📧 Você receberá uma notificação quando sua solicitação for processada.
-                </p>
-              </div>
-            )}
+            {/* Informação sobre aprovação */}
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                ⏰ <strong>Prazo de análise:</strong> Até 2 dias úteis após o envio
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                ✅ Após a aprovação pela secretaria, a falta será abonada automaticamente
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                📧 Você será notificado sobre o status da sua justificativa
+              </p>
+            </div>
           </form>
         </Form>
       </DialogContent>

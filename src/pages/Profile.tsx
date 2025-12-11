@@ -10,16 +10,18 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle, User, Key } from 'lucide-react';
+import { CalendarDays, Mail, Phone, MapPin, GraduationCap, BookOpen, Megaphone, AlertCircle, User, Key, Settings } from 'lucide-react';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 import { UserRole } from '@/types/user';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
+import { StudentProfileSettingsForm } from '@/components/forms/StudentProfileSettingsForm';
 
 const Profile = () => {
   const { user, profile, isAuthenticated } = useAuth();
   const { data: communications, loading: commLoading } = useCommunications();
   const { data: classes } = useSupabaseClasses();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   
   // Fallback para quando não temos profile ainda
   const userRole = (profile?.role as UserRole) || 'student';
@@ -82,11 +84,25 @@ const Profile = () => {
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
         {/* Cabeçalho */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
-          <p className="text-muted-foreground">
-            Visualize suas informações pessoais e avisos importantes
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Meu Perfil</h1>
+            <p className="text-muted-foreground">
+              Visualize suas informações pessoais e avisos importantes
+            </p>
+          </div>
+          
+          {/* Botão de Configurações do Perfil para Alunos */}
+          {userRole === 'student' && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsProfileSettingsOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Configurações do Perfil
+            </Button>
+          )}
         </div>
 
         {/* Avisos da Secretaria */}
@@ -173,7 +189,7 @@ const Profile = () => {
                 </div>
               </div>
               <Separator />
-              <div className="pt-4">
+              <div className="pt-4 space-y-2">
                 <Button 
                   variant="outline" 
                   className="w-full flex items-center gap-2"
@@ -182,6 +198,17 @@ const Profile = () => {
                   <Key className="h-4 w-4" />
                   Alterar Senha
                 </Button>
+                
+                {userRole === 'student' && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full flex items-center gap-2"
+                    onClick={() => setIsProfileSettingsOpen(true)}
+                  >
+                    <Settings className="h-4 w-4" />
+                    Editar Perfil
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -272,6 +299,12 @@ const Profile = () => {
         <ChangeOwnPasswordDialog
           open={isChangePasswordOpen}
           onOpenChange={setIsChangePasswordOpen}
+        />
+
+        <StudentProfileSettingsForm
+          open={isProfileSettingsOpen}
+          onOpenChange={setIsProfileSettingsOpen}
+          profile={profile}
         />
       </div>
     </Layout>

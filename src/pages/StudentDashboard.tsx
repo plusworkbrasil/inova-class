@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { ArrowLeft, User, Calendar, BookOpen, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown, Key, Shield } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { ArrowLeft, User, Calendar, BookOpen, AlertTriangle, CheckCircle, Clock, TrendingUp, TrendingDown, Key, Shield, FileText, Settings } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import StudentBanner from '@/components/dashboard/StudentBanner';
 import StudentNotificationCenter from '@/components/dashboard/StudentNotificationCenter';
@@ -14,8 +14,11 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseAttendance } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
+import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 import { StudentEquipmentCard } from '@/components/dashboard/StudentEquipmentCard';
+import { StudentProfileSettingsForm } from '@/components/forms/StudentProfileSettingsForm';
+import { cn } from '@/lib/utils';
 
 const StudentDashboard = () => {
   const { studentId } = useParams();
@@ -24,12 +27,14 @@ const StudentDashboard = () => {
   const [userRole, setUserRole] = useState<UserRole>('admin');
   const [userName, setUserName] = useState('Admin');
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
   // Hooks do Supabase
   const { user, profile } = useSupabaseAuth();
   const { data: grades, loading: gradesLoading } = useSupabaseGrades();
   const { data: attendance, loading: attendanceLoading } = useSupabaseAttendance();
   const { data: subjects } = useSupabaseSubjects();
+  const { data: declarations } = useSupabaseDeclarations();
 
   useEffect(() => {
     // Recuperar dados do usuário do localStorage
@@ -64,6 +69,16 @@ const StudentDashboard = () => {
     if (!currentStudentId) return [];
     return attendance.filter(att => att.student_id === currentStudentId);
   }, [attendance, currentStudentId]);
+
+  // Declarações do aluno
+  const studentDeclarations = useMemo(() => {
+    if (!currentStudentId) return [];
+    return declarations.filter(dec => dec.student_id === currentStudentId);
+  }, [declarations, currentStudentId]);
+
+  const pendingDeclarations = studentDeclarations.filter(d => d.status === 'pending').length;
+  const approvedDeclarations = studentDeclarations.filter(d => d.status === 'approved').length;
+  const rejectedDeclarations = studentDeclarations.filter(d => d.status === 'rejected').length;
 
   // Informações do estudante
   const studentInfo = {
@@ -141,9 +156,12 @@ const StudentDashboard = () => {
 
   // Cálculos de estatísticas
   const totalAbsences = studentAttendance.filter(att => !att.is_present).length;
+  const totalPresences = studentAttendance.filter(att => att.is_present).length;
   const totalDays = studentAttendance.length;
-  const attendancePercentage = totalDays > 0 ? ((totalDays - totalAbsences) / totalDays * 100).toFixed(1) : '0.0';
+  const attendancePercentage = totalDays > 0 ? ((totalPresences) / totalDays * 100) : 0;
+  const attendancePercentageFormatted = attendancePercentage.toFixed(1);
   const averageGrade = gradeData.length > 0 ? (gradeData.reduce((acc, grade) => acc + grade.grade, 0) / gradeData.length).toFixed(1) : '0.0';
+  const isAttendanceAtRisk = attendancePercentage < 75;
 
   const getGradeTrend = (trend: string) => {
     switch (trend) {
@@ -174,20 +192,34 @@ const StudentDashboard = () => {
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => navigate(returnTo)}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft size={16} />
-            Voltar
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard do Aluno</h1>
-            <p className="text-muted-foreground">{studentInfo.name} - {studentInfo.class}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate(returnTo)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft size={16} />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Dashboard do Aluno</h1>
+              <p className="text-muted-foreground">{studentInfo.name} - {studentInfo.class}</p>
+            </div>
           </div>
+          
+          {/* Botão de Configurações do Perfil */}
+          {userRole === 'student' && (
+            <Button 
+              variant="outline" 
+              onClick={() => setIsProfileSettingsOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Settings size={16} />
+              Configurações do Perfil
+            </Button>
+          )}
         </div>
 
         {/* Banner de avisos urgentes para alunos */}
@@ -219,6 +251,95 @@ const StudentDashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card de Frequência Destacado */}
+          <Card className={cn(
+            "relative overflow-hidden",
+            isAttendanceAtRisk && "border-destructive bg-destructive/5"
+          )}>
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center text-center">
+                <p className="text-sm font-medium text-muted-foreground mb-2">Minha Frequência</p>
+                <p className={cn(
+                  "text-5xl font-bold",
+                  isAttendanceAtRisk ? "text-destructive" : "text-green-600"
+                )}>
+                  {attendancePercentageFormatted}%
+                </p>
+                <Badge 
+                  variant={isAttendanceAtRisk ? "destructive" : "default"}
+                  className="mt-2"
+                >
+                  {isAttendanceAtRisk ? '⚠️ Atenção!' : '✓ Regular'}
+                </Badge>
+                {isAttendanceAtRisk && (
+                  <p className="text-xs text-destructive mt-2">
+                    Frequência abaixo de 75% - Risco de reprovação
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">
+                  {totalPresences} presenças / {totalAbsences} faltas
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Média Geral</p>
+                  <p className="text-3xl font-bold text-green-600">{averageGrade}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {studentGrades.length} notas registradas
+                  </p>
+                </div>
+                <BookOpen className="h-8 w-8 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total de Faltas</p>
+                  <p className="text-3xl font-bold text-amber-600">{totalAbsences}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {recentAbsences.filter(a => !a.justified).length} não justificadas
+                  </p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-amber-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Card de Justificativas */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-medium text-muted-foreground">Minhas Justificativas</p>
+                <FileText className="h-6 w-6 text-primary" />
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-xl font-bold text-amber-600">{pendingDeclarations}</p>
+                  <p className="text-xs text-muted-foreground">Aguardando</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-green-600">{approvedDeclarations}</p>
+                  <p className="text-xs text-muted-foreground">Aprovadas</p>
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-destructive">{rejectedDeclarations}</p>
+                  <p className="text-xs text-muted-foreground">Rejeitadas</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Security Card */}
         <Card>
           <CardHeader>
@@ -241,59 +362,6 @@ const StudentDashboard = () => {
             </Button>
           </CardContent>
         </Card>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Frequência</p>
-                  <p className="text-3xl font-bold text-primary">{attendancePercentage}%</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Média Geral</p>
-                  <p className="text-3xl font-bold text-success">{averageGrade}</p>
-                </div>
-                <BookOpen className="h-8 w-8 text-success" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total de Faltas</p>
-                  <p className="text-3xl font-bold text-warning">{totalAbsences}</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-warning" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Faltas Não Justificadas</p>
-                  <p className="text-3xl font-bold text-destructive">
-                    {recentAbsences.filter(absence => !absence.justified).length}
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-destructive" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -408,6 +476,12 @@ const StudentDashboard = () => {
         <ChangeOwnPasswordDialog
           open={isChangePasswordOpen}
           onOpenChange={setIsChangePasswordOpen}
+        />
+
+        <StudentProfileSettingsForm
+          open={isProfileSettingsOpen}
+          onOpenChange={setIsProfileSettingsOpen}
+          profile={profile}
         />
       </div>
     </Layout>

@@ -21,22 +21,24 @@ import { cn } from '@/lib/utils';
 import { passwordSchema } from '@/lib/passwordValidation';
 
 const studentSchema = z.object({
+  // Campos obrigatórios
   fullName: z.string().min(2, 'Nome completo é obrigatório'),
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF deve ter o formato 000.000.000-00'),
   phone: z.string().min(10, 'Telefone é obrigatório'),
   email: z.string().email('Email inválido'),
   password: passwordSchema,
+  // Campos opcionais
   class_id: z.string().optional(),
-  birth_date: z.date().optional(),
-  parentName: z.string().min(2, 'Nome dos pais é obrigatório'),
-  escolaridade: z.string().min(1, 'Escolaridade é obrigatória'),
-  cep: z.string().regex(/^\d{5}-\d{3}$/, 'CEP deve ter o formato 00000-000'),
-  street: z.string().min(1, 'Logradouro é obrigatório'),
-  number: z.string().min(1, 'Número é obrigatório'),
+  birth_date: z.string().optional(), // Alterado para string para input type="date"
+  parentName: z.string().optional(),
+  escolaridade: z.string().optional(),
+  cep: z.string().optional(),
+  street: z.string().optional(),
+  number: z.string().optional(),
   complement: z.string().optional(),
-  neighborhood: z.string().min(1, 'Bairro é obrigatório'),
-  city: z.string().min(1, 'Cidade é obrigatória'),
-  state: z.string().length(2, 'Estado deve ter 2 caracteres'),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
 });
 
 type StudentFormData = z.infer<typeof studentSchema>;
@@ -66,7 +68,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
       email: '',
       password: '',
       class_id: '',
-      birth_date: undefined,
+      birth_date: '',
       parentName: '',
       escolaridade: '',
       cep: '',
@@ -153,7 +155,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
     const submissionData = {
       ...data,
       photo: photoPreview,
-      birth_date: data.birth_date ? data.birth_date.toISOString().split('T')[0] : undefined
+      birth_date: data.birth_date || undefined
     };
     onSubmit?.(submissionData);
     setOpen(false);
@@ -326,34 +328,13 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Data de Nascimento</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "dd/MM/yyyy") : "Selecione a data"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                          }
-                          initialFocus
-                          className={cn("p-3 pointer-events-auto")}
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        placeholder="DD/MM/AAAA"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -366,27 +347,23 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
               name="escolaridade"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Escolaridade *</FormLabel>
+                  <FormLabel>Escolaridade</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione a escolaridade" />
+                        <SelectValue placeholder="Selecione a escolaridade (opcional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="educacao-infantil">Educação Infantil</SelectItem>
-                      <SelectItem value="1-ano">1º Ano</SelectItem>
-                      <SelectItem value="2-ano">2º Ano</SelectItem>
-                      <SelectItem value="3-ano">3º Ano</SelectItem>
-                      <SelectItem value="4-ano">4º Ano</SelectItem>
-                      <SelectItem value="5-ano">5º Ano</SelectItem>
-                      <SelectItem value="6-ano">6º Ano</SelectItem>
-                      <SelectItem value="7-ano">7º Ano</SelectItem>
-                      <SelectItem value="8-ano">8º Ano</SelectItem>
-                      <SelectItem value="9-ano">9º Ano</SelectItem>
-                      <SelectItem value="1-ensino-medio">1º Ano - Ensino Médio</SelectItem>
-                      <SelectItem value="2-ensino-medio">2º Ano - Ensino Médio</SelectItem>
-                      <SelectItem value="3-ensino-medio">3º Ano - Ensino Médio</SelectItem>
+                      <SelectItem value="fundamental-incompleto">Fundamental Incompleto</SelectItem>
+                      <SelectItem value="fundamental-completo">Fundamental Completo</SelectItem>
+                      <SelectItem value="medio-incompleto">Médio Incompleto</SelectItem>
+                      <SelectItem value="medio-completo">Médio Completo</SelectItem>
+                      <SelectItem value="tecnico">Técnico</SelectItem>
+                      <SelectItem value="superior">Superior</SelectItem>
+                      <SelectItem value="pos-graduado">Pós-graduado</SelectItem>
+                      <SelectItem value="mestre">Mestre</SelectItem>
+                      <SelectItem value="doutor">Doutor</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -394,24 +371,24 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
               )}
             />
 
-            {/* Dados dos Responsáveis */}
+            {/* Dados dos Responsáveis (Opcional) */}
             <FormField
               control={form.control}
               name="parentName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome dos Pais/Responsáveis *</FormLabel>
+                  <FormLabel>Nome dos Pais/Responsáveis</FormLabel>
                   <FormControl>
-                    <Input placeholder="Nome completo dos pais ou responsáveis" {...field} />
+                    <Input placeholder="Nome completo dos pais ou responsáveis (opcional)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Endereço */}
+            {/* Endereço (Opcional) */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Endereço</h3>
+              <h3 className="text-lg font-medium">Endereço (Opcional)</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
@@ -419,7 +396,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                   name="cep"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CEP *</FormLabel>
+                      <FormLabel>CEP</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="00000-000"
@@ -442,7 +419,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                   name="street"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Logradouro *</FormLabel>
+                      <FormLabel>Logradouro</FormLabel>
                       <FormControl>
                         <Input placeholder="Rua, Avenida, etc." {...field} />
                       </FormControl>
@@ -456,7 +433,7 @@ export function StudentForm({ onSubmit, trigger }: StudentFormProps) {
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número *</FormLabel>
+                      <FormLabel>Número</FormLabel>
                       <FormControl>
                         <Input placeholder="123" {...field} />
                       </FormControl>

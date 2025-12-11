@@ -1121,8 +1121,8 @@ export type Database = {
         Returns: boolean
       }
       is_instructor_of_subject:
-        | { Args: { subject: string; user_id: string }; Returns: boolean }
         | { Args: { _subject_id: string; _user_id: string }; Returns: boolean }
+        | { Args: { subject: string; user_id: string }; Returns: boolean }
       log_profile_update_attempt: {
         Args: {
           details?: string

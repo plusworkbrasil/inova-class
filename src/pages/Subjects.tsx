@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet, FileBarChart } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet, FileBarChart, ClipboardList, CalendarDays } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { SubjectForm } from '@/components/forms/SubjectForm';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ import { useRealClassData } from '@/hooks/useRealClassData';
 import { cn, toBrasiliaDate, parseYMDToLocalDate, formatDateBR } from '@/lib/utils';
 import { SubjectAttendanceExportDialog } from '@/components/ui/subject-attendance-export-dialog';
 import { SubjectGradesExportDialog } from '@/components/ui/subject-grades-export-dialog';
+import { exportAttendanceSignatureSheet, exportWeeklyFrequencySheet } from '@/lib/attendanceExport';
+import { supabase } from '@/integrations/supabase/client';
 
 const Subjects = () => {
   const { profile } = useAuth();
@@ -218,6 +220,74 @@ const Subjects = () => {
     setGradesExportDialogOpen(true);
   };
 
+  const handleExportSignatureSheet = async (subject: any) => {
+    try {
+      const { data: students, error } = await supabase
+        .from('profiles')
+        .select('name, auto_student_id')
+        .eq('class_id', subject.class_id)
+        .order('name');
+
+      if (error) throw error;
+
+      const formattedStudents = (students || []).map(s => ({
+        name: s.name,
+        number: s.auto_student_id?.toString() || ''
+      }));
+
+      await exportAttendanceSignatureSheet({
+        subjectName: subject.name,
+        className: getClassName(subject.class_id),
+        students: formattedStudents
+      });
+
+      toast({
+        title: "Lista de Presença exportada",
+        description: "O PDF foi gerado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao exportar",
+        description: "Não foi possível gerar a lista de presença.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleExportWeeklyFrequency = async (subject: any) => {
+    try {
+      const { data: students, error } = await supabase
+        .from('profiles')
+        .select('name, auto_student_id')
+        .eq('class_id', subject.class_id)
+        .order('name');
+
+      if (error) throw error;
+
+      const formattedStudents = (students || []).map(s => ({
+        name: s.name,
+        number: s.auto_student_id?.toString() || ''
+      }));
+
+      await exportWeeklyFrequencySheet({
+        subjectName: subject.name,
+        className: getClassName(subject.class_id),
+        students: formattedStudents
+      });
+
+      toast({
+        title: "Lista de Frequência exportada",
+        description: "O PDF foi gerado com sucesso.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro ao exportar",
+        description: "Não foi possível gerar a lista de frequência.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredSubjects = subjects.filter(subject =>
     subject.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -401,6 +471,24 @@ const Subjects = () => {
                           >
                             <FileBarChart className="w-3 h-3 mr-1" />
                             Exportar Notas
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={() => handleExportSignatureSheet(subject)}
+                          >
+                            <ClipboardList className="w-3 h-3 mr-1" />
+                            Lista de Presença
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="w-full text-xs"
+                            onClick={() => handleExportWeeklyFrequency(subject)}
+                          >
+                            <CalendarDays className="w-3 h-3 mr-1" />
+                            Lista de Frequência
                           </Button>
                         </div>
                       </div>

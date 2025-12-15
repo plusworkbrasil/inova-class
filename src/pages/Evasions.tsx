@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart, Undo2 } from 'lucide-react';
+import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart, Undo2, Download, CalendarIcon } from 'lucide-react';
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
@@ -14,6 +14,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import { exportEvasionsToExcel } from '@/lib/evasionsExport';
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -23,6 +29,8 @@ const Evasions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedReason, setSelectedReason] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [isEvasionFormOpen, setIsEvasionFormOpen] = useState(false);
   const [editingEvasion, setEditingEvasion] = useState<any>(null);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
@@ -135,18 +143,53 @@ const Evasions = () => {
   const classesAffected = new Set(evasions.map(e => e.student_id)).size;
 
   // Filter evasions
-  const filteredEvasions = evasions.filter(evasion => {
-    if (searchTerm && !evasion.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
+  const filteredEvasions = useMemo(() => {
+    return evasions.filter(evasion => {
+      if (searchTerm && !evasion.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      if (selectedReason && evasion.reason !== selectedReason) {
+        return false;
+      }
+      if (selectedClass && selectedClass !== 'all' && evasion.profiles?.class_id !== selectedClass) {
+        return false;
+      }
+      // Filtro por período
+      if (startDate) {
+        const evasionDate = new Date(evasion.date);
+        if (evasionDate < startDate) return false;
+      }
+      if (endDate) {
+        const evasionDate = new Date(evasion.date);
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (evasionDate > endOfDay) return false;
+      }
+      return true;
+    });
+  }, [evasions, searchTerm, selectedReason, selectedClass, startDate, endDate]);
+
+  const handleExportExcel = () => {
+    if (filteredEvasions.length === 0) {
+      toast({
+        title: "Nenhum dado para exportar",
+        description: "Não há evasões para exportar com os filtros atuais.",
+        variant: "destructive",
+      });
+      return;
     }
-    if (selectedReason && evasion.reason !== selectedReason) {
-      return false;
-    }
-    if (selectedClass && selectedClass !== 'all' && evasion.profiles?.class_id !== selectedClass) {
-      return false;
-    }
-    return true;
-  });
+
+    exportEvasionsToExcel(
+      filteredEvasions,
+      realClasses,
+      { startDate, endDate, reason: selectedReason || undefined }
+    );
+
+    toast({
+      title: "Relatório exportado",
+      description: `${filteredEvasions.length} registro(s) exportado(s) com sucesso.`,
+    });
+  };
 
   if (loading) {
     return (
@@ -224,12 +267,16 @@ const Evasions = () => {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Filtros</CardTitle>
+            <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+              <Download size={16} />
+              Exportar Excel
+            </Button>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
-              <div className="relative flex-1">
+            <div className="flex flex-wrap gap-4">
+              <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar aluno..."
@@ -238,12 +285,65 @@ const Evasions = () => {
                   className="pl-10"
                 />
               </div>
-               <Select value={selectedClass} onValueChange={setSelectedClass}>
+              
+              {/* Filtro de Data Inicial */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Filtro de Data Final */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Selecionar turma" />
                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="all">Todas as turmas</SelectItem>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
                   {realClasses.map((classItem) => (
                     <SelectItem key={classItem.id} value={classItem.id}>
                       {classItem.name}
@@ -251,19 +351,36 @@ const Evasions = () => {
                   ))}
                 </SelectContent>
               </Select>
+              
               <Select value={selectedReason} onValueChange={setSelectedReason}>
                 <SelectTrigger className="w-64">
                   <SelectValue placeholder="Motivo da evasão" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="financeiras">Dificuldades financeiras</SelectItem>
-                  <SelectItem value="mudanca">Mudança de cidade</SelectItem>
-                  <SelectItem value="emprego">Conseguiu emprego</SelectItem>
-                  <SelectItem value="insatisfacao">Insatisfação com o curso</SelectItem>
-                  <SelectItem value="saude">Problemas de saúde</SelectItem>
-                  <SelectItem value="academicas">Dificuldades acadêmicas</SelectItem>
+                  <SelectItem value="all">Todos os motivos</SelectItem>
+                  <SelectItem value="Dificuldades financeiras">Dificuldades financeiras</SelectItem>
+                  <SelectItem value="Mudança de cidade">Mudança de cidade</SelectItem>
+                  <SelectItem value="Conseguiu emprego">Conseguiu emprego</SelectItem>
+                  <SelectItem value="Insatisfação com o curso">Insatisfação com o curso</SelectItem>
+                  <SelectItem value="Problemas de saúde">Problemas de saúde</SelectItem>
+                  <SelectItem value="Dificuldades acadêmicas">Dificuldades acadêmicas</SelectItem>
                 </SelectContent>
               </Select>
+
+              {(startDate || endDate || selectedReason || selectedClass) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(undefined);
+                    setEndDate(undefined);
+                    setSelectedReason('');
+                    setSelectedClass('');
+                  }}
+                >
+                  Limpar filtros
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

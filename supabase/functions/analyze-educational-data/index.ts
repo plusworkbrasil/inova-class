@@ -107,25 +107,34 @@ serve(async (req) => {
       ? gradesData?.filter(g => g.student?.class_id === classId)
       : gradesData;
 
-    // 3. Buscar evasões
+    // 3. Buscar evasões com detalhes completos
     let evasionsQuery = supabase
       .from('evasions')
       .select(`
         *,
-        student:profiles(name, class_id)
+        student:profiles!evasions_student_id_fkey(id, name, class_id)
       `)
       .gte('date', startDateStr)
       .lte('date', endDateStr);
-
-    if (classId) {
-      evasionsQuery = evasionsQuery.eq('class_id', classId);
-    }
 
     const { data: evasionsData, error: evasionsError } = await evasionsQuery;
     
     if (evasionsError) {
       console.error('Evasions error:', evasionsError);
     }
+
+    // Filtrar por turma se necessário (após o fetch para evitar problema de join)
+    const filteredEvasions = classId 
+      ? evasionsData?.filter(e => e.student?.class_id === classId)
+      : evasionsData;
+
+    // Criar conjunto de IDs de alunos evadidos (status 'active')
+    const evadedStudentIds = new Set(
+      filteredEvasions
+        ?.filter(e => e.status === 'active')
+        ?.map(e => e.student?.id)
+        .filter(Boolean) || []
+    );
 
     // 4. Buscar disciplinas ativas sem lançamento nos últimos 5 dias
     const fiveDaysAgo = new Date();
@@ -193,7 +202,11 @@ serve(async (req) => {
     });
 
     const studentsAtRisk = Object.entries(studentAbsences)
-      .filter(([_, data]) => data.total > 0 && (data.absences / data.total) > 0.25)
+      .filter(([studentId, data]) => 
+        data.total > 0 && 
+        (data.absences / data.total) > 0.25 &&
+        !evadedStudentIds.has(studentId) // Excluir alunos já evadidos
+      )
       .map(([id, data]) => ({
         name: data.name,
         className: data.className,
@@ -239,12 +252,21 @@ serve(async (req) => {
           .reduce((a, b) => a + b, 0) / Object.values(studentGrades).length
       : 0;
 
-    // Processar evasões
+    // Processar evasões com detalhes
     const evasionsByReason: Record<string, number> = {};
-    evasionsData?.forEach(evasion => {
+    filteredEvasions?.forEach(evasion => {
       const reason = evasion.reason || 'Não informado';
       evasionsByReason[reason] = (evasionsByReason[reason] || 0) + 1;
     });
+
+    // Detalhes de cada evasão para o relatório
+    const evasionDetails = filteredEvasions?.map(e => ({
+      name: e.student?.name || 'N/A',
+      className: classMap.get(e.student?.class_id) || 'Sem Turma',
+      reason: e.reason || 'Não informado',
+      date: e.date,
+      status: e.status
+    })) || [];
 
     // Montar dados para a IA
     const analysisData = {
@@ -264,9 +286,9 @@ serve(async (req) => {
         totalStudents: Object.keys(studentGrades).length
       },
       evasions: {
-        total: evasionsData?.length || 0,
+        total: filteredEvasions?.length || 0,
         byReason: evasionsByReason,
-        students: evasionsData?.map(e => e.student?.name).filter(Boolean) || []
+        details: evasionDetails
       },
       pendingInstructors: pendingSubjects.map(s => ({
         instructor: s.instructor?.name || 'N/A',
@@ -303,10 +325,14 @@ DADOS COLETADOS:
   ? analysisData.grades.studentsWithLowGrades.map(s => `${s.name} (média ${s.average})`).join(', ')
   : 'Nenhum'}
 
-🚪 EVASÕES:
+🚪 EVASÕES NO PERÍODO:
 - Total de evasões: ${analysisData.evasions.total}
 - Motivos: ${Object.entries(analysisData.evasions.byReason).map(([reason, count]) => `${reason} (${count})`).join(', ') || 'N/A'}
-- Alunos evadidos: ${analysisData.evasions.students.join(', ') || 'Nenhum'}
+${analysisData.evasions.details.length > 0 
+  ? `| Aluno | Turma | Motivo | Data |
+|-------|-------|--------|------|
+${analysisData.evasions.details.map((e: any) => `| ${e.name} | ${e.className} | ${e.reason} | ${e.date} |`).join('\n')}`
+  : '- Nenhuma evasão no período.'}
 
 👨‍🏫 PENDÊNCIAS ADMINISTRATIVAS:
 - Instrutores com disciplinas sem lançamento de frequência há mais de 5 dias: ${analysisData.pendingInstructors.length}
@@ -324,7 +350,14 @@ ESTRUTURA OBRIGATÓRIA DO RELATÓRIO:
 ## 🚀 RESUMO RÁPIDO
 [1-2 linhas objetivas: Frequência X% | Média X.X | Evasões X | Pendências X]
 
-## ⚠️ ALUNOS EM RISCO DE FREQUÊNCIA
+## 🚪 EVASÕES OCORRIDAS
+${analysisData.evasions.details.length > 0 
+  ? `| Aluno | Turma | Motivo | Data |
+|-------|-------|--------|------|
+${analysisData.evasions.details.map((e: any) => `| ${e.name} | ${e.className} | ${e.reason} | ${e.date} |`).join('\n')}`
+  : 'Nenhuma evasão no período.'}
+
+## ⚠️ ALUNOS EM RISCO DE FREQUÊNCIA (excluindo evadidos)
 ${analysisData.attendance.studentsAtRisk.length > 0 
   ? `| Aluno | Turma | % Faltas |
 |-------|-------|----------|
@@ -341,7 +374,7 @@ ${analysisData.attendance.studentsAtRisk.map(s => `| ${s.name} | ${s.className} 
 [Análise detalhada de frequência e notas]
 
 ## 🚪 Análise de Evasão
-[Padrões de evasão e possíveis causas]
+[Padrões de evasão, causas identificadas e impacto]
 
 ## 👨‍🏫 Gestão Pedagógica
 [Pendências administrativas e sugestões]

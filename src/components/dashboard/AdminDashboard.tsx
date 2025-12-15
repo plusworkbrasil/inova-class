@@ -8,12 +8,14 @@ import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
 import { useClasses } from '@/hooks/useClasses';
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 import { useEquipmentStats } from '@/hooks/useEquipmentStats';
-
+import { useStudentsAtRisk } from '@/hooks/useStudentsAtRisk';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -34,6 +36,7 @@ const AdminDashboard = () => {
   
   const { data: classes, loading: classesLoading } = useClasses();
   const { stats: equipmentStats } = useEquipmentStats();
+  const { data: studentsAtRisk, loading: riskLoading } = useStudentsAtRisk();
   
   // Filtrar alunos com faltas por turma selecionada
   const filteredTopAbsentStudents = useMemo(() => {
@@ -42,6 +45,17 @@ const AdminDashboard = () => {
     }
     return reportsData.topAbsentStudents.filter(student => student.class === selectedClass);
   }, [reportsData.topAbsentStudents, selectedClass]);
+
+  // Filtrar alunos em risco crítico (apenas ativos)
+  const criticalStudents = useMemo(() => {
+    return studentsAtRisk
+      .filter(s => s.risk_level === 'critical' && s.status === 'active')
+      .slice(0, 3);
+  }, [studentsAtRisk]);
+
+  const totalCriticalStudents = useMemo(() => {
+    return studentsAtRisk.filter(s => s.risk_level === 'critical' && s.status === 'active').length;
+  }, [studentsAtRisk]);
   
   return <div className="space-y-6">
       {/* Header */}
@@ -130,6 +144,97 @@ const AdminDashboard = () => {
         />
       </div>
 
+      {/* Widget de Alunos em Risco Crítico */}
+      <Card className="border-destructive/50 bg-destructive/5">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertOctagon className="h-5 w-5 text-destructive" />
+              <span>Alunos em Risco Crítico</span>
+              {totalCriticalStudents > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {totalCriticalStudents}
+                </Badge>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/students-at-risk')}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Ver Todos
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {riskLoading ? (
+            <div className="flex items-center justify-center h-24">
+              <p className="text-muted-foreground">Carregando...</p>
+            </div>
+          ) : criticalStudents.length > 0 ? (
+            <div className="space-y-3">
+              {criticalStudents.map((student) => (
+                <div
+                  key={student.id}
+                  className="p-3 bg-background rounded-lg border border-destructive/20 hover:border-destructive/40 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <button
+                        onClick={() => handleViewStudentHistory(student.student_id)}
+                        className="font-medium text-foreground hover:text-primary hover:underline text-left"
+                      >
+                        {student.student?.name || 'Nome não disponível'}
+                      </button>
+                      <p className="text-sm text-muted-foreground">
+                        {student.student_class?.name || 'Sem turma'}
+                      </p>
+                    </div>
+                    <Badge variant="destructive" className="ml-2">
+                      Score: {student.risk_score || 0}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                    <span>
+                      Frequência: <span className="text-destructive font-medium">{student.attendance_percentage?.toFixed(0) || 0}%</span>
+                    </span>
+                    <span>
+                      Média: <span className="font-medium">{student.grade_average?.toFixed(1) || 'N/A'}</span>
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {student.last_intervention ? (
+                      <span>
+                        Última intervenção: {formatDistanceToNow(new Date(student.last_intervention), { addSuffix: true, locale: ptBR })}
+                      </span>
+                    ) : (
+                      <span className="text-warning">Sem intervenções registradas</span>
+                    )}
+                    {(student.interventions_count ?? 0) > 0 && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        {student.interventions_count} intervenção(ões)
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {totalCriticalStudents > 3 && (
+                <p className="text-center text-sm text-muted-foreground pt-2">
+                  + {totalCriticalStudents - 3} outros alunos em risco crítico
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-24 text-center">
+              <p className="text-muted-foreground">Nenhum aluno em risco crítico</p>
+              <p className="text-sm text-muted-foreground/70">Todos os alunos estão em situação regular</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Birthday Card and Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -785,6 +785,70 @@ export type Database = {
           },
         ]
       }
+      risk_interventions: {
+        Row: {
+          created_at: string | null
+          description: string
+          follow_up_date: string | null
+          follow_up_notes: string | null
+          id: string
+          intervention_type: string
+          outcome: string | null
+          performed_at: string | null
+          performed_by: string
+          risk_record_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
+          id?: string
+          intervention_type: string
+          outcome?: string | null
+          performed_at?: string | null
+          performed_by: string
+          risk_record_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          follow_up_date?: string | null
+          follow_up_notes?: string | null
+          id?: string
+          intervention_type?: string
+          outcome?: string | null
+          performed_at?: string | null
+          performed_by?: string
+          risk_record_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_interventions_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_interventions_risk_record_id_fkey"
+            columns: ["risk_record_id"]
+            isOneToOne: false
+            referencedRelation: "students_at_risk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_interventions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_academic_info: {
         Row: {
           academic_status: string | null
@@ -819,6 +883,85 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fk_student_academic_info_student"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students_at_risk: {
+        Row: {
+          absences_last_30_days: number | null
+          assigned_to: string | null
+          attendance_percentage: number | null
+          created_at: string | null
+          grade_average: number | null
+          id: string
+          identified_at: string | null
+          identified_by: string
+          missed_activities: number | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          risk_level: string
+          risk_score: number | null
+          status: string
+          student_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          absences_last_30_days?: number | null
+          assigned_to?: string | null
+          attendance_percentage?: number | null
+          created_at?: string | null
+          grade_average?: number | null
+          id?: string
+          identified_at?: string | null
+          identified_by: string
+          missed_activities?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          risk_level: string
+          risk_score?: number | null
+          status?: string
+          student_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          absences_last_30_days?: number | null
+          assigned_to?: string | null
+          attendance_percentage?: number | null
+          created_at?: string | null
+          grade_average?: number | null
+          id?: string
+          identified_at?: string | null
+          identified_by?: string
+          missed_activities?: number | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          risk_level?: string
+          risk_score?: number | null
+          status?: string
+          student_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_at_risk_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_at_risk_identified_by_fkey"
+            columns: ["identified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_at_risk_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "profiles"

@@ -29,6 +29,7 @@ import InstructorSubjects from "./pages/InstructorSubjects";
 import ClassTimeline from "./pages/ClassTimeline";
 import StudentHistory from "./pages/StudentHistory";
 import StudentAbsences from "./pages/StudentAbsences";
+import StudentsAtRisk from "./pages/StudentsAtRisk";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,7 @@ const App = () => (
           <Route path="/class-timeline" element={<ClassTimeline />} />
           <Route path="/student-history" element={<StudentHistory />} />
           <Route path="/student-absences" element={<StudentAbsences />} />
+          <Route path="/students-at-risk" element={<StudentsAtRisk />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

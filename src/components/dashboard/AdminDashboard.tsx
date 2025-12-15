@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
 import { useClasses } from '@/hooks/useClasses';
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
@@ -16,10 +16,13 @@ import { useEquipmentStats } from '@/hooks/useEquipmentStats';
 import { useStudentsAtRisk } from '@/hooks/useStudentsAtRisk';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+const ITEMS_PER_PAGE = 5;
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [absentStudentsPage, setAbsentStudentsPage] = useState(1);
   
   const handleViewStudentHistory = (studentId: string) => {
     navigate(`/student-history?studentId=${studentId}`);
@@ -45,6 +48,19 @@ const AdminDashboard = () => {
     }
     return reportsData.topAbsentStudents.filter(student => student.class === selectedClass);
   }, [reportsData.topAbsentStudents, selectedClass]);
+
+  // Paginação dos alunos com faltas
+  const paginatedAbsentStudents = useMemo(() => {
+    const startIndex = (absentStudentsPage - 1) * ITEMS_PER_PAGE;
+    return filteredTopAbsentStudents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredTopAbsentStudents, absentStudentsPage]);
+
+  const totalAbsentPages = Math.ceil(filteredTopAbsentStudents.length / ITEMS_PER_PAGE);
+
+  // Reset página ao mudar filtro de turma
+  useEffect(() => {
+    setAbsentStudentsPage(1);
+  }, [selectedClass]);
 
   // Filtrar alunos em risco crítico (apenas ativos)
   const criticalStudents = useMemo(() => {
@@ -368,50 +384,97 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Frequent Absentees */}
         <Card className="shadow-[var(--shadow-card)]">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <ClipboardX className="w-5 h-5 mr-2 text-destructive" />
-                  Alunos com Maior Número de Faltas
-                  {selectedClass !== 'all' && (
-                    <span className="ml-2 text-sm font-normal text-muted-foreground">
-                      • {selectedClass}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-normal text-muted-foreground">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <CardTitle className="flex items-center">
+                <ClipboardX className="w-5 h-5 mr-2 text-destructive" />
+                Alunos com Maior Número de Faltas
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Select value={selectedClass} onValueChange={setSelectedClass}>
+                  <SelectTrigger className="w-[160px] h-8">
+                    <Filter className="h-3 w-3 mr-1" />
+                    <SelectValue placeholder="Turma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    {!classesLoading && classes?.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.name}>
+                        {cls.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {reportsData.topAbsentStudentsPeriod || 'Últimos 7 dias'}
                 </span>
-              </CardTitle>
-            </CardHeader>
+              </div>
+            </div>
+          </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {reportsLoading ? <div className="flex items-center justify-center h-32">
+              {reportsLoading ? (
+                <div className="flex items-center justify-center h-32">
                   <p className="text-muted-foreground">Carregando dados...</p>
-                </div> : filteredTopAbsentStudents.length > 0 ? filteredTopAbsentStudents.slice(0, 4).map((student, index) => <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
-                    <div className="flex-1 cursor-pointer" onClick={() => handleViewStudentHistory(student.student_id)}>
-                      <p className="font-medium text-primary hover:underline">{student.name}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{student.class}</span>
-                        {student.studentId && (
-                          <>
-                            <span>•</span>
-                            <span className="font-mono">ID: {student.studentId}</span>
-                          </>
-                        )}
+                </div>
+              ) : filteredTopAbsentStudents.length > 0 ? (
+                <>
+                  {paginatedAbsentStudents.map((student, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted/70 transition-colors">
+                      <div className="flex-1 cursor-pointer" onClick={() => handleViewStudentHistory(student.student_id)}>
+                        <p className="font-medium text-primary hover:underline">{student.name}</p>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>{student.class}</span>
+                          {student.studentId && (
+                            <>
+                              <span>•</span>
+                              <span className="font-mono">ID: {student.studentId}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-destructive">{student.absences} faltas</p>
+                        <p className="text-xs text-muted-foreground">{student.percentage}% de faltas</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-destructive">{student.absences} faltas</p>
-                      <p className="text-xs text-muted-foreground">{student.percentage}% de faltas</p>
+                  ))}
+                  {filteredTopAbsentStudents.length > ITEMS_PER_PAGE && (
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <span className="text-sm text-muted-foreground">
+                        {(absentStudentsPage - 1) * ITEMS_PER_PAGE + 1}-
+                        {Math.min(absentStudentsPage * ITEMS_PER_PAGE, filteredTopAbsentStudents.length)} de {filteredTopAbsentStudents.length}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={absentStudentsPage === 1}
+                          onClick={() => setAbsentStudentsPage(p => p - 1)}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={absentStudentsPage >= totalAbsentPages}
+                          onClick={() => setAbsentStudentsPage(p => p + 1)}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                  </div>) : <div className="text-center py-8">
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
                   <p className="text-muted-foreground">
                     {selectedClass === 'all' 
                       ? 'Nenhum dado de faltas encontrado' 
                       : `Nenhum aluno com faltas na turma ${selectedClass}`}
                   </p>
-                </div>}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

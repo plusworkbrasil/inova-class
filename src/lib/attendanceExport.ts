@@ -150,7 +150,7 @@ const generateWeeklyFrequencyHTML = ({
         <tbody>
           ${students.map((student, index) => `
             <tr>
-              <td style="border: 1px solid #333; padding: 10px; text-align: center; font-size: 10px;">${String(index + 1).padStart(2, '0')}</td>
+              <td style="border: 1px solid #333; padding: 10px; text-align: center; font-size: 10px;"></td>
               <td style="border: 1px solid #333; padding: 10px; font-size: 10px;">${student.name}</td>
               <td style="border: 1px solid #333; padding: 10px; height: 30px;"></td>
               <td style="border: 1px solid #333; padding: 10px; height: 30px;"></td>

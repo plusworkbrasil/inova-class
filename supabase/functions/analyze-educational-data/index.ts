@@ -57,6 +57,13 @@ serve(async (req) => {
 
     console.log('Date range:', startDateStr, 'to', endDateStr);
 
+    // Buscar turmas para mapear nomes
+    const { data: classesData } = await supabase
+      .from('classes')
+      .select('id, name');
+    
+    const classMap = new Map((classesData || []).map(c => [c.id, c.name]));
+
     // 1. Buscar frequência
     let attendanceQuery = supabase
       .from('attendance')
@@ -162,32 +169,38 @@ serve(async (req) => {
       attendanceStats.rate = (attendanceStats.present / attendanceStats.total) * 100;
     }
 
-    // Identificar alunos com muitas faltas
-    const studentAbsences: Record<string, { name: string; absences: number; total: number }> = {};
+    // Identificar alunos com muitas faltas (incluindo turma)
+    const studentAbsences: Record<string, { name: string; classId: string; className: string; absences: number; total: number }> = {};
     
     attendanceData?.forEach(record => {
       if (record.student) {
         const studentId = record.student_id;
         if (!studentAbsences[studentId]) {
+          const studentClassId = record.student.class_id || '';
           studentAbsences[studentId] = { 
             name: record.student.name, 
+            classId: studentClassId,
+            className: classMap.get(studentClassId) || 'Sem Turma',
             absences: 0, 
             total: 0 
           };
         }
         studentAbsences[studentId].total++;
-        if (record.status === 'absent') {
+        if (!record.is_present) {
           studentAbsences[studentId].absences++;
         }
       }
     });
 
     const studentsAtRisk = Object.entries(studentAbsences)
-      .filter(([_, data]) => (data.absences / data.total) > 0.25)
+      .filter(([_, data]) => data.total > 0 && (data.absences / data.total) > 0.25)
       .map(([id, data]) => ({
         name: data.name,
+        className: data.className,
         absenceRate: ((data.absences / data.total) * 100).toFixed(1)
-      }));
+      }))
+      .sort((a, b) => parseFloat(b.absenceRate) - parseFloat(a.absenceRate))
+      .slice(0, 10); // Top 10 alunos em risco
 
     // Processar notas
     const studentGrades: Record<string, { name: string; grades: number[]; subjects: string[] }> = {};
@@ -282,9 +295,6 @@ DADOS COLETADOS:
 - Total de registros: ${analysisData.attendance.total}
 - Presenças: ${analysisData.attendance.present}
 - Faltas: ${analysisData.attendance.absent}
-- Alunos com >25% de faltas: ${analysisData.attendance.studentsAtRisk.length > 0 
-  ? analysisData.attendance.studentsAtRisk.map(s => `${s.name} (${s.absenceRate}%)`).join(', ')
-  : 'Nenhum'}
 
 📈 DESEMPENHO ACADÊMICO:
 - Média geral: ${analysisData.grades.average}
@@ -305,13 +315,22 @@ ${analysisData.pendingInstructors.length > 0
   : '  Nenhuma pendência'}
 
 INSTRUÇÕES PARA O RELATÓRIO:
-1. Faça uma análise profissional e objetiva dos dados
-2. Identifique padrões, tendências e correlações
-3. Destaque pontos críticos que necessitam ação imediata
-4. Sugira ações corretivas prioritárias e práticas
-5. Use uma abordagem empática mas direta
 
-ESTRUTURA DO RELATÓRIO:
+IMPORTANTE: Comece SEMPRE com um resumo rápido objetivo de 1-2 linhas destacando os números principais.
+Em seguida, liste os alunos em risco de frequência em formato de TABELA markdown.
+
+ESTRUTURA OBRIGATÓRIA DO RELATÓRIO:
+
+## 🚀 RESUMO RÁPIDO
+[1-2 linhas objetivas: Frequência X% | Média X.X | Evasões X | Pendências X]
+
+## ⚠️ ALUNOS EM RISCO DE FREQUÊNCIA
+${analysisData.attendance.studentsAtRisk.length > 0 
+  ? `| Aluno | Turma | % Faltas |
+|-------|-------|----------|
+${analysisData.attendance.studentsAtRisk.map(s => `| ${s.name} | ${s.className} | ${s.absenceRate}% |`).join('\n')}`
+  : 'Nenhum aluno com frequência crítica no período.'}
+
 ## 📊 Resumo Executivo
 [Visão geral da situação em 2-3 parágrafos]
 

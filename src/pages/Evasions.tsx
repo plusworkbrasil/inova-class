@@ -6,13 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart, Undo2, Download, CalendarIcon } from 'lucide-react';
+import { Search, Plus, Edit, UserX, TrendingDown, AlertTriangle, BarChart, Undo2, Download, CalendarIcon, FileText, AlertCircle } from 'lucide-react';
 import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
+import { useEvasionAlerts } from '@/hooks/useEvasionAlerts';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
@@ -20,6 +21,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { exportEvasionsToExcel } from '@/lib/evasionsExport';
+import { exportEvasionsToPdf } from '@/lib/evasionsExportPdf';
+import { EvasionsChart } from '@/components/charts/EvasionsChart';
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -40,6 +43,7 @@ const Evasions = () => {
   // Use Supabase hooks
   const { data: evasions, loading, createEvasion, updateEvasion, cancelEvasion } = useSupabaseEvasions();
   const { classes: realClasses } = useRealRecipients();
+  const { alerts, hasAlerts, highSeverityCount, loading: alertsLoading } = useEvasionAlerts();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [evasionToCancel, setEvasionToCancel] = useState<any>(null);
 
@@ -191,6 +195,37 @@ const Evasions = () => {
     });
   };
 
+  const handleExportPdf = async () => {
+    if (filteredEvasions.length === 0) {
+      toast({
+        title: "Nenhum dado para exportar",
+        description: "Não há evasões para exportar com os filtros atuais.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await exportEvasionsToPdf(
+        filteredEvasions,
+        realClasses,
+        { startDate, endDate, reason: selectedReason || undefined }
+      );
+
+      toast({
+        title: "PDF gerado",
+        description: `Relatório com ${filteredEvasions.length} registro(s) gerado com sucesso.`,
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Ocorreu um erro ao gerar o relatório PDF.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -215,6 +250,56 @@ const Evasions = () => {
             </Button>
           )}
         </div>
+
+        {/* Alertas de Evasão */}
+        {hasAlerts && !alertsLoading && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                <AlertCircle size={18} />
+                Alertas de Aumento de Evasões
+                {highSeverityCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {highSeverityCount} crítico(s)
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {alerts.map((alert, idx) => (
+                <div 
+                  key={idx} 
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-lg",
+                    alert.severity === 'high' ? 'bg-red-100 dark:bg-red-950/30' : 'bg-yellow-100 dark:bg-yellow-950/30'
+                  )}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "w-2 h-2 rounded-full",
+                      alert.severity === 'high' ? 'bg-red-500' : 'bg-yellow-500'
+                    )} />
+                    <span className="font-medium">{alert.className}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">{alert.currentCount}</span> evasões este mês
+                    {alert.previousAverage > 0 && (
+                      <span className="ml-1">
+                        (média anterior: {alert.previousAverage.toFixed(1)})
+                      </span>
+                    )}
+                    <Badge 
+                      variant={alert.severity === 'high' ? 'destructive' : 'secondary'} 
+                      className="ml-2"
+                    >
+                      +{alert.increasePercentage.toFixed(0)}%
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -266,13 +351,22 @@ const Evasions = () => {
           </Card>
         </div>
 
+        {/* Gráfico de Tendência */}
+        <EvasionsChart evasions={evasions} />
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Filtros</CardTitle>
-            <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
-              <Download size={16} />
-              Exportar Excel
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleExportPdf} variant="outline" className="flex items-center gap-2">
+                <FileText size={16} />
+                Exportar PDF
+              </Button>
+              <Button onClick={handleExportExcel} variant="outline" className="flex items-center gap-2">
+                <Download size={16} />
+                Exportar Excel
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">

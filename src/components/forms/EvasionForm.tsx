@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { Check, ChevronsUpDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
+import { cn } from '@/lib/utils';
 
 const evasionFormSchema = z.object({
   studentName: z.string().min(1, 'Aluno é obrigatório'),
@@ -36,6 +40,8 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
   mode
 }) => {
   const { students: realStudents, classes: realClasses } = useRealRecipients();
+  const [studentSearchOpen, setStudentSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
   const form = useForm<EvasionFormValues>({
     resolver: zodResolver(evasionFormSchema),
@@ -61,6 +67,15 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
     return classData ? classData.name : 'Sem turma';
   };
 
+  // Filter students based on search query
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return realStudents;
+    const query = searchQuery.toLowerCase();
+    return realStudents.filter(student => 
+      student.name.toLowerCase().includes(query)
+    );
+  }, [realStudents, searchQuery]);
+
   const evasionReasons = [
     'Dificuldades financeiras',
     'Mudança de cidade',
@@ -85,36 +100,70 @@ export const EvasionForm: React.FC<EvasionFormProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
+            <FormField
                 control={form.control}
                 name="studentName"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex flex-col">
                     <FormLabel>Aluno</FormLabel>
-                    <Select 
-                      onValueChange={(value) => {
-                        const student = realStudents.find(s => s.id === value);
-                        if (student) {
-                          field.onChange(student.name);
-                          form.setValue('studentId', student.id);
-                          form.setValue('class', getClassName(student.class_id));
-                        }
-                      }} 
-                      defaultValue={realStudents.find(s => s.name === field.value)?.id || ''}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o aluno" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {realStudents.map((student) => (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.name} - {getClassName(student.class_id)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={studentSearchOpen} onOpenChange={setStudentSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={studentSearchOpen}
+                            className={cn(
+                              "w-full justify-between font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value || "Buscar aluno..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[350px] p-0" align="start">
+                        <Command shouldFilter={false}>
+                          <CommandInput 
+                            placeholder="Digite o nome do aluno..." 
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                          />
+                          <CommandList>
+                            <CommandEmpty>Nenhum aluno encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredStudents.map((student) => (
+                                <CommandItem
+                                  key={student.id}
+                                  value={student.id}
+                                  onSelect={() => {
+                                    field.onChange(student.name);
+                                    form.setValue('studentId', student.id);
+                                    form.setValue('class', getClassName(student.class_id));
+                                    setStudentSearchOpen(false);
+                                    setSearchQuery('');
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === student.name ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{student.name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {getClassName(student.class_id)}
+                                    </span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <FormMessage />
                   </FormItem>
                 )}

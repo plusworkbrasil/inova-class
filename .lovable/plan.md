@@ -1,207 +1,71 @@
 
 
-## Plano: Filtrar Alunos Ativos com Frequência "C" na Disciplina
+## Plano: Corrigir Visibilidade dos Alunos Mateus e Matheus nas Disciplinas
 
 ### Problema Identificado
 
-Atualmente, nas funcionalidades de Chamadas, Notas, Lista de Presença e Lista de Frequência na página `/subjects`, o sistema mostra **todos os alunos da turma**, incluindo:
-- Alunos inativos (evadidos, cancelados, etc.)
-- Alunos que nunca compareceram a nenhuma aula da disciplina
+Os alunos **Mateus de Jesus Miranda** e **Matheus Antônio Andrade Chagas** não aparecem nas listas porque:
 
-O usuário quer ver apenas alunos que:
-1. Estão com `status = 'active'` na tabela `profiles`
-2. Tiveram ao menos uma presença ("C") registrada na disciplina
+1. **Possuem evasões ativas** registradas em 11/11/2025 (motivo: "Dificuldades acadêmicas")
+2. **Não possuem nenhuma presença "C"** nas disciplinas Computação em Nuvens e Projetos
 
----
-
-### Arquivos a Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/hooks/useInstructorSubjectAttendance.ts` | Adicionar filtro `status = 'active'` e filtrar apenas alunos com presença na disciplina |
-| `src/hooks/useInstructorSubjectGrades.ts` | Adicionar filtro `status = 'active'` e filtrar apenas alunos com presença na disciplina |
-| `src/pages/Subjects.tsx` | Modificar `handleExportSignatureSheet` e `handleExportWeeklyFrequency` para usar mesma lógica |
+| Aluno | ID | Evasão ID |
+|-------|-----|-----------|
+| Mateus de Jesus Miranda | `64396819-79d6-4cbe-9ffd-c277c4fb000b` | `4b5caba3-d28e-4663-a880-28f4bf26fa47` |
+| Matheus Antônio Andrade Chagas | `3da048a8-cc5a-4d4b-95cd-f72dc6d4e326` | `dbdff59a-bb7c-4bd3-81f4-15046692e806` |
 
 ---
 
-### Detalhes Técnicos
+### Solução: Cancelar Evasões via SQL
 
-#### 1. Hook `useInstructorSubjectAttendance.ts`
+Executar uma migration para cancelar as evasões registradas por engano:
 
-**Alteração na busca de alunos (linha 65-69):**
-
-```typescript
-// ANTES:
-const { data: studentsData, error: studentsError } = await supabase
-  .from('profiles')
-  .select('id, name, student_id, enrollment_number')
-  .eq('class_id', classId)
-  .order('name');
-
-// DEPOIS:
-const { data: studentsData, error: studentsError } = await supabase
-  .from('profiles')
-  .select('id, name, student_id, enrollment_number, status')
-  .eq('class_id', classId)
-  .eq('status', 'active')
-  .order('name');
-```
-
-**Filtrar apenas alunos com presença (após transformToMatrix):**
-
-```typescript
-// Após buscar os dados, filtrar para mostrar apenas alunos que:
-// 1. Estão ativos (já filtrado na query)
-// 2. Tiveram ao menos uma presença ("C") na disciplina
-
-const studentsWithAttendance = transformedData.students.filter(student => 
-  student.total_present > 0  // Teve ao menos uma presença "C"
+```sql
+-- Cancelar evasões ativas dos alunos Mateus e Matheus
+UPDATE evasions 
+SET 
+  status = 'cancelled',
+  observations = COALESCE(observations, '') || 
+    E'\n[Cancelado em ' || to_char(now(), 'DD/MM/YYYY') || 
+    ']: Evasão registrada por engano - aluno retornou às aulas.',
+  updated_at = now()
+WHERE id IN (
+  '4b5caba3-d28e-4663-a880-28f4bf26fa47',  -- Mateus de Jesus Miranda
+  'dbdff59a-bb7c-4bd3-81f4-15046692e806'   -- Matheus Antônio Andrade Chagas
 );
 ```
 
 ---
 
-#### 2. Hook `useInstructorSubjectGrades.ts`
+### Sobre as Presenças
 
-**Alteração na busca de alunos (linha 68-72):**
+Após cancelar as evasões, os alunos aparecerão:
 
-```typescript
-// ANTES:
-const { data: studentsData, error: studentsError } = await supabase
-  .from('profiles')
-  .select('id, name, student_id, enrollment_number')
-  .eq('class_id', classId)
-  .order('name');
+- ✅ Na **lista de chamada** (para registrar frequência)
+- ⚠️ Na **matriz de frequência** - somente após terem ao menos 1 presença "C" registrada
+- ⚠️ Na **lista de notas** - somente após terem ao menos 1 presença "C" registrada
+- ⚠️ Nos **PDFs de Lista de Presença/Frequência** - somente após terem ao menos 1 presença "C"
 
-// DEPOIS:
-// Primeiro buscar alunos ativos com presença na disciplina
-const { data: attendanceData, error: attendanceError } = await supabase
-  .from('attendance')
-  .select('student_id')
-  .eq('subject_id', subjectId)
-  .eq('class_id', classId)
-  .eq('is_present', true);
-
-if (attendanceError) throw attendanceError;
-
-// Extrair IDs únicos de alunos com presença
-const studentIdsWithAttendance = [...new Set(
-  (attendanceData || []).map(a => a.student_id)
-)];
-
-// Buscar perfis apenas desses alunos (ativos)
-const { data: studentsData, error: studentsError } = await supabase
-  .from('profiles')
-  .select('id, name, student_id, enrollment_number')
-  .eq('class_id', classId)
-  .eq('status', 'active')
-  .in('id', studentIdsWithAttendance.length > 0 ? studentIdsWithAttendance : ['00000000-0000-0000-0000-000000000000'])
-  .order('name');
-```
+Isso ocorre porque a regra de negócio implementada anteriormente exige que o aluno tenha comparecido ao menos uma vez para aparecer nas matrizes consolidadas.
 
 ---
 
-#### 3. Subjects.tsx - Lista de Presença e Frequência
+### Alternativa: Via Interface
 
-**Modificar `handleExportSignatureSheet` (linhas 223-255):**
+Caso prefira não usar SQL, você pode:
 
-```typescript
-const handleExportSignatureSheet = async (subject: any) => {
-  try {
-    // Buscar alunos ativos COM presença na disciplina
-    const { data: attendanceData, error: attendanceError } = await supabase
-      .from('attendance')
-      .select('student_id')
-      .eq('subject_id', subject.id)
-      .eq('class_id', subject.class_id)
-      .eq('is_present', true);
-
-    if (attendanceError) throw attendanceError;
-
-    const studentIdsWithAttendance = [...new Set(
-      (attendanceData || []).map(a => a.student_id)
-    )];
-
-    if (studentIdsWithAttendance.length === 0) {
-      toast({
-        title: "Sem dados",
-        description: "Nenhum aluno com presença registrada nesta disciplina.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { data: students, error } = await supabase
-      .from('profiles')
-      .select('name, auto_student_id')
-      .eq('class_id', subject.class_id)
-      .eq('status', 'active')
-      .in('id', studentIdsWithAttendance)
-      .order('name');
-
-    if (error) throw error;
-
-    const formattedStudents = (students || []).map(s => ({
-      name: s.name,
-      number: s.auto_student_id?.toString() || ''
-    }));
-
-    await exportAttendanceSignatureSheet({
-      subjectName: subject.name,
-      className: getClassName(subject.class_id),
-      students: formattedStudents
-    });
-
-    toast({
-      title: "Lista de Presença exportada",
-      description: "O PDF foi gerado com sucesso.",
-    });
-  } catch (error) {
-    toast({
-      title: "Erro ao exportar",
-      description: "Não foi possível gerar a lista de presença.",
-      variant: "destructive",
-    });
-  }
-};
-```
-
-**Modificar `handleExportWeeklyFrequency` (linhas 257-289)** com a mesma lógica.
-
----
-
-### Fluxo de Filtragem
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Consulta ao Banco                        │
-├─────────────────────────────────────────────────────────────┤
-│ 1. Buscar IDs de alunos com is_present = true na disciplina │
-│    (tabela: attendance)                                     │
-├─────────────────────────────────────────────────────────────┤
-│ 2. Buscar perfis filtrados:                                 │
-│    - class_id = turma                                       │
-│    - status = 'active'                                      │
-│    - id IN (alunos com presença)                            │
-├─────────────────────────────────────────────────────────────┤
-│ 3. Retornar apenas alunos ativos COM frequência "C"         │
-└─────────────────────────────────────────────────────────────┘
-```
+1. Ir em **Gestão de Evasões** (`/evasions`)
+2. Localizar os registros de Mateus Miranda e Matheus Antônio
+3. Clicar no botão **"Cancelar Evasão"** para cada um
 
 ---
 
 ### Resultado Esperado
 
-| Funcionalidade | Antes | Depois |
-|----------------|-------|--------|
-| Ver Chamadas | Todos da turma | Somente ativos com presença "C" |
-| Exportar Notas | Todos da turma | Somente ativos com presença "C" |
-| Lista de Presença | Todos da turma | Somente ativos com presença "C" |
-| Lista de Frequência | Todos da turma | Somente ativos com presença "C" |
-
----
-
-### Observação Importante
-
-Se um aluno estiver ativo mas **nunca compareceu** a nenhuma aula da disciplina (somente faltas ou nenhum registro), ele **não aparecerá** nas listas. Isso garante que as listas mostrem apenas alunos que efetivamente participaram da disciplina.
+| Etapa | Antes | Depois |
+|-------|-------|--------|
+| Cancelar evasões | Evasões ativas bloqueando | Evasões canceladas |
+| Aparecer na chamada | ❌ Não aparecem | ✅ Aparecerão |
+| Registrar presença "C" | -- | Instrutor registra |
+| Aparecer em frequência/notas | ❌ | ✅ Após 1ª presença |
 

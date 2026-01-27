@@ -222,10 +222,36 @@ const Subjects = () => {
 
   const handleExportSignatureSheet = async (subject: any) => {
     try {
+      // Buscar alunos que tiveram ao menos uma presença na disciplina
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('student_id')
+        .eq('subject_id', subject.id)
+        .eq('class_id', subject.class_id)
+        .eq('is_present', true);
+
+      if (attendanceError) throw attendanceError;
+
+      const studentIdsWithAttendance = [...new Set(
+        (attendanceData || []).map(a => a.student_id)
+      )];
+
+      if (studentIdsWithAttendance.length === 0) {
+        toast({
+          title: "Sem dados",
+          description: "Nenhum aluno com presença registrada nesta disciplina.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Buscar apenas alunos ativos com presença
       const { data: students, error } = await supabase
         .from('profiles')
         .select('name, auto_student_id')
         .eq('class_id', subject.class_id)
+        .eq('status', 'active')
+        .in('id', studentIdsWithAttendance)
         .order('name');
 
       if (error) throw error;
@@ -256,10 +282,36 @@ const Subjects = () => {
 
   const handleExportWeeklyFrequency = async (subject: any) => {
     try {
+      // Buscar alunos que tiveram ao menos uma presença na disciplina
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('student_id')
+        .eq('subject_id', subject.id)
+        .eq('class_id', subject.class_id)
+        .eq('is_present', true);
+
+      if (attendanceError) throw attendanceError;
+
+      const studentIdsWithAttendance = [...new Set(
+        (attendanceData || []).map(a => a.student_id)
+      )];
+
+      if (studentIdsWithAttendance.length === 0) {
+        toast({
+          title: "Sem dados",
+          description: "Nenhum aluno com presença registrada nesta disciplina.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Buscar apenas alunos ativos com presença
       const { data: students, error } = await supabase
         .from('profiles')
         .select('name, auto_student_id')
         .eq('class_id', subject.class_id)
+        .eq('status', 'active')
+        .in('id', studentIdsWithAttendance)
         .order('name');
 
       if (error) throw error;

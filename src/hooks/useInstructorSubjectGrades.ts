@@ -64,16 +64,41 @@ export const useInstructorSubjectGrades = (
       setLoading(true);
       setError(null);
 
-      // 1. Buscar alunos da turma
+      // 1. Buscar alunos que tiveram ao menos uma presença na disciplina
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('student_id')
+        .eq('subject_id', subjectId)
+        .eq('class_id', classId)
+        .eq('is_present', true);
+
+      if (attendanceError) throw attendanceError;
+
+      // Extrair IDs únicos de alunos com presença
+      const studentIdsWithAttendance = [...new Set(
+        (attendanceData || []).map(a => a.student_id)
+      )];
+
+      // Se não há alunos com presença, retornar vazio
+      if (studentIdsWithAttendance.length === 0) {
+        setStudents([]);
+        setEvaluationTypes([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Buscar alunos ATIVOS que tiveram presença na disciplina
       const { data: studentsData, error: studentsError } = await supabase
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
         .eq('class_id', classId)
+        .eq('status', 'active')
+        .in('id', studentIdsWithAttendance)
         .order('name');
 
       if (studentsError) throw studentsError;
 
-      // 2. Buscar notas da disciplina
+      // 3. Buscar notas da disciplina
       const { data: gradesData, error: gradesError } = await supabase
         .from('grades')
         .select('id, student_id, value, max_value, date, type, observations')
@@ -82,7 +107,7 @@ export const useInstructorSubjectGrades = (
 
       if (gradesError) throw gradesError;
 
-      // 3. Transformar em matriz
+      // 4. Transformar em matriz
       const transformedData = transformToMatrix(
         studentsData as Student[] || [],
         gradesData as Grade[] || []

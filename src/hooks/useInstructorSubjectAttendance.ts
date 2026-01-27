@@ -61,11 +61,12 @@ export const useInstructorSubjectAttendance = (
       setLoading(true);
       setError(null);
 
-      // 1. Buscar alunos da turma
+      // 1. Buscar alunos ATIVOS da turma
       const { data: studentsData, error: studentsError } = await supabase
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
         .eq('class_id', classId)
+        .eq('status', 'active')
         .order('name');
 
       if (studentsError) throw studentsError;
@@ -86,7 +87,12 @@ export const useInstructorSubjectAttendance = (
         attendancesData as AttendanceRecord[] || []
       );
 
-      setStudents(transformedData.students);
+      // 4. Filtrar apenas alunos que tiveram ao menos uma presença "C" na disciplina
+      const studentsWithPresence = transformedData.students.filter(student => 
+        student.total_present > 0
+      );
+
+      setStudents(studentsWithPresence);
       setDates(transformedData.dates);
     } catch (err: any) {
       console.error('Error fetching attendance matrix:', err);

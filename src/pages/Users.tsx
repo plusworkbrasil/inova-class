@@ -430,6 +430,24 @@ const Users = () => {
                           >
                             <Key size={14} />
                           </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleSyncEmail(user.id, user.email, user.name)}
+                                  disabled={syncingEmail === user.id}
+                                  title="Sincronizar email com autenticação"
+                                >
+                                  <RefreshCw size={14} className={syncingEmail === user.id ? 'animate-spin' : ''} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Sincronizar email do perfil com sistema de login</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Button 
                             variant="outline" 
                             size="sm"

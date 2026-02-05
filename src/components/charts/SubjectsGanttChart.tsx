@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import html2pdf from 'html2pdf.js';
+
 const CLASS_COLORS = [
   'hsl(0, 84%, 60%)',    // vermelho
   'hsl(25, 95%, 53%)',   // laranja
@@ -30,18 +31,28 @@ interface GanttBarProps {
 }
 
 function GanttBar({ subject, color, leftPercent, widthPercent }: GanttBarProps) {
+  // Mostrar texto se a barra for larga o suficiente (> 8% da largura total)
+  const showText = widthPercent > 8;
+  
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <div
-            className="absolute h-6 rounded-sm cursor-pointer transition-all hover:opacity-80 hover:scale-y-110"
+            className="absolute h-7 rounded-sm cursor-pointer transition-all hover:opacity-80 hover:scale-y-110 flex items-center px-1 overflow-hidden"
             style={{
               left: `${leftPercent}%`,
               width: `${Math.max(widthPercent, 1)}%`,
               backgroundColor: color,
             }}
-          />
+          >
+            {showText && (
+              <span className="text-[9px] text-white font-medium truncate drop-shadow-sm">
+                {subject.name}
+                {subject.teacher_name && ` - ${subject.teacher_name}`}
+              </span>
+            )}
+          </div>
         </TooltipTrigger>
         <TooltipContent className="max-w-xs">
           <div className="space-y-1">
@@ -58,6 +69,12 @@ function GanttBar({ subject, color, leftPercent, widthPercent }: GanttBarProps) 
       </Tooltip>
     </TooltipProvider>
   );
+}
+
+interface ClassGroup {
+  classId: string;
+  className: string;
+  subjects: TimelineSubject[];
 }
 
 export function SubjectsGanttChart() {
@@ -89,7 +106,7 @@ export function SubjectsGanttChart() {
       years.add(getYear(parseISO(s.start_date)));
       years.add(getYear(parseISO(s.end_date)));
     });
-    return Array.from(years).sort((a, b) => b - a); // Most recent first
+    return Array.from(years).sort((a, b) => b - a);
   }, [subjects]);
 
   // Extract available classes from subjects
@@ -149,6 +166,27 @@ export function SubjectsGanttChart() {
     return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
   }, [filteredByTeacher, selectedStatus]);
 
+  // Group subjects by class
+  const subjectsByClass = useMemo((): ClassGroup[] => {
+    const grouped = new Map<string, TimelineSubject[]>();
+    filteredSubjects.forEach(subject => {
+      const key = subject.class_id;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(subject);
+    });
+    return Array.from(grouped.entries())
+      .map(([classId, subjects]) => ({
+        classId,
+        className: subjects[0].class_name,
+        subjects: subjects.sort((a, b) => 
+          new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+        ),
+      }))
+      .sort((a, b) => a.className.localeCompare(b.className));
+  }, [filteredSubjects]);
+
   // Export handlers
   const handleExportPdf = async () => {
     setExporting(true);
@@ -195,9 +233,9 @@ export function SubjectsGanttChart() {
     }
   };
 
-  const { months, timelineStart, totalDays, classColorMap, uniqueClasses } = useMemo(() => {
+  const { months, timelineStart, totalDays, classColorMap } = useMemo(() => {
     if (filteredSubjects.length === 0) {
-      return { months: [], timelineStart: new Date(), totalDays: 1, classColorMap: new Map(), uniqueClasses: [] };
+      return { months: [], timelineStart: new Date(), totalDays: 1, classColorMap: new Map() };
     }
 
     // Find min and max dates
@@ -218,16 +256,11 @@ export function SubjectsGanttChart() {
       colorMap.set(classId, CLASS_COLORS[index % CLASS_COLORS.length]);
     });
 
-    // Get unique classes with names for legend
-    const uniqueClassList = [...new Set(filteredSubjects.map(s => JSON.stringify({ id: s.class_id, name: s.class_name })))]
-      .map(s => JSON.parse(s));
-
     return {
       months: monthsArray,
       timelineStart: minDate,
       totalDays: total,
       classColorMap: colorMap,
-      uniqueClasses: uniqueClassList,
     };
   }, [filteredSubjects]);
 
@@ -241,6 +274,15 @@ export function SubjectsGanttChart() {
     const leftPercent = (daysFromStart / totalDays) * 100;
     const widthPercent = (duration / totalDays) * 100;
     
+    return { leftPercent, widthPercent };
+  };
+
+  const calculateMonthPosition = (month: Date) => {
+    const monthStart = startOfMonth(month);
+    const monthEnd = endOfMonth(month);
+    const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+    const widthPercent = (daysInMonth / totalDays) * 100;
+    const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
     return { leftPercent, widthPercent };
   };
 
@@ -261,55 +303,78 @@ export function SubjectsGanttChart() {
     );
   }
 
+  // Render filters section (used in both empty and populated states)
+  const renderFilters = () => (
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Selecionar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {availableYears.map(year => (
+              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Turma:</span>
+        <Select value={selectedClass} onValueChange={setSelectedClass}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Selecionar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as turmas</SelectItem>
+            {availableClasses.map(cls => (
+              <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Professor:</span>
+        <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Selecionar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            {availableTeachers.map(teacher => (
+              <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-medium text-muted-foreground">Status:</span>
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Selecionar" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="ongoing">Em andamento</SelectItem>
+            <SelectItem value="finished">Finalizadas</SelectItem>
+            <SelectItem value="future">Futuras</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
+        <Badge variant="secondary">
+          {filteredSubjects.length} disciplina(s)
+        </Badge>
+      )}
+    </div>
+  );
+
   if (filteredSubjects.length === 0) {
     return (
       <div className="space-y-4">
-        {/* Filters */}
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">Ano:</span>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Selecionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {availableYears.map(year => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">Turma:</span>
-              <Select value={selectedClass} onValueChange={setSelectedClass}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Selecionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas as turmas</SelectItem>
-                  {availableClasses.map(cls => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">Professor:</span>
-              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Selecionar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {availableTeachers.map(teacher => (
-                    <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {renderFilters()}
         </div>
         <div className="text-center py-8 text-muted-foreground">
           <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
@@ -322,69 +387,7 @@ export function SubjectsGanttChart() {
     <div className="space-y-4">
       {/* Filters and Export Buttons */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Ano:</span>
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {availableYears.map(year => (
-                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Turma:</span>
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as turmas</SelectItem>
-                {availableClasses.map(cls => (
-                  <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Professor:</span>
-            <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {availableTeachers.map(teacher => (
-                  <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground">Status:</span>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Selecionar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="ongoing">Em andamento</SelectItem>
-                <SelectItem value="finished">Finalizadas</SelectItem>
-                <SelectItem value="future">Futuras</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
-            <Badge variant="secondary">
-              {filteredSubjects.length} disciplina(s)
-            </Badge>
-          )}
-        </div>
+        {renderFilters()}
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -412,15 +415,12 @@ export function SubjectsGanttChart() {
         <div className="min-w-[800px]">
           {/* Header with months */}
           <div className="flex border-b border-border">
-            <div className="w-64 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
-              Disciplina / Turma / Professor
+            <div className="w-48 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
+              Turma
             </div>
             <div className="flex-1 flex">
               {months.map((month, index) => {
-                const monthStart = startOfMonth(month);
-                const monthEnd = endOfMonth(month);
-                const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-                const widthPercent = (daysInMonth / totalDays) * 100;
+                const { widthPercent } = calculateMonthPosition(month);
                 
                 return (
                   <div
@@ -435,70 +435,76 @@ export function SubjectsGanttChart() {
             </div>
           </div>
 
-          {/* Rows */}
-          {filteredSubjects.map((subject, index) => {
-            const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
-            const color = classColorMap.get(subject.class_id) || CLASS_COLORS[0];
-            
-            return (
-              <div
-                key={subject.id}
-                className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-              >
-              <div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-                  <div className="font-medium break-words">{subject.name}</div>
-                  <div className="text-muted-foreground break-words">{subject.class_name}</div>
-                  {subject.teacher_name && (
-                    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
-                  )}
-                </div>
-                <div className="flex-1 relative min-h-12 flex items-center">
-                  {/* Month grid lines */}
-                  {months.map((month, monthIndex) => {
-                    const monthStart = startOfMonth(month);
-                    const monthEnd = endOfMonth(month);
-                    const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-                    const widthPercent = (daysInMonth / totalDays) * 100;
-                    const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
-                    
-                    return (
-                      <div
-                        key={monthIndex}
-                        className="absolute h-full border-l border-border/50"
-                        style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
-                      />
-                    );
-                  })}
-                  
-                  {/* Gantt bar */}
-                  <GanttBar
-                    subject={subject}
-                    color={color}
-                    leftPercent={leftPercent}
-                    widthPercent={widthPercent}
-                  />
-                </div>
+          {/* Rows grouped by class */}
+          {subjectsByClass.map((classGroup, index) => (
+            <div
+              key={classGroup.classId}
+              className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
+            >
+              {/* Column: Class Name */}
+              <div className="w-48 flex-shrink-0 p-2 text-xs font-medium flex items-start pt-3">
+                <span className="break-words">{classGroup.className}</span>
               </div>
-            );
-          })}
+              
+              {/* Bars area */}
+              <div 
+                className="flex-1 relative" 
+                style={{ minHeight: `${Math.max(classGroup.subjects.length * 32, 48)}px` }}
+              >
+                {/* Month grid lines */}
+                {months.map((month, monthIndex) => {
+                  const { leftPercent, widthPercent } = calculateMonthPosition(month);
+                  
+                  return (
+                    <div
+                      key={monthIndex}
+                      className="absolute h-full border-l border-border/50"
+                      style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
+                    />
+                  );
+                })}
+                
+                {/* Subject bars */}
+                {classGroup.subjects.map((subject, subjectIndex) => {
+                  const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
+                  const color = classColorMap.get(subject.class_id) || CLASS_COLORS[0];
+                  
+                  return (
+                    <div
+                      key={subject.id}
+                      className="absolute"
+                      style={{ top: `${subjectIndex * 32 + 4}px` }}
+                    >
+                      <GanttBar
+                        subject={subject}
+                        color={color}
+                        leftPercent={leftPercent}
+                        widthPercent={widthPercent}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Legend */}
       <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
         <span className="text-sm font-medium text-muted-foreground">Legenda:</span>
-        {uniqueClasses.map((classItem, index) => (
+        {subjectsByClass.map((classGroup) => (
           <Badge
-            key={classItem.id}
+            key={classGroup.classId}
             variant="outline"
             className="gap-1"
-            style={{ borderColor: classColorMap.get(classItem.id) }}
+            style={{ borderColor: classColorMap.get(classGroup.classId) }}
           >
             <div
               className="w-3 h-3 rounded-sm"
-              style={{ backgroundColor: classColorMap.get(classItem.id) }}
+              style={{ backgroundColor: classColorMap.get(classGroup.classId) }}
             />
-            {classItem.name}
+            {classGroup.className}
           </Badge>
         ))}
       </div>

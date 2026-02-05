@@ -149,10 +149,31 @@ export function SubjectsGanttChart() {
     );
   }
 
-  if (subjects.length === 0) {
+  if (filteredSubjects.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <p>Nenhuma disciplina com datas definidas encontrada.</p>
+      <div className="space-y-4">
+        {/* Year Filter */}
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium text-muted-foreground">
+            Filtrar por ano:
+          </span>
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Selecionar ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os anos</SelectItem>
+              {availableYears.map(year => (
+                <SelectItem key={year} value={year.toString()}>
+                  {year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-center py-8 text-muted-foreground">
+          <p>Nenhuma disciplina com datas definidas encontrada{selectedYear !== 'all' ? ` para ${selectedYear}` : ''}.</p>
+        </div>
       </div>
     );
   }

@@ -64,6 +64,7 @@ export function SubjectsGanttChart() {
   const { subjects, loading, error } = useAllSubjectsTimeline();
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
 
   // Extract available years from subjects

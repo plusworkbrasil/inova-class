@@ -56,6 +56,7 @@ const Users = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [deactivatingUser, setDeactivatingUser] = useState<any>(null);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
+  const [syncingEmail, setSyncingEmail] = useState<string | null>(null);
   
   const { 
     users, 

@@ -65,7 +65,21 @@ export function SubjectsGanttChart() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
+
+  // Helper function to calculate subject status
+  const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    
+    if (end < today) return 'finished';
+    if (start > today) return 'future';
+    return 'ongoing';
+  };
 
   // Extract available years from subjects
   const availableYears = useMemo(() => {
@@ -123,11 +137,17 @@ export function SubjectsGanttChart() {
     return filteredByYear.filter(s => s.class_id === selectedClass);
   }, [filteredByYear, selectedClass]);
 
-  // Finally filter by selected teacher
-  const filteredSubjects = useMemo(() => {
+  // Filter by selected teacher
+  const filteredByTeacher = useMemo(() => {
     if (selectedTeacher === 'all') return filteredByClass;
     return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
   }, [filteredByClass, selectedTeacher]);
+
+  // Finally filter by selected status
+  const filteredSubjects = useMemo(() => {
+    if (selectedStatus === 'all') return filteredByTeacher;
+    return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
+  }, [filteredByTeacher, selectedStatus]);
 
   // Export handlers
   const handleExportPdf = async () => {
@@ -292,7 +312,7 @@ export function SubjectsGanttChart() {
           </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );
@@ -345,7 +365,21 @@ export function SubjectsGanttChart() {
               </SelectContent>
             </Select>
           </div>
-          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all') && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Status:</span>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="ongoing">Em andamento</SelectItem>
+                <SelectItem value="finished">Finalizadas</SelectItem>
+                <SelectItem value="future">Futuras</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
             <Badge variant="secondary">
               {filteredSubjects.length} disciplina(s)
             </Badge>

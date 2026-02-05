@@ -1,218 +1,104 @@
 
-## Plano: Adicionar Filtro por Status da Disciplina no Gráfico Gantt
 
-### Objetivo
+## Plano: Corrigir Texto Cortado na Exportação do Gráfico Gantt
 
-Adicionar um seletor de status ao gráfico Gantt que permite filtrar disciplinas por:
-- **Em andamento**: Disciplinas cujo período inclui a data atual
-- **Finalizada**: Disciplinas com data de término anterior à data atual
-- **Futura**: Disciplinas com data de início posterior à data atual
+### Problema Identificado
+
+Na exportação do gráfico Gantt (PDF ou imagem), o texto das colunas "Disciplina", "Turma" e "Professor" está sendo cortado porque as classes CSS `truncate` aplicam:
+- `overflow: hidden`
+- `text-overflow: ellipsis`
+- `white-space: nowrap`
+
+Isso faz com que texto longo seja cortado com "..." na visualização e especialmente na exportação.
 
 ---
 
 ### Arquivo a Modificar
 
-| Arquivo | Acao | Descricao |
+| Arquivo | Ação | Descrição |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar estado, logica e UI do filtro por status |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Permitir texto completo visível na exportação |
 
 ---
 
-### Definicao de Status
+### Solução
 
-```typescript
-type SubjectStatus = 'all' | 'ongoing' | 'finished' | 'future';
+Remover a classe `truncate` dos textos da coluna lateral e permitir que o texto quebre em múltiplas linhas quando necessário, usando `break-words` para evitar overflow horizontal.
 
-const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
-  
-  if (end < today) return 'finished';      // Terminou antes de hoje
-  if (start > today) return 'future';      // Comeca depois de hoje
-  return 'ongoing';                         // Hoje esta entre inicio e fim
-};
-```
+#### Mudanças nas Linhas 448-453
 
----
-
-### Mudancas no Componente
-
-#### 1. Adicionar Estado para Filtro de Status
-
-```typescript
-const [selectedStatus, setSelectedStatus] = useState<string>('all');
-```
-
-#### 2. Adicionar Funcao de Calculo de Status
-
-```typescript
-const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const start = parseISO(startDate);
-  const end = parseISO(endDate);
-  
-  if (end < today) return 'finished';
-  if (start > today) return 'future';
-  return 'ongoing';
-};
-```
-
-#### 3. Atualizar Cadeia de Filtros
-
-Adicionar filtro por status apos o filtro por professor:
-
-```typescript
-// Filtrar por professor
-const filteredByTeacher = useMemo(() => {
-  if (selectedTeacher === 'all') return filteredByClass;
-  return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
-}, [filteredByClass, selectedTeacher]);
-
-// Filtrar por status (NOVO)
-const filteredSubjects = useMemo(() => {
-  if (selectedStatus === 'all') return filteredByTeacher;
-  return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
-}, [filteredByTeacher, selectedStatus]);
-```
-
-#### 4. Adicionar UI do Filtro de Status
-
-Posicao: Apos o filtro de Professor
-
+**Antes:**
 ```tsx
-{/* Filtro por Status */}
-<div className="flex items-center gap-2">
-  <span className="text-sm font-medium text-muted-foreground">Status:</span>
-  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-    <SelectTrigger className="w-[150px]">
-      <SelectValue placeholder="Selecionar" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="all">Todos</SelectItem>
-      <SelectItem value="ongoing">Em andamento</SelectItem>
-      <SelectItem value="finished">Finalizadas</SelectItem>
-      <SelectItem value="future">Futuras</SelectItem>
-    </SelectContent>
-  </Select>
+<div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+  <div className="font-medium truncate">{subject.name}</div>
+  <div className="text-muted-foreground truncate">{subject.class_name}</div>
+  {subject.teacher_name && (
+    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
+  )}
 </div>
 ```
 
-#### 5. Atualizar Badge de Contador
-
+**Depois:**
 ```tsx
-{(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
-  <Badge variant="secondary">
-    {filteredSubjects.length} disciplina(s)
-  </Badge>
-)}
+<div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+  <div className="font-medium break-words">{subject.name}</div>
+  <div className="text-muted-foreground break-words">{subject.class_name}</div>
+  {subject.teacher_name && (
+    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
+  )}
+</div>
 ```
 
-#### 6. Atualizar Mensagem de Estado Vazio
+#### Ajustar Altura da Linha (Linha 455)
 
+Como o texto pode ocupar mais de uma linha, alterar a altura da barra do Gantt de fixa para mínima:
+
+**Antes:**
 ```tsx
-<p>
-  Nenhuma disciplina encontrada
-  {selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all'
-    ? ' para os filtros selecionados' 
-    : ' com datas definidas'}.
-</p>
+<div className="flex-1 relative h-12 flex items-center">
+```
+
+**Depois:**
+```tsx
+<div className="flex-1 relative min-h-12 flex items-center">
 ```
 
 ---
 
-### Fluxo de Filtros em Cascata Atualizado
+### Detalhes Técnicos
 
-```text
-Todas as Disciplinas
-        |
-        v
-Filtro por Ano (selectedYear)
-        |
-        v
-Filtro por Turma (selectedClass)
-        |
-        v
-Filtro por Professor (selectedTeacher)
-        |
-        v
-Filtro por Status (selectedStatus) <-- NOVO
-        |
-        v
-Grafico Gantt Renderizado
-```
-
----
-
-### Interface Visual Esperada
-
-```text
-+-------------------------------------------------------------------------------------------+
-|  Cronograma de Disciplinas                                                                |
-+-------------------------------------------------------------------------------------------+
-|                                                                                           |
-|  Ano: [v 2025]  Turma: [v Todas]  Professor: [v Todos]  Status: [v Em andamento]         |
-|                                                                                           |
-|  * 3 disciplinas                                               [PDF] [Imagem]             |
-|                                                                                           |
-|                    JAN    FEV    MAR    ABR    MAI    JUN                                 |
-|  ---------------------------------------------------------------------------------        |
-|  React.js                 ############                                                    |
-|  T02AB Tarde                                                                              |
-|  Joao Silva                                                                               |
-|  ---------------------------------------------------------------------------------        |
-|  Node.js                        ############                                              |
-|  T02AB Tarde                                                                              |
-|  Maria Santos                                                                             |
-|  ---------------------------------------------------------------------------------        |
-+-------------------------------------------------------------------------------------------+
-```
-
----
-
-### Comportamento dos Status
-
-| Status | Condicao | Exemplo (hoje = 01/03/2025) |
-|--------|----------|----------------------------|
-| **Em andamento** | `start <= hoje <= end` | 15/02/2025 - 15/04/2025 |
-| **Finalizada** | `end < hoje` | 01/01/2025 - 28/02/2025 |
-| **Futura** | `start > hoje` | 01/04/2025 - 30/06/2025 |
-
----
-
-### Combinacoes de Filtros
-
-| Ano | Turma | Professor | Status | Resultado |
-|-----|-------|-----------|--------|-----------|
-| Todos | Todas | Todos | Todos | Todas as disciplinas |
-| 2025 | Todas | Todos | Em andamento | Disciplinas de 2025 em execucao |
-| Todos | T02AB | Joao | Finalizadas | Disciplinas finalizadas do Joao na T02AB |
-| Todos | Todas | Todos | Futuras | Todas as disciplinas que ainda vao comecar |
-
----
-
-### Locais de Mudanca
-
-| Linha | Mudanca |
-|-------|---------|
-| ~68 | Adicionar estado `selectedStatus` |
-| ~108 | Adicionar funcao `getSubjectStatus` |
-| ~127-130 | Renomear `filteredSubjects` para `filteredByTeacher` |
-| ~132 | Adicionar novo `filteredSubjects` com filtro de status |
-| ~294-296 | Atualizar condicao da mensagem vazia (empty state) |
-| ~347 | Adicionar Select de Status na UI |
-| ~348 | Atualizar condicao do Badge contador |
+| Classe Anterior | Classe Nova | Efeito |
+|-----------------|-------------|--------|
+| `truncate` | `break-words` | Permite quebra de palavras longas |
+| `h-12` | `min-h-12` | Altura mínima, mas pode crescer se necessário |
 
 ---
 
 ### Resultado Esperado
 
-| Antes | Depois |
-|-------|--------|
-| Filtros: Ano, Turma, Professor | Filtros: Ano, Turma, Professor, Status |
-| Sem nocao de progresso temporal | Facil identificar disciplinas atuais, passadas e futuras |
-| Todas disciplinas misturadas | Visao focada por status de execucao |
+| Antes (Exportação) | Depois (Exportação) |
+|--------------------|---------------------|
+| "React is..." | "React is" (completo) |
+| "Jovem Tech T02ABC..." | "Jovem Tech T02ABC - Noite" (completo) |
+| "Jailson Sil..." | "Jailson Silva" (completo) |
+
+---
+
+### Visualização do Problema vs Solução
+
+```text
+ANTES (cortado):
++---------------------------+------------------------------------+
+| React is...               |  ▓▓▓▓▓                             |
+| Jovem Tech T02ABC...      |                                    |
+| Jailson Sil...            |                                    |
++---------------------------+------------------------------------+
+
+DEPOIS (completo):
++---------------------------+------------------------------------+
+| React is                  |  ▓▓▓▓▓                             |
+| Jovem Tech T02ABC - Noite |                                    |
+| Jailson Silva             |                                    |
++---------------------------+------------------------------------+
+```
+

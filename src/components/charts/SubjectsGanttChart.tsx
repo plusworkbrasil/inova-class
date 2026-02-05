@@ -365,7 +365,21 @@ export function SubjectsGanttChart() {
               </SelectContent>
             </Select>
           </div>
-          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all') && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Status:</span>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="ongoing">Em andamento</SelectItem>
+                <SelectItem value="finished">Finalizadas</SelectItem>
+                <SelectItem value="future">Futuras</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
             <Badge variant="secondary">
               {filteredSubjects.length} disciplina(s)
             </Badge>

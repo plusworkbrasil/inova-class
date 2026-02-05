@@ -59,14 +59,37 @@ function GanttBar({ subject, color, leftPercent, widthPercent }: GanttBarProps) 
 
 export function SubjectsGanttChart() {
   const { subjects, loading, error } = useAllSubjectsTimeline();
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+
+  // Extract available years from subjects
+  const availableYears = useMemo(() => {
+    if (subjects.length === 0) return [];
+    const years = new Set<number>();
+    subjects.forEach(s => {
+      years.add(getYear(parseISO(s.start_date)));
+      years.add(getYear(parseISO(s.end_date)));
+    });
+    return Array.from(years).sort((a, b) => b - a); // Most recent first
+  }, [subjects]);
+
+  // Filter subjects by selected year
+  const filteredSubjects = useMemo(() => {
+    if (selectedYear === 'all') return subjects;
+    const year = parseInt(selectedYear);
+    return subjects.filter(s => {
+      const startYear = getYear(parseISO(s.start_date));
+      const endYear = getYear(parseISO(s.end_date));
+      return startYear === year || endYear === year;
+    });
+  }, [subjects, selectedYear]);
 
   const { months, timelineStart, totalDays, classColorMap, uniqueClasses } = useMemo(() => {
-    if (subjects.length === 0) {
+    if (filteredSubjects.length === 0) {
       return { months: [], timelineStart: new Date(), totalDays: 1, classColorMap: new Map(), uniqueClasses: [] };
     }
 
     // Find min and max dates
-    const dates = subjects.flatMap(s => [parseISO(s.start_date), parseISO(s.end_date)]);
+    const dates = filteredSubjects.flatMap(s => [parseISO(s.start_date), parseISO(s.end_date)]);
     const minDate = startOfMonth(new Date(Math.min(...dates.map(d => d.getTime()))));
     const maxDate = endOfMonth(new Date(Math.max(...dates.map(d => d.getTime()))));
 
@@ -77,14 +100,14 @@ export function SubjectsGanttChart() {
     const total = differenceInDays(maxDate, minDate) + 1;
 
     // Create color map for classes
-    const classes = [...new Set(subjects.map(s => s.class_id))];
+    const classes = [...new Set(filteredSubjects.map(s => s.class_id))];
     const colorMap = new Map<string, string>();
     classes.forEach((classId, index) => {
       colorMap.set(classId, CLASS_COLORS[index % CLASS_COLORS.length]);
     });
 
     // Get unique classes with names for legend
-    const uniqueClassList = [...new Set(subjects.map(s => JSON.stringify({ id: s.class_id, name: s.class_name })))]
+    const uniqueClassList = [...new Set(filteredSubjects.map(s => JSON.stringify({ id: s.class_id, name: s.class_name })))]
       .map(s => JSON.parse(s));
 
     return {
@@ -94,7 +117,7 @@ export function SubjectsGanttChart() {
       classColorMap: colorMap,
       uniqueClasses: uniqueClassList,
     };
-  }, [subjects]);
+  }, [filteredSubjects]);
 
   const calculatePosition = (startDate: string, endDate: string) => {
     const start = parseISO(startDate);

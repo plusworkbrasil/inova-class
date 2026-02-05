@@ -1,228 +1,102 @@
 
 
-## Plano: Adicionar Filtro por Professor no Gráfico Gantt
+## Plano: Mostrar Nome do Professor nas Linhas do Gráfico Gantt
 
 ### Objetivo
 
-Adicionar um seletor de professor acima do gráfico Gantt, permitindo visualizar apenas as disciplinas ministradas por um professor específico. O filtro funcionará em cascata com os filtros existentes (Ano > Turma > Professor).
+Exibir o nome do professor em cada linha do gráfico Gantt, junto com a disciplina e turma, facilitando a identificação rápida sem precisar passar o mouse sobre a barra.
 
 ---
 
-### Arquivos a Modificar
+### Arquivo a Modificar
 
 | Arquivo | Ação | Descrição |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar estado, extração e filtro por professor |
-| `src/hooks/useAllSubjectsTimeline.ts` | **MODIFICAR** | Adicionar `teacher_id` ao tipo e à query |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar nome do professor na coluna lateral |
 
 ---
 
-### 1. Modificação: `useAllSubjectsTimeline.ts`
+### Mudanças
 
-Adicionar `teacher_id` para identificar unicamente cada professor:
+#### 1. Atualizar Header da Coluna
 
-```typescript
-export interface TimelineSubject {
-  id: string;
-  name: string;
-  class_name: string;
-  class_id: string;
-  start_date: string;
-  end_date: string;
-  teacher_name: string | null;
-  teacher_id: string | null;  // NOVO
-}
-
-// Na query, adicionar teacher_id
-const { data, error: queryError } = await supabase
-  .from('subjects')
-  .select(`
-    id,
-    name,
-    start_date,
-    end_date,
-    class_id,
-    teacher_id,  // NOVO
-    classes!subjects_class_id_fkey (name),
-    profiles!subjects_teacher_id_fkey (name)
-  `)
-  // ...
-
-// No mapeamento:
-teacher_id: item.teacher_id || null,
-```
-
----
-
-### 2. Modificação: `SubjectsGanttChart.tsx`
-
-#### 2.1 Adicionar Estado para Filtro de Professor
-
-```typescript
-const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
-```
-
-#### 2.2 Extrair Professores Disponíveis
-
-```typescript
-const availableTeachers = useMemo(() => {
-  if (subjects.length === 0) return [];
-  const teachers = new Map<string, string>();
-  subjects.forEach(s => {
-    if (s.teacher_id && s.teacher_name) {
-      teachers.set(s.teacher_id, s.teacher_name);
-    }
-  });
-  return Array.from(teachers.entries())
-    .map(([id, name]) => ({ id, name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-}, [subjects]);
-```
-
-#### 2.3 Adicionar Filtro em Cascata
-
-Atualizar a cadeia de filtros: Ano → Turma → Professor
-
-```typescript
-// Filtrar por ano primeiro
-const filteredByYear = useMemo(() => {
-  if (selectedYear === 'all') return subjects;
-  const year = parseInt(selectedYear);
-  return subjects.filter(s => {
-    const startYear = getYear(parseISO(s.start_date));
-    const endYear = getYear(parseISO(s.end_date));
-    return startYear === year || endYear === year;
-  });
-}, [subjects, selectedYear]);
-
-// Depois filtrar por turma
-const filteredByClass = useMemo(() => {
-  if (selectedClass === 'all') return filteredByYear;
-  return filteredByYear.filter(s => s.class_id === selectedClass);
-}, [filteredByYear, selectedClass]);
-
-// Por último, filtrar por professor (NOVO)
-const filteredSubjects = useMemo(() => {
-  if (selectedTeacher === 'all') return filteredByClass;
-  return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
-}, [filteredByClass, selectedTeacher]);
-```
-
-#### 2.4 Adicionar UI do Filtro de Professor
-
-Posição: Após o filtro de Turma
+Mudar o título de "Disciplina - Turma" para "Disciplina / Turma / Professor":
 
 ```tsx
-{/* Filtro por Professor (NOVO) */}
-<div className="flex items-center gap-2">
-  <span className="text-sm font-medium text-muted-foreground">Professor:</span>
-  <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
-    <SelectTrigger className="w-[180px]">
-      <SelectValue placeholder="Selecionar" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="all">Todos</SelectItem>
-      {availableTeachers.map(teacher => (
-        <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
+// Linha 381-382: Atualizar header
+<div className="w-64 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
+  Disciplina / Turma / Professor
 </div>
 ```
 
-#### 2.5 Atualizar Badge de Contador
+#### 2. Expandir Largura da Coluna
+
+Aumentar a largura da coluna lateral para acomodar a informação adicional:
+
+- De `w-48` (192px) para `w-64` (256px)
+
+#### 3. Adicionar Nome do Professor nas Linhas
+
+Atualizar a renderização de cada linha para incluir o professor:
 
 ```tsx
-{(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all') && (
-  <Badge variant="secondary">
-    {filteredSubjects.length} disciplina(s)
-  </Badge>
-)}
-```
-
-#### 2.6 Atualizar Mensagem de Estado Vazio
-
-```tsx
-<p>
-  Nenhuma disciplina encontrada
-  {selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' 
-    ? ' para os filtros selecionados' 
-    : ' com datas definidas'}.
-</p>
+// Linhas 414-417: Atualizar para mostrar 3 linhas
+<div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+  <div className="font-medium truncate">{subject.name}</div>
+  <div className="text-muted-foreground truncate">{subject.class_name}</div>
+  {subject.teacher_name && (
+    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
+  )}
+</div>
 ```
 
 ---
 
-### Fluxo de Filtros em Cascata
+### Locais de Mudança
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     Todas as Disciplinas                                │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 Filtro por Ano (selectedYear)                           │
-│                 Mostra disciplinas do ano selecionado                   │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 Filtro por Turma (selectedClass)                        │
-│                 Mostra disciplinas da turma selecionada                 │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                 Filtro por Professor (selectedTeacher)                  │
-│                 Mostra disciplinas do professor selecionado             │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                      Gráfico Gantt Renderizado                          │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+| Linha | Mudança |
+|-------|---------|
+| 381 | Aumentar largura do header: `w-48` → `w-64` |
+| 382 | Atualizar texto do header |
+| 414 | Aumentar largura da coluna: `w-48` → `w-64` |
+| 414-417 | Adicionar terceira linha com nome do professor |
 
 ---
 
 ### Interface Visual Esperada
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│  📊 Cronograma de Disciplinas                                                       │
-├─────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                     │
-│  Ano: [▼ 2025]  Turma: [▼ Todas]  Professor: [▼ João Silva]  ⬤ 4    [PDF] [Imagem] │
-│                                                                                     │
-│                    SET    OUT    NOV    DEZ    JAN    FEV    MAR                    │
-│  ─────────────────────────────────────────────────────────────────                  │
-│  Banco de Dados    ▓▓▓▓▓▓▓▓▓                                                        │
-│  T02AB Tarde       └──────────────┘                                                 │
-│                                                                                     │
-│  React.js                 ▓▓▓▓▓▓▓▓▓▓▓                                               │
-│  T02AB Tarde              └───────────────┘                                         │
-│                                                                                     │
-│  C#                              ▓▓▓▓▓▓▓▓▓▓                                         │
-│  T02ABC Noite                    └──────────────┘                                   │
-│                                                                                     │
-│  React Native                           ▓▓▓▓▓▓▓▓                                    │
-│  T02C Tarde                             └────────────┘                              │
-│                                                                                     │
-└─────────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────┐
+│  Disciplina / Turma / Professor                  JAN    FEV    MAR    ABR          │
+│  ─────────────────────────────────────────────────────────────────────────────────  │
+│  Banco de Dados                                  ▓▓▓▓▓▓▓▓▓                          │
+│  T02AB Tarde                                     └──────────────┘                   │
+│  João Silva                                                                         │
+│  ─────────────────────────────────────────────────────────────────────────────────  │
+│  React.js                                               ▓▓▓▓▓▓▓▓▓▓▓                 │
+│  T02AB Tarde                                            └───────────────┘           │
+│  Maria Santos                                                                       │
+│  ─────────────────────────────────────────────────────────────────────────────────  │
+│  Python                                                        ▓▓▓▓▓▓▓▓▓▓           │
+│  T02ABC Noite                                                  └──────────────┘     │
+│  (sem professor)                                                                    │
+└────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Comportamento dos Filtros Combinados
+### Detalhes Técnicos
 
-| Ano | Turma | Professor | Resultado |
-|-----|-------|-----------|-----------|
-| Todos | Todas | Todos | Todas as disciplinas |
-| 2025 | Todas | Todos | Disciplinas de 2025 |
-| 2025 | T02AB | Todos | Disciplinas de 2025 da turma T02AB |
-| 2025 | T02AB | João Silva | Disciplinas de 2025, turma T02AB, professor João |
-| Todos | Todas | Maria Santos | Todas as disciplinas da professora Maria |
+**Estilização do nome do professor:**
+- Fonte menor: `text-[10px]` (menor que o padrão `text-xs`)
+- Cor mais suave: `text-muted-foreground/70` (70% opacidade)
+- Truncate para nomes longos
+- Mostrado apenas se `teacher_name` existir
+
+**Ajustes de largura:**
+- Header: `w-48` → `w-64`
+- Linhas: `w-48` → `w-64`
+- Altura das linhas permanece igual (h-12)
 
 ---
 
@@ -230,7 +104,7 @@ Posição: Após o filtro de Turma
 
 | Antes | Depois |
 |-------|--------|
-| Filtros: Ano e Turma | Filtros: Ano, Turma e Professor |
-| Difícil ver carga de um professor | Fácil visualizar disciplinas de um professor específico |
-| Sem visão por docente | Visão clara da alocação por professor |
+| Mostra: Disciplina + Turma | Mostra: Disciplina + Turma + Professor |
+| Professor só no tooltip | Professor visível diretamente |
+| Coluna 192px | Coluna 256px para acomodar mais texto |
 

@@ -275,10 +275,24 @@ export function SubjectsGanttChart() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Professor:</span>
+              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableTeachers.map(teacher => (
+                    <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );

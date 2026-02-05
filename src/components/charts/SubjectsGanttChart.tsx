@@ -445,14 +445,14 @@ export function SubjectsGanttChart() {
                 key={subject.id}
                 className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
               >
-                <div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-                  <div className="font-medium truncate">{subject.name}</div>
-                  <div className="text-muted-foreground truncate">{subject.class_name}</div>
+              <div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+                  <div className="font-medium break-words">{subject.name}</div>
+                  <div className="text-muted-foreground break-words">{subject.class_name}</div>
                   {subject.teacher_name && (
-                    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
+                    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
                   )}
                 </div>
-                <div className="flex-1 relative h-12 flex items-center">
+                <div className="flex-1 relative min-h-12 flex items-center">
                   {/* Month grid lines */}
                   {months.map((month, monthIndex) => {
                     const monthStart = startOfMonth(month);

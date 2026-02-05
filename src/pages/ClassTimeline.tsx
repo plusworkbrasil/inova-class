@@ -8,11 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { SubjectTimelineCard } from '@/components/ui/subject-timeline-card';
 import { useClassSubjects } from '@/hooks/useClassSubjects';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
-import { ArrowLeft, Calendar, AlertTriangle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Calendar, AlertTriangle, ChevronDown, BarChart3 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useUrgentSubjects } from '@/hooks/useUrgentSubjects';
-
+import { SubjectsGanttChart } from '@/components/charts/SubjectsGanttChart';
 export default function ClassTimeline() {
   const navigate = useNavigate();
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -163,6 +163,22 @@ export default function ClassTimeline() {
             </CardContent>
           </Card>
         )}
+
+        {/* Gráfico Gantt de Todas as Disciplinas */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              📊 Cronograma de Disciplinas
+            </CardTitle>
+            <CardDescription>
+              Visualização tipo Gantt de todas as disciplinas por turma
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubjectsGanttChart />
+          </CardContent>
+        </Card>
 
         {/* Filtro opcional por turma */}
         <Collapsible className="mt-8">

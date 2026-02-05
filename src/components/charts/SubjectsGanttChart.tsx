@@ -92,6 +92,20 @@ export function SubjectsGanttChart() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [subjects]);
 
+  // Extract available teachers from subjects
+  const availableTeachers = useMemo(() => {
+    if (subjects.length === 0) return [];
+    const teachers = new Map<string, string>();
+    subjects.forEach(s => {
+      if (s.teacher_id && s.teacher_name) {
+        teachers.set(s.teacher_id, s.teacher_name);
+      }
+    });
+    return Array.from(teachers.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects]);
+
   // Filter subjects by selected year first
   const filteredByYear = useMemo(() => {
     if (selectedYear === 'all') return subjects;

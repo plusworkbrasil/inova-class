@@ -1,102 +1,211 @@
 
-
-## Plano: Mostrar Nome do Professor nas Linhas do Gráfico Gantt
+## Plano: Adicionar Filtro por Status da Disciplina no Gráfico Gantt
 
 ### Objetivo
 
-Exibir o nome do professor em cada linha do gráfico Gantt, junto com a disciplina e turma, facilitando a identificação rápida sem precisar passar o mouse sobre a barra.
+Adicionar um seletor de status ao gráfico Gantt que permite filtrar disciplinas por:
+- **Em andamento**: Disciplinas cujo período inclui a data atual
+- **Finalizada**: Disciplinas com data de término anterior à data atual
+- **Futura**: Disciplinas com data de início posterior à data atual
 
 ---
 
 ### Arquivo a Modificar
 
-| Arquivo | Ação | Descrição |
+| Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar nome do professor na coluna lateral |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar estado, logica e UI do filtro por status |
 
 ---
 
-### Mudanças
+### Definicao de Status
 
-#### 1. Atualizar Header da Coluna
+```typescript
+type SubjectStatus = 'all' | 'ongoing' | 'finished' | 'future';
 
-Mudar o título de "Disciplina - Turma" para "Disciplina / Turma / Professor":
-
-```tsx
-// Linha 381-382: Atualizar header
-<div className="w-64 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
-  Disciplina / Turma / Professor
-</div>
-```
-
-#### 2. Expandir Largura da Coluna
-
-Aumentar a largura da coluna lateral para acomodar a informação adicional:
-
-- De `w-48` (192px) para `w-64` (256px)
-
-#### 3. Adicionar Nome do Professor nas Linhas
-
-Atualizar a renderização de cada linha para incluir o professor:
-
-```tsx
-// Linhas 414-417: Atualizar para mostrar 3 linhas
-<div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-  <div className="font-medium truncate">{subject.name}</div>
-  <div className="text-muted-foreground truncate">{subject.class_name}</div>
-  {subject.teacher_name && (
-    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
-  )}
-</div>
+const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const start = parseISO(startDate);
+  const end = parseISO(endDate);
+  
+  if (end < today) return 'finished';      // Terminou antes de hoje
+  if (start > today) return 'future';      // Comeca depois de hoje
+  return 'ongoing';                         // Hoje esta entre inicio e fim
+};
 ```
 
 ---
 
-### Locais de Mudança
+### Mudancas no Componente
 
-| Linha | Mudança |
-|-------|---------|
-| 381 | Aumentar largura do header: `w-48` → `w-64` |
-| 382 | Atualizar texto do header |
-| 414 | Aumentar largura da coluna: `w-48` → `w-64` |
-| 414-417 | Adicionar terceira linha com nome do professor |
+#### 1. Adicionar Estado para Filtro de Status
+
+```typescript
+const [selectedStatus, setSelectedStatus] = useState<string>('all');
+```
+
+#### 2. Adicionar Funcao de Calculo de Status
+
+```typescript
+const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const start = parseISO(startDate);
+  const end = parseISO(endDate);
+  
+  if (end < today) return 'finished';
+  if (start > today) return 'future';
+  return 'ongoing';
+};
+```
+
+#### 3. Atualizar Cadeia de Filtros
+
+Adicionar filtro por status apos o filtro por professor:
+
+```typescript
+// Filtrar por professor
+const filteredByTeacher = useMemo(() => {
+  if (selectedTeacher === 'all') return filteredByClass;
+  return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
+}, [filteredByClass, selectedTeacher]);
+
+// Filtrar por status (NOVO)
+const filteredSubjects = useMemo(() => {
+  if (selectedStatus === 'all') return filteredByTeacher;
+  return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
+}, [filteredByTeacher, selectedStatus]);
+```
+
+#### 4. Adicionar UI do Filtro de Status
+
+Posicao: Apos o filtro de Professor
+
+```tsx
+{/* Filtro por Status */}
+<div className="flex items-center gap-2">
+  <span className="text-sm font-medium text-muted-foreground">Status:</span>
+  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+    <SelectTrigger className="w-[150px]">
+      <SelectValue placeholder="Selecionar" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">Todos</SelectItem>
+      <SelectItem value="ongoing">Em andamento</SelectItem>
+      <SelectItem value="finished">Finalizadas</SelectItem>
+      <SelectItem value="future">Futuras</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+```
+
+#### 5. Atualizar Badge de Contador
+
+```tsx
+{(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all') && (
+  <Badge variant="secondary">
+    {filteredSubjects.length} disciplina(s)
+  </Badge>
+)}
+```
+
+#### 6. Atualizar Mensagem de Estado Vazio
+
+```tsx
+<p>
+  Nenhuma disciplina encontrada
+  {selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all'
+    ? ' para os filtros selecionados' 
+    : ' com datas definidas'}.
+</p>
+```
+
+---
+
+### Fluxo de Filtros em Cascata Atualizado
+
+```text
+Todas as Disciplinas
+        |
+        v
+Filtro por Ano (selectedYear)
+        |
+        v
+Filtro por Turma (selectedClass)
+        |
+        v
+Filtro por Professor (selectedTeacher)
+        |
+        v
+Filtro por Status (selectedStatus) <-- NOVO
+        |
+        v
+Grafico Gantt Renderizado
+```
 
 ---
 
 ### Interface Visual Esperada
 
 ```text
-┌────────────────────────────────────────────────────────────────────────────────────┐
-│  Disciplina / Turma / Professor                  JAN    FEV    MAR    ABR          │
-│  ─────────────────────────────────────────────────────────────────────────────────  │
-│  Banco de Dados                                  ▓▓▓▓▓▓▓▓▓                          │
-│  T02AB Tarde                                     └──────────────┘                   │
-│  João Silva                                                                         │
-│  ─────────────────────────────────────────────────────────────────────────────────  │
-│  React.js                                               ▓▓▓▓▓▓▓▓▓▓▓                 │
-│  T02AB Tarde                                            └───────────────┘           │
-│  Maria Santos                                                                       │
-│  ─────────────────────────────────────────────────────────────────────────────────  │
-│  Python                                                        ▓▓▓▓▓▓▓▓▓▓           │
-│  T02ABC Noite                                                  └──────────────┘     │
-│  (sem professor)                                                                    │
-└────────────────────────────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------------------------------------+
+|  Cronograma de Disciplinas                                                                |
++-------------------------------------------------------------------------------------------+
+|                                                                                           |
+|  Ano: [v 2025]  Turma: [v Todas]  Professor: [v Todos]  Status: [v Em andamento]         |
+|                                                                                           |
+|  * 3 disciplinas                                               [PDF] [Imagem]             |
+|                                                                                           |
+|                    JAN    FEV    MAR    ABR    MAI    JUN                                 |
+|  ---------------------------------------------------------------------------------        |
+|  React.js                 ############                                                    |
+|  T02AB Tarde                                                                              |
+|  Joao Silva                                                                               |
+|  ---------------------------------------------------------------------------------        |
+|  Node.js                        ############                                              |
+|  T02AB Tarde                                                                              |
+|  Maria Santos                                                                             |
+|  ---------------------------------------------------------------------------------        |
++-------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-### Detalhes Técnicos
+### Comportamento dos Status
 
-**Estilização do nome do professor:**
-- Fonte menor: `text-[10px]` (menor que o padrão `text-xs`)
-- Cor mais suave: `text-muted-foreground/70` (70% opacidade)
-- Truncate para nomes longos
-- Mostrado apenas se `teacher_name` existir
+| Status | Condicao | Exemplo (hoje = 01/03/2025) |
+|--------|----------|----------------------------|
+| **Em andamento** | `start <= hoje <= end` | 15/02/2025 - 15/04/2025 |
+| **Finalizada** | `end < hoje` | 01/01/2025 - 28/02/2025 |
+| **Futura** | `start > hoje` | 01/04/2025 - 30/06/2025 |
 
-**Ajustes de largura:**
-- Header: `w-48` → `w-64`
-- Linhas: `w-48` → `w-64`
-- Altura das linhas permanece igual (h-12)
+---
+
+### Combinacoes de Filtros
+
+| Ano | Turma | Professor | Status | Resultado |
+|-----|-------|-----------|--------|-----------|
+| Todos | Todas | Todos | Todos | Todas as disciplinas |
+| 2025 | Todas | Todos | Em andamento | Disciplinas de 2025 em execucao |
+| Todos | T02AB | Joao | Finalizadas | Disciplinas finalizadas do Joao na T02AB |
+| Todos | Todas | Todos | Futuras | Todas as disciplinas que ainda vao comecar |
+
+---
+
+### Locais de Mudanca
+
+| Linha | Mudanca |
+|-------|---------|
+| ~68 | Adicionar estado `selectedStatus` |
+| ~108 | Adicionar funcao `getSubjectStatus` |
+| ~127-130 | Renomear `filteredSubjects` para `filteredByTeacher` |
+| ~132 | Adicionar novo `filteredSubjects` com filtro de status |
+| ~294-296 | Atualizar condicao da mensagem vazia (empty state) |
+| ~347 | Adicionar Select de Status na UI |
+| ~348 | Atualizar condicao do Badge contador |
 
 ---
 
@@ -104,7 +213,6 @@ Atualizar a renderização de cada linha para incluir o professor:
 
 | Antes | Depois |
 |-------|--------|
-| Mostra: Disciplina + Turma | Mostra: Disciplina + Turma + Professor |
-| Professor só no tooltip | Professor visível diretamente |
-| Coluna 192px | Coluna 256px para acomodar mais texto |
-
+| Filtros: Ano, Turma, Professor | Filtros: Ano, Turma, Professor, Status |
+| Sem nocao de progresso temporal | Facil identificar disciplinas atuais, passadas e futuras |
+| Todas disciplinas misturadas | Visao focada por status de execucao |

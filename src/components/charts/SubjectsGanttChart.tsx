@@ -331,7 +331,21 @@ export function SubjectsGanttChart() {
               </SelectContent>
             </Select>
           </div>
-          {(selectedYear !== 'all' || selectedClass !== 'all') && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Professor:</span>
+            <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {availableTeachers.map(teacher => (
+                  <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all') && (
             <Badge variant="secondary">
               {filteredSubjects.length} disciplina(s)
             </Badge>

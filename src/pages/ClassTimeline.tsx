@@ -164,6 +164,22 @@ export default function ClassTimeline() {
           </Card>
         )}
 
+        {/* Gráfico Gantt de Todas as Disciplinas */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              📊 Cronograma de Disciplinas
+            </CardTitle>
+            <CardDescription>
+              Visualização tipo Gantt de todas as disciplinas por turma
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SubjectsGanttChart />
+          </CardContent>
+        </Card>
+
         {/* Filtro opcional por turma */}
         <Collapsible className="mt-8">
           <CollapsibleTrigger asChild>

@@ -378,8 +378,8 @@ export function SubjectsGanttChart() {
         <div className="min-w-[800px]">
           {/* Header with months */}
           <div className="flex border-b border-border">
-            <div className="w-48 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
-              Disciplina - Turma
+            <div className="w-64 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
+              Disciplina / Turma / Professor
             </div>
             <div className="flex-1 flex">
               {months.map((month, index) => {

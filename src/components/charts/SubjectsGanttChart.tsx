@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
-import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, parseISO } from 'date-fns';
+import { useMemo, useState } from 'react';
+import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, parseISO, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAllSubjectsTimeline, TimelineSubject } from '@/hooks/useAllSubjectsTimeline';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const CLASS_COLORS = [
   'hsl(0, 84%, 60%)',    // vermelho

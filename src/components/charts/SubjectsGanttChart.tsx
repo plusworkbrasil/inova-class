@@ -231,6 +231,25 @@ export function SubjectsGanttChart() {
     };
   }, [filteredSubjects]);
 
+  // Calculate today's position on the timeline
+  const todayPosition = useMemo(() => {
+    if (filteredSubjects.length === 0) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if today is within the visible timeline range
+    const timelineEnd = new Date(timelineStart.getTime());
+    timelineEnd.setDate(timelineEnd.getDate() + totalDays - 1);
+    
+    if (today < timelineStart || today > timelineEnd) {
+      return null; // Today is outside visible range
+    }
+    
+    const daysFromStart = differenceInDays(today, timelineStart);
+    return (daysFromStart / totalDays) * 100;
+  }, [timelineStart, totalDays, filteredSubjects.length]);
+
   const calculatePosition = (startDate: string, endDate: string) => {
     const start = parseISO(startDate);
     const end = parseISO(endDate);
@@ -415,7 +434,7 @@ export function SubjectsGanttChart() {
             <div className="w-64 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
               Disciplina / Turma / Professor
             </div>
-            <div className="flex-1 flex">
+            <div className="flex-1 flex relative">
               {months.map((month, index) => {
                 const monthStart = startOfMonth(month);
                 const monthEnd = endOfMonth(month);
@@ -432,6 +451,17 @@ export function SubjectsGanttChart() {
                   </div>
                 );
               })}
+              {/* Today marker in header */}
+              {todayPosition !== null && (
+                <div
+                  className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                  style={{ left: `${todayPosition}%` }}
+                >
+                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm whitespace-nowrap font-medium">
+                    Hoje
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -469,6 +499,14 @@ export function SubjectsGanttChart() {
                       />
                     );
                   })}
+                  
+                  {/* Today marker line */}
+                  {todayPosition !== null && (
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                      style={{ left: `${todayPosition}%` }}
+                    />
+                  )}
                   
                   {/* Gantt bar */}
                   <GanttBar

@@ -118,10 +118,16 @@ export function SubjectsGanttChart() {
   }, [subjects, selectedYear]);
 
   // Then filter by selected class
-  const filteredSubjects = useMemo(() => {
+  const filteredByClass = useMemo(() => {
     if (selectedClass === 'all') return filteredByYear;
     return filteredByYear.filter(s => s.class_id === selectedClass);
   }, [filteredByYear, selectedClass]);
+
+  // Finally filter by selected teacher
+  const filteredSubjects = useMemo(() => {
+    if (selectedTeacher === 'all') return filteredByClass;
+    return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
+  }, [filteredByClass, selectedTeacher]);
 
   // Export handlers
   const handleExportPdf = async () => {

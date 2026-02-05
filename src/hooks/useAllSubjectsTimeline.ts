@@ -55,6 +55,7 @@ export function useAllSubjectsTimeline() {
           start_date: item.start_date,
           end_date: item.end_date,
           teacher_name: item.profiles?.name || null,
+          teacher_id: item.teacher_id || null,
         }));
 
         // Sort by class name, then by start date

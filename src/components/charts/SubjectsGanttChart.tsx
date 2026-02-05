@@ -65,7 +65,21 @@ export function SubjectsGanttChart() {
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
+
+  // Helper function to calculate subject status
+  const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    
+    if (end < today) return 'finished';
+    if (start > today) return 'future';
+    return 'ongoing';
+  };
 
   // Extract available years from subjects
   const availableYears = useMemo(() => {

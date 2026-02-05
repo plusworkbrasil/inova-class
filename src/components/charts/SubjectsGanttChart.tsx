@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, parseISO, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { FileDown, Image as ImageIcon } from 'lucide-react';
 import { useAllSubjectsTimeline, TimelineSubject } from '@/hooks/useAllSubjectsTimeline';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { toast } from 'sonner';
+import html2pdf from 'html2pdf.js';
 const CLASS_COLORS = [
   'hsl(0, 84%, 60%)',    // vermelho
   'hsl(25, 95%, 53%)',   // laranja
@@ -60,6 +63,8 @@ function GanttBar({ subject, color, leftPercent, widthPercent }: GanttBarProps) 
 export function SubjectsGanttChart() {
   const { subjects, loading, error } = useAllSubjectsTimeline();
   const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [exporting, setExporting] = useState(false);
 
   // Extract available years from subjects
   const availableYears = useMemo(() => {
@@ -72,8 +77,22 @@ export function SubjectsGanttChart() {
     return Array.from(years).sort((a, b) => b - a); // Most recent first
   }, [subjects]);
 
-  // Filter subjects by selected year
-  const filteredSubjects = useMemo(() => {
+  // Extract available classes from subjects
+  const availableClasses = useMemo(() => {
+    if (subjects.length === 0) return [];
+    const classes = new Map<string, string>();
+    subjects.forEach(s => {
+      if (s.class_id) {
+        classes.set(s.class_id, s.class_name);
+      }
+    });
+    return Array.from(classes.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects]);
+
+  // Filter subjects by selected year first
+  const filteredByYear = useMemo(() => {
     if (selectedYear === 'all') return subjects;
     const year = parseInt(selectedYear);
     return subjects.filter(s => {
@@ -82,6 +101,58 @@ export function SubjectsGanttChart() {
       return startYear === year || endYear === year;
     });
   }, [subjects, selectedYear]);
+
+  // Then filter by selected class
+  const filteredSubjects = useMemo(() => {
+    if (selectedClass === 'all') return filteredByYear;
+    return filteredByYear.filter(s => s.class_id === selectedClass);
+  }, [filteredByYear, selectedClass]);
+
+  // Export handlers
+  const handleExportPdf = async () => {
+    setExporting(true);
+    try {
+      const element = document.getElementById('gantt-chart-container');
+      if (!element) throw new Error('Elemento não encontrado');
+
+      const options = {
+        margin: 10,
+        filename: `Cronograma_Disciplinas_${format(new Date(), 'yyyy-MM-dd_HHmm')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      await html2pdf().set(options).from(element).save();
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Export PDF error:', error);
+      toast.error('Erro ao exportar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportImage = async () => {
+    setExporting(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const element = document.getElementById('gantt-chart-container');
+      if (!element) throw new Error('Elemento não encontrado');
+
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `Cronograma_Disciplinas_${format(new Date(), 'yyyy-MM-dd_HHmm')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('Imagem exportada com sucesso!');
+    } catch (error) {
+      console.error('Export Image error:', error);
+      toast.error('Erro ao exportar imagem');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const { months, timelineStart, totalDays, classColorMap, uniqueClasses } = useMemo(() => {
     if (filteredSubjects.length === 0) {
@@ -152,27 +223,41 @@ export function SubjectsGanttChart() {
   if (filteredSubjects.length === 0) {
     return (
       <div className="space-y-4">
-        {/* Year Filter */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            Filtrar por ano:
-          </span>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Selecionar ano" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os anos</SelectItem>
-              {availableYears.map(year => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Turma:</span>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {availableClasses.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina com datas definidas encontrada{selectedYear !== 'all' ? ` para ${selectedYear}` : ''}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );
@@ -180,33 +265,67 @@ export function SubjectsGanttChart() {
 
   return (
     <div className="space-y-4">
-      {/* Year Filter */}
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-muted-foreground">
-          Filtrar por ano:
-        </span>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Selecionar ano" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os anos</SelectItem>
-            {availableYears.map(year => (
-              <SelectItem key={year} value={year.toString()}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedYear !== 'all' && (
-          <Badge variant="secondary">
-            {filteredSubjects.length} disciplina(s)
-          </Badge>
-        )}
+      {/* Filters and Export Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Turma:</span>
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as turmas</SelectItem>
+                {availableClasses.map(cls => (
+                  <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all') && (
+            <Badge variant="secondary">
+              {filteredSubjects.length} disciplina(s)
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || filteredSubjects.length === 0}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportImage}
+            disabled={exporting || filteredSubjects.length === 0}
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Imagem
+          </Button>
+        </div>
       </div>
 
       {/* Gantt Chart */}
-      <div className="overflow-x-auto">
+      <div id="gantt-chart-container" className="overflow-x-auto bg-background rounded-lg p-2">
         <div className="min-w-[800px]">
           {/* Header with months */}
           <div className="flex border-b border-border">

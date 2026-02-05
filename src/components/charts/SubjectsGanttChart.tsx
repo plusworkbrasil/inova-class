@@ -63,6 +63,8 @@ function GanttBar({ subject, color, leftPercent, widthPercent }: GanttBarProps) 
 export function SubjectsGanttChart() {
   const { subjects, loading, error } = useAllSubjectsTimeline();
   const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [exporting, setExporting] = useState(false);
 
   // Extract available years from subjects
   const availableYears = useMemo(() => {
@@ -75,8 +77,22 @@ export function SubjectsGanttChart() {
     return Array.from(years).sort((a, b) => b - a); // Most recent first
   }, [subjects]);
 
-  // Filter subjects by selected year
-  const filteredSubjects = useMemo(() => {
+  // Extract available classes from subjects
+  const availableClasses = useMemo(() => {
+    if (subjects.length === 0) return [];
+    const classes = new Map<string, string>();
+    subjects.forEach(s => {
+      if (s.class_id) {
+        classes.set(s.class_id, s.class_name);
+      }
+    });
+    return Array.from(classes.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects]);
+
+  // Filter subjects by selected year first
+  const filteredByYear = useMemo(() => {
     if (selectedYear === 'all') return subjects;
     const year = parseInt(selectedYear);
     return subjects.filter(s => {
@@ -85,6 +101,58 @@ export function SubjectsGanttChart() {
       return startYear === year || endYear === year;
     });
   }, [subjects, selectedYear]);
+
+  // Then filter by selected class
+  const filteredSubjects = useMemo(() => {
+    if (selectedClass === 'all') return filteredByYear;
+    return filteredByYear.filter(s => s.class_id === selectedClass);
+  }, [filteredByYear, selectedClass]);
+
+  // Export handlers
+  const handleExportPdf = async () => {
+    setExporting(true);
+    try {
+      const element = document.getElementById('gantt-chart-container');
+      if (!element) throw new Error('Elemento não encontrado');
+
+      const options = {
+        margin: 10,
+        filename: `Cronograma_Disciplinas_${format(new Date(), 'yyyy-MM-dd_HHmm')}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      await html2pdf().set(options).from(element).save();
+      toast.success('PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Export PDF error:', error);
+      toast.error('Erro ao exportar PDF');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportImage = async () => {
+    setExporting(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const element = document.getElementById('gantt-chart-container');
+      if (!element) throw new Error('Elemento não encontrado');
+
+      const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `Cronograma_Disciplinas_${format(new Date(), 'yyyy-MM-dd_HHmm')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('Imagem exportada com sucesso!');
+    } catch (error) {
+      console.error('Export Image error:', error);
+      toast.error('Erro ao exportar imagem');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const { months, timelineStart, totalDays, classColorMap, uniqueClasses } = useMemo(() => {
     if (filteredSubjects.length === 0) {

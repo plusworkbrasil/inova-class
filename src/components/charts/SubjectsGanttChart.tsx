@@ -234,7 +234,7 @@ export function SubjectsGanttChart() {
           </div>
 
           {/* Rows */}
-          {subjects.map((subject, index) => {
+          {filteredSubjects.map((subject, index) => {
             const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
             const color = classColorMap.get(subject.class_id) || CLASS_COLORS[0];
             

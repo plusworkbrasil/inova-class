@@ -9,6 +9,7 @@ export interface TimelineSubject {
   start_date: string;
   end_date: string;
   teacher_name: string | null;
+  teacher_id: string | null;
 }
 
 export function useAllSubjectsTimeline() {

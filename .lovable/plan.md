@@ -1,131 +1,104 @@
 
 
-## Plano: Corrigir Alinhamento das Barras do Gantt com os Meses
+## Plano: Corrigir Texto Cortado na Exportação do Gráfico Gantt
 
 ### Problema Identificado
 
-As barras do Gantt não estão alinhadas corretamente com as colunas de meses porque:
+Na exportação do gráfico Gantt (PDF ou imagem), o texto das colunas "Disciplina", "Turma" e "Professor" está sendo cortado porque as classes CSS `truncate` aplicam:
+- `overflow: hidden`
+- `text-overflow: ellipsis`
+- `white-space: nowrap`
 
-1. **Header dos meses**: Usa `display: flex` onde cada mês tem largura percentual calculada
-2. **Área das barras**: Usa `position: absolute` com `left` em porcentagem
-
-O problema é que o flexbox distribui o espaço de forma diferente do posicionamento absoluto, causando desalinhamento visual entre as barras e os meses correspondentes.
+Isso faz com que texto longo seja cortado com "..." na visualização e especialmente na exportação.
 
 ---
 
 ### Arquivo a Modificar
 
-| Arquivo | Acao | Descricao |
+| Arquivo | Ação | Descrição |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Unificar sistema de posicionamento |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Permitir texto completo visível na exportação |
 
 ---
 
-### Solucao
+### Solução
 
-Modificar o header para usar o mesmo sistema de posicionamento absoluto que as barras, garantindo alinhamento perfeito.
+Remover a classe `truncate` dos textos da coluna lateral e permitir que o texto quebre em múltiplas linhas quando necessário, usando `break-words` para evitar overflow horizontal.
 
-#### Mudanca no Header (Linhas 421-435)
+#### Mudanças nas Linhas 448-453
 
 **Antes:**
 ```tsx
-<div className="flex-1 flex">
-  {months.map((month, index) => {
-    const { widthPercent } = calculateMonthPosition(month);
-    
-    return (
-      <div
-        key={index}
-        className="text-center p-2 text-xs font-medium border-l border-border bg-muted"
-        style={{ width: `${widthPercent}%` }}
-      >
-        {format(month, 'MMM yyyy', { locale: ptBR })}
-      </div>
-    );
-  })}
+<div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+  <div className="font-medium truncate">{subject.name}</div>
+  <div className="text-muted-foreground truncate">{subject.class_name}</div>
+  {subject.teacher_name && (
+    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
+  )}
 </div>
 ```
 
 **Depois:**
 ```tsx
-<div className="flex-1 relative">
-  {months.map((month, index) => {
-    const { leftPercent, widthPercent } = calculateMonthPosition(month);
-    
-    return (
-      <div
-        key={index}
-        className="absolute text-center p-2 text-xs font-medium border-l border-border bg-muted h-full flex items-center justify-center"
-        style={{ 
-          left: `${leftPercent}%`, 
-          width: `${widthPercent}%` 
-        }}
-      >
-        {format(month, 'MMM yyyy', { locale: ptBR })}
-      </div>
-    );
-  })}
+<div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
+  <div className="font-medium break-words">{subject.name}</div>
+  <div className="text-muted-foreground break-words">{subject.class_name}</div>
+  {subject.teacher_name && (
+    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
+  )}
 </div>
 ```
 
----
+#### Ajustar Altura da Linha (Linha 455)
 
-### Detalhes Tecnicos
+Como o texto pode ocupar mais de uma linha, alterar a altura da barra do Gantt de fixa para mínima:
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Container header | `flex` | `relative` |
-| Celulas de mes | `width: %` | `position: absolute` + `left: %` + `width: %` |
-| Alinhamento | Flexbox independente | Mesmo sistema das barras |
-
----
-
-### Porque Isso Funciona
-
-Ambos os sistemas (header e barras) usarao o mesmo calculo de posicionamento:
-
-```typescript
-const calculateMonthPosition = (month: Date) => {
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
-  const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-  const widthPercent = (daysInMonth / totalDays) * 100;
-  const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
-  return { leftPercent, widthPercent };
-};
-```
-
-As barras ja usam esse calculo corretamente. Ao aplicar o mesmo sistema ao header, os meses e as barras ficarao perfeitamente alinhados.
-
----
-
-### Mudanca Adicional - Altura do Container do Header
-
-Adicionar altura fixa ao container do header para que os elementos absolutos tenham referencia:
-
+**Antes:**
 ```tsx
-<div className="flex-1 relative h-10">
+<div className="flex-1 relative h-12 flex items-center">
+```
+
+**Depois:**
+```tsx
+<div className="flex-1 relative min-h-12 flex items-center">
 ```
 
 ---
 
-### Visualizacao do Resultado
+### Detalhes Técnicos
+
+| Classe Anterior | Classe Nova | Efeito |
+|-----------------|-------------|--------|
+| `truncate` | `break-words` | Permite quebra de palavras longas |
+| `h-12` | `min-h-12` | Altura mínima, mas pode crescer se necessário |
+
+---
+
+### Resultado Esperado
+
+| Antes (Exportação) | Depois (Exportação) |
+|--------------------|---------------------|
+| "React is..." | "React is" (completo) |
+| "Jovem Tech T02ABC..." | "Jovem Tech T02ABC - Noite" (completo) |
+| "Jailson Sil..." | "Jailson Silva" (completo) |
+
+---
+
+### Visualização do Problema vs Solução
 
 ```text
-ANTES (desalinhado):
-|  JAN  |   FEV   |  MAR  |
-     [████████]        <- barra nao alinhada
+ANTES (cortado):
++---------------------------+------------------------------------+
+| React is...               |  ▓▓▓▓▓                             |
+| Jovem Tech T02ABC...      |                                    |
+| Jailson Sil...            |                                    |
++---------------------------+------------------------------------+
 
-DEPOIS (alinhado):
-|  JAN  |   FEV   |  MAR  |
-|  [████████]    |     <- barra alinhada com os meses
+DEPOIS (completo):
++---------------------------+------------------------------------+
+| React is                  |  ▓▓▓▓▓                             |
+| Jovem Tech T02ABC - Noite |                                    |
+| Jailson Silva             |                                    |
++---------------------------+------------------------------------+
 ```
-
----
-
-### Resumo das Mudancas
-
-1. Trocar `flex-1 flex` por `flex-1 relative h-10` no container do header
-2. Adicionar `position: absolute`, `left`, e `h-full` nas celulas de mes
-3. Adicionar `flex items-center justify-center` para centralizar o texto verticalmente
 

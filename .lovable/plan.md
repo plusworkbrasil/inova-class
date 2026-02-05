@@ -1,71 +1,78 @@
 
+## Plano: Sincronizar Email do Thalles Vicente Rabelo
 
-## Plano: Corrigir Visibilidade dos Alunos Mateus e Matheus nas Disciplinas
+### Problema Raiz
 
-### Problema Identificado
+O email no sistema de autenticação (`auth.users`) está diferente do email na tabela `profiles`:
 
-Os alunos **Mateus de Jesus Miranda** e **Matheus Antônio Andrade Chagas** não aparecem nas listas porque:
+| Local | Email |
+|-------|-------|
+| `profiles` (o que você vê na interface) | `thalles.vicente.nl@gmail.com` |
+| `auth.users` (usado para login) | `thalles@inovase.org` |
 
-1. **Possuem evasões ativas** registradas em 11/11/2025 (motivo: "Dificuldades acadêmicas")
-2. **Não possuem nenhuma presença "C"** nas disciplinas Computação em Nuvens e Projetos
-
-| Aluno | ID | Evasão ID |
-|-------|-----|-----------|
-| Mateus de Jesus Miranda | `64396819-79d6-4cbe-9ffd-c277c4fb000b` | `4b5caba3-d28e-4663-a880-28f4bf26fa47` |
-| Matheus Antônio Andrade Chagas | `3da048a8-cc5a-4d4b-95cd-f72dc6d4e326` | `dbdff59a-bb7c-4bd3-81f4-15046692e806` |
+Quando você alterou a senha pelo painel admin, ela foi alterada corretamente, mas o usuário está tentando logar com o email errado.
 
 ---
 
-### Solução: Cancelar Evasões via SQL
+### Solução 1: Fazer login com o email correto (rápido)
 
-Executar uma migration para cancelar as evasões registradas por engano:
+O usuário pode fazer login **agora** usando:
+- **Email:** `thalles@inovase.org` (o email real no auth)
+- **Senha:** A nova senha que você definiu pelo admin
 
-```sql
--- Cancelar evasões ativas dos alunos Mateus e Matheus
-UPDATE evasions 
-SET 
-  status = 'cancelled',
-  observations = COALESCE(observations, '') || 
-    E'\n[Cancelado em ' || to_char(now(), 'DD/MM/YYYY') || 
-    ']: Evasão registrada por engano - aluno retornou às aulas.',
-  updated_at = now()
-WHERE id IN (
-  '4b5caba3-d28e-4663-a880-28f4bf26fa47',  -- Mateus de Jesus Miranda
-  'dbdff59a-bb7c-4bd3-81f4-15046692e806'   -- Matheus Antônio Andrade Chagas
-);
+---
+
+### Solução 2: Sincronizar o email no auth.users (permanente)
+
+Criar uma ferramenta para sincronizar o email deste usuário específico ou usar a edge function existente.
+
+#### Opção A: Via página de Configurações
+
+Ir em **Configurações** > **Sincronização de Emails de Autenticação** e adicionar o email `thalles.vicente.nl@gmail.com` à lista de sincronização.
+
+#### Opção B: Chamada direta à edge function
+
+Executar a edge function `sync-auth-email-with-profiles` com o email do usuário para sincronizar.
+
+---
+
+### Implementação Recomendada
+
+Adicionar uma funcionalidade na página de **Gerenciamento de Usuários** para sincronizar emails individuais, não apenas uma lista fixa.
+
+#### Arquivo a modificar: `src/pages/Users.tsx`
+
+Adicionar um botão "Sincronizar Email" ao lado do botão de alterar senha, que chama a edge function `sync-auth-email-with-profiles` para o usuário selecionado.
+
+```typescript
+const handleSyncEmail = async (userId: string, email: string) => {
+  const { data, error } = await supabase.functions.invoke('sync-auth-email-with-profiles', {
+    body: { emails: [email] }
+  });
+  
+  if (error) {
+    toast.error('Erro ao sincronizar email');
+  } else {
+    toast.success('Email sincronizado com sucesso');
+  }
+};
 ```
-
----
-
-### Sobre as Presenças
-
-Após cancelar as evasões, os alunos aparecerão:
-
-- ✅ Na **lista de chamada** (para registrar frequência)
-- ⚠️ Na **matriz de frequência** - somente após terem ao menos 1 presença "C" registrada
-- ⚠️ Na **lista de notas** - somente após terem ao menos 1 presença "C" registrada
-- ⚠️ Nos **PDFs de Lista de Presença/Frequência** - somente após terem ao menos 1 presença "C"
-
-Isso ocorre porque a regra de negócio implementada anteriormente exige que o aluno tenha comparecido ao menos uma vez para aparecer nas matrizes consolidadas.
-
----
-
-### Alternativa: Via Interface
-
-Caso prefira não usar SQL, você pode:
-
-1. Ir em **Gestão de Evasões** (`/evasions`)
-2. Localizar os registros de Mateus Miranda e Matheus Antônio
-3. Clicar no botão **"Cancelar Evasão"** para cada um
 
 ---
 
 ### Resultado Esperado
 
-| Etapa | Antes | Depois |
-|-------|-------|--------|
-| Cancelar evasões | Evasões ativas bloqueando | Evasões canceladas |
-| Aparecer na chamada | ❌ Não aparecem | ✅ Aparecerão |
-| Registrar presença "C" | -- | Instrutor registra |
-| Aparecer em frequência/notas | ❌ | ✅ Após 1ª presença |
+| Etapa | Ação | Resultado |
+|-------|------|-----------|
+| 1 | Sincronizar email | Email no auth.users muda de `thalles@inovase.org` para `thalles.vicente.nl@gmail.com` |
+| 2 | Usuário faz login | Login com `thalles.vicente.nl@gmail.com` + senha nova funciona |
 
+---
+
+### Alternativa Imediata (sem código)
+
+Se precisar que o usuário acesse **agora**, informe-o que o login deve ser feito com:
+- **Email:** `thalles@inovase.org`
+- **Senha:** A que você definiu pelo admin
+
+Depois você pode sincronizar o email para corrigir permanentemente.

@@ -137,11 +137,17 @@ export function SubjectsGanttChart() {
     return filteredByYear.filter(s => s.class_id === selectedClass);
   }, [filteredByYear, selectedClass]);
 
-  // Finally filter by selected teacher
-  const filteredSubjects = useMemo(() => {
+  // Filter by selected teacher
+  const filteredByTeacher = useMemo(() => {
     if (selectedTeacher === 'all') return filteredByClass;
     return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
   }, [filteredByClass, selectedTeacher]);
+
+  // Finally filter by selected status
+  const filteredSubjects = useMemo(() => {
+    if (selectedStatus === 'all') return filteredByTeacher;
+    return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
+  }, [filteredByTeacher, selectedStatus]);
 
   // Export handlers
   const handleExportPdf = async () => {

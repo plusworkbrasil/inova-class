@@ -265,29 +265,63 @@ export function SubjectsGanttChart() {
 
   return (
     <div className="space-y-4">
-      {/* Year Filter */}
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium text-muted-foreground">
-          Filtrar por ano:
-        </span>
-        <Select value={selectedYear} onValueChange={setSelectedYear}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Selecionar ano" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os anos</SelectItem>
-            {availableYears.map(year => (
-              <SelectItem key={year} value={year.toString()}>
-                {year}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedYear !== 'all' && (
-          <Badge variant="secondary">
-            {filteredSubjects.length} disciplina(s)
-          </Badge>
-        )}
+      {/* Filters and Export Buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {availableYears.map(year => (
+                  <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Turma:</span>
+            <Select value={selectedClass} onValueChange={setSelectedClass}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as turmas</SelectItem>
+                {availableClasses.map(cls => (
+                  <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all') && (
+            <Badge variant="secondary">
+              {filteredSubjects.length} disciplina(s)
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exporting || filteredSubjects.length === 0}
+          >
+            <FileDown className="h-4 w-4 mr-2" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportImage}
+            disabled={exporting || filteredSubjects.length === 0}
+          >
+            <ImageIcon className="h-4 w-4 mr-2" />
+            Imagem
+          </Button>
+        </div>
       </div>
 
       {/* Gantt Chart */}

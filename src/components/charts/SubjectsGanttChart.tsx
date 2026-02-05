@@ -231,6 +231,25 @@ export function SubjectsGanttChart() {
     };
   }, [filteredSubjects]);
 
+  // Calculate today's position on the timeline
+  const todayPosition = useMemo(() => {
+    if (filteredSubjects.length === 0) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Check if today is within the visible timeline range
+    const timelineEnd = new Date(timelineStart.getTime());
+    timelineEnd.setDate(timelineEnd.getDate() + totalDays - 1);
+    
+    if (today < timelineStart || today > timelineEnd) {
+      return null; // Today is outside visible range
+    }
+    
+    const daysFromStart = differenceInDays(today, timelineStart);
+    return (daysFromStart / totalDays) * 100;
+  }, [timelineStart, totalDays, filteredSubjects.length]);
+
   const calculatePosition = (startDate: string, endDate: string) => {
     const start = parseISO(startDate);
     const end = parseISO(endDate);

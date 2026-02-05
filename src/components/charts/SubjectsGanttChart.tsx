@@ -418,15 +418,18 @@ export function SubjectsGanttChart() {
             <div className="w-48 flex-shrink-0 p-2 font-semibold text-sm bg-muted">
               Turma
             </div>
-            <div className="flex-1 flex">
+            <div className="flex-1 relative h-10">
               {months.map((month, index) => {
-                const { widthPercent } = calculateMonthPosition(month);
+                const { leftPercent, widthPercent } = calculateMonthPosition(month);
                 
                 return (
                   <div
                     key={index}
-                    className="text-center p-2 text-xs font-medium border-l border-border bg-muted"
-                    style={{ width: `${widthPercent}%` }}
+                    className="absolute text-center text-xs font-medium border-l border-border bg-muted h-full flex items-center justify-center"
+                    style={{ 
+                      left: `${leftPercent}%`, 
+                      width: `${widthPercent}%` 
+                    }}
                   >
                     {format(month, 'MMM yyyy', { locale: ptBR })}
                   </div>

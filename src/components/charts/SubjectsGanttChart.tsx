@@ -312,7 +312,7 @@ export function SubjectsGanttChart() {
           </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' || selectedStatus !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );

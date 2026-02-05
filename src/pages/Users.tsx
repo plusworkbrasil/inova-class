@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight, X, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';

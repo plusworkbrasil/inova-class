@@ -31,6 +31,7 @@ export function useAllSubjectsTimeline() {
             start_date,
             end_date,
             class_id,
+            teacher_id,
             classes!subjects_class_id_fkey (
               name
             ),

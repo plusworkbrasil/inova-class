@@ -325,7 +325,7 @@ export function SubjectsGanttChart() {
       </div>
 
       {/* Gantt Chart */}
-      <div className="overflow-x-auto">
+      <div id="gantt-chart-container" className="overflow-x-auto bg-background rounded-lg p-2">
         <div className="min-w-[800px]">
           {/* Header with months */}
           <div className="flex border-b border-border">

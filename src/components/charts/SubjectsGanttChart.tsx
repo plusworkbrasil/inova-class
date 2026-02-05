@@ -223,27 +223,41 @@ export function SubjectsGanttChart() {
   if (filteredSubjects.length === 0) {
     return (
       <div className="space-y-4">
-        {/* Year Filter */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-muted-foreground">
-            Filtrar por ano:
-          </span>
-          <Select value={selectedYear} onValueChange={setSelectedYear}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Selecionar ano" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os anos</SelectItem>
-              {availableYears.map(year => (
-                <SelectItem key={year} value={year.toString()}>
-                  {year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Ano:</span>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableYears.map(year => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Turma:</span>
+              <Select value={selectedClass} onValueChange={setSelectedClass}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {availableClasses.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina com datas definidas encontrada{selectedYear !== 'all' ? ` para ${selectedYear}` : ''}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );

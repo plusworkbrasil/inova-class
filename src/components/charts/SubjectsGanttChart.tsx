@@ -180,6 +180,31 @@ export function SubjectsGanttChart() {
 
   return (
     <div className="space-y-4">
+      {/* Year Filter */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">
+          Filtrar por ano:
+        </span>
+        <Select value={selectedYear} onValueChange={setSelectedYear}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Selecionar ano" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os anos</SelectItem>
+            {availableYears.map(year => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {selectedYear !== 'all' && (
+          <Badge variant="secondary">
+            {filteredSubjects.length} disciplina(s)
+          </Badge>
+        )}
+      </div>
+
       {/* Gantt Chart */}
       <div className="overflow-x-auto">
         <div className="min-w-[800px]">

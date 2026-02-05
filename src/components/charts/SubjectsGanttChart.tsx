@@ -64,6 +64,7 @@ export function SubjectsGanttChart() {
   const { subjects, loading, error } = useAllSubjectsTimeline();
   const [selectedYear, setSelectedYear] = useState<string>('all');
   const [selectedClass, setSelectedClass] = useState<string>('all');
+  const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
 
   // Extract available years from subjects
@@ -91,6 +92,20 @@ export function SubjectsGanttChart() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [subjects]);
 
+  // Extract available teachers from subjects
+  const availableTeachers = useMemo(() => {
+    if (subjects.length === 0) return [];
+    const teachers = new Map<string, string>();
+    subjects.forEach(s => {
+      if (s.teacher_id && s.teacher_name) {
+        teachers.set(s.teacher_id, s.teacher_name);
+      }
+    });
+    return Array.from(teachers.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subjects]);
+
   // Filter subjects by selected year first
   const filteredByYear = useMemo(() => {
     if (selectedYear === 'all') return subjects;
@@ -103,10 +118,16 @@ export function SubjectsGanttChart() {
   }, [subjects, selectedYear]);
 
   // Then filter by selected class
-  const filteredSubjects = useMemo(() => {
+  const filteredByClass = useMemo(() => {
     if (selectedClass === 'all') return filteredByYear;
     return filteredByYear.filter(s => s.class_id === selectedClass);
   }, [filteredByYear, selectedClass]);
+
+  // Finally filter by selected teacher
+  const filteredSubjects = useMemo(() => {
+    if (selectedTeacher === 'all') return filteredByClass;
+    return filteredByClass.filter(s => s.teacher_id === selectedTeacher);
+  }, [filteredByClass, selectedTeacher]);
 
   // Export handlers
   const handleExportPdf = async () => {
@@ -254,10 +275,24 @@ export function SubjectsGanttChart() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Professor:</span>
+              <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {availableTeachers.map(teacher => (
+                    <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <div className="text-center py-8 text-muted-foreground">
-          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
+          <p>Nenhuma disciplina encontrada{selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all' ? ' para os filtros selecionados' : ' com datas definidas'}.</p>
         </div>
       </div>
     );
@@ -296,7 +331,21 @@ export function SubjectsGanttChart() {
               </SelectContent>
             </Select>
           </div>
-          {(selectedYear !== 'all' || selectedClass !== 'all') && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Professor:</span>
+            <Select value={selectedTeacher} onValueChange={setSelectedTeacher}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {availableTeachers.map(teacher => (
+                  <SelectItem key={teacher.id} value={teacher.id}>{teacher.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {(selectedYear !== 'all' || selectedClass !== 'all' || selectedTeacher !== 'all') && (
             <Badge variant="secondary">
               {filteredSubjects.length} disciplina(s)
             </Badge>

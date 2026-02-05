@@ -9,6 +9,7 @@ export interface TimelineSubject {
   start_date: string;
   end_date: string;
   teacher_name: string | null;
+  teacher_id: string | null;
 }
 
 export function useAllSubjectsTimeline() {
@@ -30,6 +31,7 @@ export function useAllSubjectsTimeline() {
             start_date,
             end_date,
             class_id,
+            teacher_id,
             classes!subjects_class_id_fkey (
               name
             ),
@@ -53,6 +55,7 @@ export function useAllSubjectsTimeline() {
           start_date: item.start_date,
           end_date: item.end_date,
           teacher_name: item.profiles?.name || null,
+          teacher_id: item.teacher_id || null,
         }));
 
         // Sort by class name, then by start date

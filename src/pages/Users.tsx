@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Search, Edit, Trash2, Eye, Key, ChevronLeft, ChevronRight, X, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
 import { UserRole } from '@/types/user';
 import { StudentForm } from '@/components/forms/StudentForm';
@@ -54,6 +56,7 @@ const Users = () => {
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [deactivatingUser, setDeactivatingUser] = useState<any>(null);
   const [isDeactivateDialogOpen, setIsDeactivateDialogOpen] = useState(false);
+  const [syncingEmail, setSyncingEmail] = useState<string | null>(null);
   
   const { 
     users, 
@@ -185,6 +188,32 @@ const Users = () => {
       await toggleUserStatus(deactivatingUser.id, deactivatingUser.status);
       setIsDeactivateDialogOpen(false);
       setDeactivatingUser(null);
+    }
+  };
+
+  const handleSyncEmail = async (userId: string, email: string, userName: string) => {
+    try {
+      setSyncingEmail(userId);
+      
+      const { data, error } = await supabase.functions.invoke('sync-auth-email-with-profiles', {
+        body: { emails: [email] }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(`Email de ${userName} sincronizado com autenticação`);
+        if (data.results?.errors?.length > 0) {
+          console.warn('Avisos na sincronização:', data.results.errors);
+        }
+      } else {
+        throw new Error(data.error || 'Falha na sincronização');
+      }
+    } catch (error: any) {
+      console.error('Erro ao sincronizar email:', error);
+      toast.error(`Erro ao sincronizar email: ${error.message}`);
+    } finally {
+      setSyncingEmail(null);
     }
   };
 
@@ -401,6 +430,24 @@ const Users = () => {
                           >
                             <Key size={14} />
                           </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleSyncEmail(user.id, user.email, user.name)}
+                                  disabled={syncingEmail === user.id}
+                                  title="Sincronizar email com autenticação"
+                                >
+                                  <RefreshCw size={14} className={syncingEmail === user.id ? 'animate-spin' : ''} />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Sincronizar email do perfil com sistema de login</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <Button 
                             variant="outline" 
                             size="sm"

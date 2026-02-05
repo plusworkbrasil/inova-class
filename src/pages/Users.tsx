@@ -191,6 +191,32 @@ const Users = () => {
     }
   };
 
+  const handleSyncEmail = async (userId: string, email: string, userName: string) => {
+    try {
+      setSyncingEmail(userId);
+      
+      const { data, error } = await supabase.functions.invoke('sync-auth-email-with-profiles', {
+        body: { emails: [email] }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(`Email de ${userName} sincronizado com autenticação`);
+        if (data.results?.errors?.length > 0) {
+          console.warn('Avisos na sincronização:', data.results.errors);
+        }
+      } else {
+        throw new Error(data.error || 'Falha na sincronização');
+      }
+    } catch (error: any) {
+      console.error('Erro ao sincronizar email:', error);
+      toast.error(`Erro ao sincronizar email: ${error.message}`);
+    } finally {
+      setSyncingEmail(null);
+    }
+  };
+
   const getRoleBadgeVariant = (role: UserRole) => {
     switch (role) {
       case 'admin': return 'destructive';

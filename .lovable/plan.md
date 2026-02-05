@@ -1,15 +1,10 @@
 
 
-## Plano: Corrigir Texto Cortado na Exportação do Gráfico Gantt
+## Plano: Adicionar Linha Vertical do Dia Atual no Gráfico Gantt
 
-### Problema Identificado
+### Objetivo
 
-Na exportação do gráfico Gantt (PDF ou imagem), o texto das colunas "Disciplina", "Turma" e "Professor" está sendo cortado porque as classes CSS `truncate` aplicam:
-- `overflow: hidden`
-- `text-overflow: ellipsis`
-- `white-space: nowrap`
-
-Isso faz com que texto longo seja cortado com "..." na visualização e especialmente na exportação.
+Adicionar uma linha vertical destacada que indica a posição do dia atual no gráfico Gantt, facilitando a visualização do progresso das disciplinas em relação à data de hoje.
 
 ---
 
@@ -17,88 +12,169 @@ Isso faz com que texto longo seja cortado com "..." na visualização e especial
 
 | Arquivo | Ação | Descrição |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Permitir texto completo visível na exportação |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar linha vertical do dia atual |
 
 ---
 
-### Solução
+### Lógica de Posicionamento
 
-Remover a classe `truncate` dos textos da coluna lateral e permitir que o texto quebre em múltiplas linhas quando necessário, usando `break-words` para evitar overflow horizontal.
+A linha será posicionada usando a mesma lógica de cálculo percentual já existente:
 
-#### Mudanças nas Linhas 448-453
-
-**Antes:**
-```tsx
-<div className="w-64 flex-shrink-0 p-2 text-xs" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-  <div className="font-medium truncate">{subject.name}</div>
-  <div className="text-muted-foreground truncate">{subject.class_name}</div>
-  {subject.teacher_name && (
-    <div className="text-muted-foreground/70 truncate text-[10px]">{subject.teacher_name}</div>
-  )}
-</div>
-```
-
-**Depois:**
-```tsx
-<div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-  <div className="font-medium break-words">{subject.name}</div>
-  <div className="text-muted-foreground break-words">{subject.class_name}</div>
-  {subject.teacher_name && (
-    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
-  )}
-</div>
-```
-
-#### Ajustar Altura da Linha (Linha 455)
-
-Como o texto pode ocupar mais de uma linha, alterar a altura da barra do Gantt de fixa para mínima:
-
-**Antes:**
-```tsx
-<div className="flex-1 relative h-12 flex items-center">
-```
-
-**Depois:**
-```tsx
-<div className="flex-1 relative min-h-12 flex items-center">
+```typescript
+const todayPosition = useMemo(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Verificar se hoje está dentro do range do timeline
+  const timelineEnd = new Date(timelineStart);
+  timelineEnd.setDate(timelineEnd.getDate() + totalDays);
+  
+  if (today < timelineStart || today > timelineEnd) {
+    return null; // Hoje está fora do range visível
+  }
+  
+  const daysFromStart = differenceInDays(today, timelineStart);
+  return (daysFromStart / totalDays) * 100;
+}, [timelineStart, totalDays]);
 ```
 
 ---
 
-### Detalhes Técnicos
+### Componente da Linha do Dia Atual
 
-| Classe Anterior | Classe Nova | Efeito |
-|-----------------|-------------|--------|
-| `truncate` | `break-words` | Permite quebra de palavras longas |
-| `h-12` | `min-h-12` | Altura mínima, mas pode crescer se necessário |
+Criar um componente interno para renderizar a linha:
+
+```tsx
+{/* Today marker line */}
+{todayPosition !== null && (
+  <div
+    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+    style={{ left: `${todayPosition}%` }}
+  >
+    <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] px-1 rounded whitespace-nowrap">
+      Hoje
+    </div>
+  </div>
+)}
+```
+
+---
+
+### Locais de Inserção
+
+| Linha | Mudança |
+|-------|---------|
+| ~232 | Adicionar cálculo `todayPosition` no useMemo existente ou criar novo useMemo após ele |
+| ~471 | Inserir a linha vertical após as linhas de grade dos meses, dentro do container das barras |
+
+---
+
+### Estrutura Visual
+
+```text
+                    JAN    FEV    MAR    ABR    MAI    JUN
+                                   |
+  ─────────────────────────────────|────────────────────────
+  React.js          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓|                        
+  T02AB Tarde                      |                        
+  João Silva                       |                        
+  ─────────────────────────────────|────────────────────────
+  Node.js                     ▓▓▓▓▓|▓▓▓▓▓                   
+  T02AB Tarde                      |                        
+  Maria Santos                     |                        
+  ─────────────────────────────────|────────────────────────
+                                   ↑
+                               [Hoje]
+```
+
+---
+
+### Detalhes de Implementação
+
+#### 1. Calcular Posição do Dia Atual
+
+Adicionar após o useMemo existente (~linha 232):
+
+```typescript
+// Calculate today's position on the timeline
+const todayPosition = useMemo(() => {
+  if (filteredSubjects.length === 0) return null;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Check if today is within the visible timeline range
+  const timelineEnd = new Date(timelineStart.getTime());
+  timelineEnd.setDate(timelineEnd.getDate() + totalDays - 1);
+  
+  if (today < timelineStart || today > timelineEnd) {
+    return null; // Today is outside visible range
+  }
+  
+  const daysFromStart = differenceInDays(today, timelineStart);
+  return (daysFromStart / totalDays) * 100;
+}, [timelineStart, totalDays, filteredSubjects.length]);
+```
+
+#### 2. Renderizar Linha na Área das Barras
+
+Inserir após as linhas de grade dos meses (~linha 471), dentro de cada linha:
+
+```tsx
+{/* Today marker line */}
+{todayPosition !== null && (
+  <div
+    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+    style={{ left: `${todayPosition}%` }}
+  />
+)}
+```
+
+#### 3. Adicionar Indicador "Hoje" no Header
+
+No header dos meses, adicionar um marcador visual:
+
+```tsx
+{/* Today marker in header */}
+{todayPosition !== null && (
+  <div
+    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+    style={{ left: `${todayPosition}%` }}
+  >
+    <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm whitespace-nowrap font-medium">
+      Hoje
+    </div>
+  </div>
+)}
+```
+
+---
+
+### Estilização da Linha
+
+| Propriedade | Valor | Descrição |
+|-------------|-------|-----------|
+| Cor | `bg-red-500` | Vermelho vibrante para destaque |
+| Largura | `w-0.5` (2px) | Fina mas visível |
+| Z-index | `z-10` | Acima das barras do Gantt |
+| Label | "Hoje" | Badge vermelho com texto branco |
+
+---
+
+### Comportamento Especial
+
+| Situação | Comportamento |
+|----------|---------------|
+| Hoje dentro do range | Linha vermelha visível com label "Hoje" |
+| Hoje fora do range | Linha não é renderizada |
+| Filtro por ano passado | Linha não aparece (hoje fora do range) |
 
 ---
 
 ### Resultado Esperado
 
-| Antes (Exportação) | Depois (Exportação) |
-|--------------------|---------------------|
-| "React is..." | "React is" (completo) |
-| "Jovem Tech T02ABC..." | "Jovem Tech T02ABC - Noite" (completo) |
-| "Jailson Sil..." | "Jailson Silva" (completo) |
-
----
-
-### Visualização do Problema vs Solução
-
-```text
-ANTES (cortado):
-+---------------------------+------------------------------------+
-| React is...               |  ▓▓▓▓▓                             |
-| Jovem Tech T02ABC...      |                                    |
-| Jailson Sil...            |                                    |
-+---------------------------+------------------------------------+
-
-DEPOIS (completo):
-+---------------------------+------------------------------------+
-| React is                  |  ▓▓▓▓▓                             |
-| Jovem Tech T02ABC - Noite |                                    |
-| Jailson Silva             |                                    |
-+---------------------------+------------------------------------+
-```
+- Linha vertical vermelha atravessando todo o gráfico na posição do dia atual
+- Label "Hoje" no topo da linha para identificação clara
+- Linha visível na exportação PDF/Imagem
+- Comportamento inteligente: só aparece se o dia atual estiver no range visível
 

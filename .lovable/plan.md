@@ -1,10 +1,12 @@
 
 
-## Plano: Adicionar Botao Expandir/Colapsar por Turma no Grafico Gantt
+## Plano: Animacao Suave e Campo de Pesquisa por Turma no Grafico Gantt
 
 ### Objetivo
 
-Adicionar funcionalidade interativa para expandir e colapsar os grupos de disciplinas por turma, permitindo que o usuario foque em turmas especificas e reduza a quantidade de informacao visual quando necessario.
+Adicionar duas melhorias ao grafico Gantt:
+1. **Animacao suave** ao expandir/colapsar os grupos de turmas para uma experiencia mais fluida
+2. **Campo de pesquisa** para filtrar turmas pelo nome rapidamente
 
 ---
 
@@ -12,184 +14,151 @@ Adicionar funcionalidade interativa para expandir e colapsar os grupos de discip
 
 | Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar estado e botoes de expandir/colapsar |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar animacoes e campo de busca |
 
 ---
 
-### Estrutura Visual
+### Parte 1: Animacao Suave ao Expandir/Colapsar
+
+#### Abordagem Tecnica
+
+Usar CSS transitions com `max-height` e `opacity` para criar uma animacao suave. A abordagem mais robusta e usar `grid-template-rows` com transicao de `0fr` para `1fr`.
+
+#### Modificacoes
+
+1. **Wrapper com animacao** em volta das disciplinas de cada grupo:
+
+```tsx
+{/* Subject rows container with animation */}
+<div
+  className="grid transition-all duration-300 ease-in-out overflow-hidden"
+  style={{
+    gridTemplateRows: expandedGroups.has(group.classId) ? '1fr' : '0fr'
+  }}
+>
+  <div className="min-h-0">
+    {group.subjects.map((subject, index) => {
+      // ... existing row content ...
+    })}
+  </div>
+</div>
+```
+
+2. **Animacao do icone chevron** para rotacao suave:
+
+```tsx
+<ChevronRight 
+  className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ${
+    expandedGroups.has(group.classId) ? 'rotate-90' : ''
+  }`}
+/>
+```
+
+---
+
+### Parte 2: Campo de Pesquisa por Nome da Turma
+
+#### Abordagem
+
+Adicionar um campo `Input` com icone de busca que filtra os grupos pelo nome da turma em tempo real.
+
+#### Novo Estado
+
+```typescript
+const [searchTerm, setSearchTerm] = useState('');
+```
+
+#### Novo Import
+
+```typescript
+import { Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+```
+
+#### Logica de Filtragem
+
+Adicionar um `useMemo` para filtrar `groupedSubjects` pelo termo de busca:
+
+```typescript
+// Filter groups by search term
+const searchedGroups = useMemo(() => {
+  if (!searchTerm.trim()) return groupedSubjects;
+  
+  const term = searchTerm.toLowerCase().trim();
+  return groupedSubjects.filter(group => 
+    group.className.toLowerCase().includes(term)
+  );
+}, [groupedSubjects, searchTerm]);
+```
+
+#### UI do Campo de Pesquisa
+
+Adicionar entre os filtros existentes:
+
+```tsx
+<div className="relative flex-1 max-w-xs">
+  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+  <Input
+    placeholder="Buscar turma..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    className="pl-8 pr-8"
+  />
+  {searchTerm && (
+    <button
+      onClick={() => setSearchTerm('')}
+      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+    >
+      <X className="h-4 w-4" />
+    </button>
+  )}
+</div>
+```
+
+---
+
+### Estrutura Visual do Campo de Busca
 
 ```text
-+---------------------------+--------------------------------------------+
-| Disciplina / Turma / Prof |  JAN    FEV    MAR    ABR    MAI    JUN   |
-+===========================+============================================+
-| [v] JOVEM TECH T02ABC - NOITE                    (6 disciplinas)       |
-+---------------------------+--------------------------------------------+
-|   | Banco de Dados        |  ████████                                  |
-|   | React                 |       ████████                             |
-|   | C#                    |            ████████                        |
-|   | React Native          |                  ████████                  |
-+===========================+============================================+
-| [>] JOVEM TECH T02XYZ - MANHA (COLAPSADO)        (4 disciplinas)       |
-+===========================+============================================+
-| [v] OUTRA TURMA                                  (3 disciplinas)       |
-+---------------------------+--------------------------------------------+
-|   | Python                |  ████████                                  |
-+---------------------------+--------------------------------------------+
++----------------------------------------------------------------+
+|  Ano: [v]  Turma: [v]  Professor: [v]  Status: [v]             |
+|                                                                 |
+|  [🔍 Buscar turma...________________X]    [Expandir] [Colapsar] |
++----------------------------------------------------------------+
 ```
 
 ---
 
-### Mudancas Tecnicas
-
-#### 1. Adicionar Estado para Controlar Grupos Expandidos
-
-```typescript
-// State to track expanded/collapsed groups
-const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-
-// Initialize all groups as expanded on first load
-useEffect(() => {
-  if (groupedSubjects.length > 0 && expandedGroups.size === 0) {
-    setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)));
-  }
-}, [groupedSubjects]);
-```
-
-#### 2. Funcao para Alternar Estado de Expansao
-
-```typescript
-const toggleGroup = (classId: string) => {
-  setExpandedGroups(prev => {
-    const newSet = new Set(prev);
-    if (newSet.has(classId)) {
-      newSet.delete(classId);
-    } else {
-      newSet.add(classId);
-    }
-    return newSet;
-  });
-};
-```
-
-#### 3. Botoes para Expandir/Colapsar Todos
-
-Adicionar na barra de ferramentas junto aos botoes de exportacao:
-
-```tsx
-<div className="flex items-center gap-2">
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)))}
-    disabled={expandedGroups.size === groupedSubjects.length}
-  >
-    <ChevronsDown className="h-4 w-4 mr-1" />
-    Expandir Todos
-  </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    onClick={() => setExpandedGroups(new Set())}
-    disabled={expandedGroups.size === 0}
-  >
-    <ChevronsUp className="h-4 w-4 mr-1" />
-    Colapsar Todos
-  </Button>
-</div>
-```
-
-#### 4. Modificar Cabecalho do Grupo
-
-Tornar o cabecalho clicavel e adicionar icone de chevron:
-
-```tsx
-{/* Class header row - clickable */}
-<div 
-  className="flex border-b-2 border-t-2 cursor-pointer hover:opacity-90 transition-opacity"
-  style={{ borderColor: color }}
-  onClick={() => toggleGroup(group.classId)}
->
-  <div 
-    className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
-    style={{ backgroundColor: `${color}15` }}
-  >
-    {/* Chevron icon */}
-    {expandedGroups.has(group.classId) ? (
-      <ChevronDown className="w-4 h-4 flex-shrink-0" />
-    ) : (
-      <ChevronRight className="w-4 h-4 flex-shrink-0" />
-    )}
-    <div 
-      className="w-3 h-3 rounded-sm flex-shrink-0"
-      style={{ backgroundColor: color }}
-    />
-    <span className="break-words flex-1">{group.className}</span>
-    <Badge variant="secondary" className="ml-auto text-[10px] flex-shrink-0">
-      {group.subjects.length}
-    </Badge>
-  </div>
-  <div 
-    className="flex-1 relative"
-    style={{ backgroundColor: `${color}08` }}
-  >
-    {/* Today marker in header */}
-    {todayPosition !== null && (
-      <div
-        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
-        style={{ left: `${todayPosition}%` }}
-      />
-    )}
-  </div>
-</div>
-```
-
-#### 5. Renderizacao Condicional das Disciplinas
-
-```tsx
-{/* Subject rows within group - only show if expanded */}
-{expandedGroups.has(group.classId) && group.subjects.map((subject, index) => {
-  // ... existing row content ...
-})}
-```
-
----
-
-### Imports Adicionais
-
-```typescript
-import { ChevronDown, ChevronRight, ChevronsDown, ChevronsUp } from 'lucide-react';
-```
-
----
-
-### Comportamento
-
-| Acao | Resultado |
-|------|-----------|
-| Clique no cabecalho da turma | Expande/colapsa apenas aquela turma |
-| Botao "Expandir Todos" | Expande todas as turmas |
-| Botao "Colapsar Todos" | Colapsa todas as turmas |
-| Grupo colapsado | Mostra apenas cabecalho com nome da turma e contagem |
-| Grupo expandido | Mostra cabecalho + todas as disciplinas |
-
----
-
-### Consideracoes para Exportacao
-
-Importante: Durante a exportacao (PDF/Imagem), o estado atual sera mantido. Se o usuario quiser exportar o grafico completo, deve expandir todos os grupos antes de exportar.
-
----
-
-### Localizacao das Mudancas
+### Resumo das Mudancas
 
 | Linha | Mudanca |
 |-------|---------|
-| ~1 | Adicionar `useEffect` ao import |
-| ~4 | Adicionar icones `ChevronDown, ChevronRight, ChevronsDown, ChevronsUp` |
-| ~69 | Adicionar estado `expandedGroups` |
-| ~70-76 | Adicionar `useEffect` para inicializar grupos expandidos |
-| ~77-85 | Adicionar funcao `toggleGroup` |
-| ~438 | Adicionar botoes "Expandir Todos" e "Colapsar Todos" |
-| ~506-535 | Modificar cabecalho do grupo para ser clicavel com icone |
-| ~537 | Adicionar condicao `expandedGroups.has(group.classId)` |
+| ~4 | Adicionar `Search, X` aos imports do Lucide |
+| ~10 | Adicionar import do `Input` component |
+| ~70 | Adicionar estado `searchTerm` |
+| ~183 | Adicionar `searchedGroups` useMemo apos `groupedSubjects` |
+| ~459 | Adicionar campo de busca na barra de ferramentas |
+| ~539-638 | Substituir `groupedSubjects` por `searchedGroups` no map |
+| ~555-559 | Substituir `ChevronDown/ChevronRight` por um unico `ChevronRight` com rotacao |
+| ~583-638 | Envolver linhas de disciplinas com wrapper animado |
+
+---
+
+### Comportamento Final
+
+| Acao | Resultado |
+|------|-----------|
+| Digitar no campo de busca | Filtra turmas em tempo real pelo nome |
+| Clicar no X do campo | Limpa a busca |
+| Clicar no cabecalho da turma | Animacao suave de expansao/colapsamento |
+| Icone chevron | Rotaciona suavemente 90 graus |
+
+---
+
+### Observacoes
+
+- A animacao usa `grid-template-rows` que funciona bem com conteudo dinamico
+- O campo de busca limpa automaticamente quando o usuario clica no X
+- A filtragem e case-insensitive (ignora maiusculas/minusculas)
+- Compativel com exportacao PDF/Imagem (estado visual atual e exportado)
 

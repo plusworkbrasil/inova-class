@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, parseISO, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileDown, Image as ImageIcon } from 'lucide-react';
+import { FileDown, Image as ImageIcon, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp } from 'lucide-react';
 import { useAllSubjectsTimeline, TimelineSubject } from '@/hooks/useAllSubjectsTimeline';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -67,6 +67,7 @@ export function SubjectsGanttChart() {
   const [selectedTeacher, setSelectedTeacher] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Helper function to calculate subject status
   const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
@@ -179,6 +180,26 @@ export function SubjectsGanttChart() {
         )
       }));
   }, [filteredSubjects]);
+
+  // Initialize all groups as expanded when data loads
+  useEffect(() => {
+    if (groupedSubjects.length > 0 && expandedGroups.size === 0) {
+      setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)));
+    }
+  }, [groupedSubjects]);
+
+  // Toggle group expansion
+  const toggleGroup = (classId: string) => {
+    setExpandedGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(classId)) {
+        newSet.delete(classId);
+      } else {
+        newSet.add(classId);
+      }
+      return newSet;
+    });
+  };
 
   // Export handlers
   const handleExportPdf = async () => {
@@ -439,6 +460,24 @@ export function SubjectsGanttChart() {
           <Button
             variant="outline"
             size="sm"
+            onClick={() => setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)))}
+            disabled={expandedGroups.size === groupedSubjects.length}
+          >
+            <ChevronsDown className="h-4 w-4 mr-1" />
+            Expandir Todos
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExpandedGroups(new Set())}
+            disabled={expandedGroups.size === 0}
+          >
+            <ChevronsUp className="h-4 w-4 mr-1" />
+            Colapsar Todos
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleExportPdf}
             disabled={exporting || filteredSubjects.length === 0}
           >
@@ -485,10 +524,10 @@ export function SubjectsGanttChart() {
               {/* Today marker in header */}
               {todayPosition !== null && (
                 <div
-                  className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                  className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10"
                   style={{ left: `${todayPosition}%` }}
                 >
-                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-sm whitespace-nowrap font-medium">
+                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-sm whitespace-nowrap font-medium">
                     Hoje
                   </div>
                 </div>
@@ -502,15 +541,22 @@ export function SubjectsGanttChart() {
             
             return (
               <div key={group.classId}>
-                {/* Class header row */}
+                {/* Class header row - clickable */}
                 <div 
-                  className="flex border-b-2 border-t-2"
+                  className="flex border-b-2 border-t-2 cursor-pointer hover:opacity-90 transition-opacity select-none"
                   style={{ borderColor: color }}
+                  onClick={() => toggleGroup(group.classId)}
                 >
                   <div 
                     className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
                     style={{ backgroundColor: `${color}15` }}
                   >
+                    {/* Chevron icon */}
+                    {expandedGroups.has(group.classId) ? (
+                      <ChevronDown className="w-4 h-4 flex-shrink-0" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                    )}
                     <div 
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: color }}
@@ -527,15 +573,15 @@ export function SubjectsGanttChart() {
                     {/* Today marker in header */}
                     {todayPosition !== null && (
                       <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                        className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10"
                         style={{ left: `${todayPosition}%` }}
                       />
                     )}
                   </div>
                 </div>
                 
-                {/* Subject rows within group */}
-                {group.subjects.map((subject, index) => {
+                {/* Subject rows within group - only show if expanded */}
+                {expandedGroups.has(group.classId) && group.subjects.map((subject, index) => {
                   const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
                   
                   return (
@@ -574,7 +620,7 @@ export function SubjectsGanttChart() {
                         {/* Today marker line */}
                         {todayPosition !== null && (
                           <div
-                            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                            className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10 pointer-events-none"
                             style={{ left: `${todayPosition}%` }}
                           />
                         )}

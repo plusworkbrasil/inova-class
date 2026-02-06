@@ -149,6 +149,37 @@ export function SubjectsGanttChart() {
     return filteredByTeacher.filter(s => getSubjectStatus(s.start_date, s.end_date) === selectedStatus);
   }, [filteredByTeacher, selectedStatus]);
 
+  // Group subjects by class
+  const groupedSubjects = useMemo(() => {
+    const groups = new Map<string, { 
+      classId: string; 
+      className: string; 
+      subjects: TimelineSubject[] 
+    }>();
+    
+    filteredSubjects.forEach(subject => {
+      const key = subject.class_id;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          classId: subject.class_id,
+          className: subject.class_name,
+          subjects: []
+        });
+      }
+      groups.get(key)!.subjects.push(subject);
+    });
+    
+    // Sort groups by class name, and subjects within each group by start_date
+    return Array.from(groups.values())
+      .sort((a, b) => a.className.localeCompare(b.className))
+      .map(group => ({
+        ...group,
+        subjects: group.subjects.sort((a, b) => 
+          parseISO(a.start_date).getTime() - parseISO(b.start_date).getTime()
+        )
+      }));
+  }, [filteredSubjects]);
+
   // Export handlers
   const handleExportPdf = async () => {
     setExporting(true);
@@ -465,57 +496,100 @@ export function SubjectsGanttChart() {
             </div>
           </div>
 
-          {/* Rows */}
-          {filteredSubjects.map((subject, index) => {
-            const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
-            const color = classColorMap.get(subject.class_id) || CLASS_COLORS[0];
+          {/* Rows grouped by class */}
+          {groupedSubjects.map((group) => {
+            const color = classColorMap.get(group.classId) || CLASS_COLORS[0];
             
             return (
-              <div
-                key={subject.id}
-                className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-              >
-              <div className="w-64 flex-shrink-0 p-2 text-xs overflow-hidden" title={`${subject.name} - ${subject.class_name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}>
-                  <div className="font-medium break-words">{subject.name}</div>
-                  <div className="text-muted-foreground break-words">{subject.class_name}</div>
-                  {subject.teacher_name && (
-                    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
-                  )}
-                </div>
-                <div className="flex-1 relative min-h-12 flex items-center">
-                  {/* Month grid lines */}
-                  {months.map((month, monthIndex) => {
-                    const monthStart = startOfMonth(month);
-                    const monthEnd = endOfMonth(month);
-                    const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-                    const widthPercent = (daysInMonth / totalDays) * 100;
-                    const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
-                    
-                    return (
-                      <div
-                        key={monthIndex}
-                        className="absolute h-full border-l border-border/50"
-                        style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
-                      />
-                    );
-                  })}
-                  
-                  {/* Today marker line */}
-                  {todayPosition !== null && (
-                    <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
-                      style={{ left: `${todayPosition}%` }}
+              <div key={group.classId}>
+                {/* Class header row */}
+                <div 
+                  className="flex border-b-2 border-t-2"
+                  style={{ borderColor: color }}
+                >
+                  <div 
+                    className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
+                    style={{ backgroundColor: `${color}15` }}
+                  >
+                    <div 
+                      className="w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: color }}
                     />
-                  )}
-                  
-                  {/* Gantt bar */}
-                  <GanttBar
-                    subject={subject}
-                    color={color}
-                    leftPercent={leftPercent}
-                    widthPercent={widthPercent}
-                  />
+                    <span className="break-words flex-1">{group.className}</span>
+                    <Badge variant="secondary" className="ml-auto text-[10px] flex-shrink-0">
+                      {group.subjects.length}
+                    </Badge>
+                  </div>
+                  <div 
+                    className="flex-1 relative"
+                    style={{ backgroundColor: `${color}08` }}
+                  >
+                    {/* Today marker in header */}
+                    {todayPosition !== null && (
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+                        style={{ left: `${todayPosition}%` }}
+                      />
+                    )}
+                  </div>
                 </div>
+                
+                {/* Subject rows within group */}
+                {group.subjects.map((subject, index) => {
+                  const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
+                  
+                  return (
+                    <div
+                      key={subject.id}
+                      className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
+                      style={{ borderLeftWidth: '3px', borderLeftColor: color }}
+                    >
+                      <div 
+                        className="w-64 flex-shrink-0 p-2 pl-4 text-xs overflow-hidden" 
+                        title={`${subject.name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}
+                      >
+                        <div className="font-medium break-words">{subject.name}</div>
+                        {subject.teacher_name && (
+                          <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
+                        )}
+                      </div>
+                      <div className="flex-1 relative min-h-10 flex items-center">
+                        {/* Month grid lines */}
+                        {months.map((month, monthIndex) => {
+                          const monthStart = startOfMonth(month);
+                          const monthEnd = endOfMonth(month);
+                          const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+                          const widthPercent = (daysInMonth / totalDays) * 100;
+                          const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
+                          
+                          return (
+                            <div
+                              key={monthIndex}
+                              className="absolute h-full border-l border-border/50"
+                              style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
+                            />
+                          );
+                        })}
+                        
+                        {/* Today marker line */}
+                        {todayPosition !== null && (
+                          <div
+                            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                            style={{ left: `${todayPosition}%` }}
+                          />
+                        )}
+                        
+                        {/* Gantt bar */}
+                        <GanttBar
+                          subject={subject}
+                          color={color}
+                          leftPercent={leftPercent}
+                          widthPercent={widthPercent}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             );
           })}

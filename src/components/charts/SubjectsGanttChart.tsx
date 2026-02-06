@@ -1,13 +1,14 @@
 import { useMemo, useState, useEffect } from 'react';
 import { format, differenceInDays, startOfMonth, endOfMonth, eachMonthOfInterval, parseISO, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileDown, Image as ImageIcon, ChevronDown, ChevronRight, ChevronsDown, ChevronsUp } from 'lucide-react';
+import { FileDown, Image as ImageIcon, ChevronRight, ChevronsDown, ChevronsUp, Search, X } from 'lucide-react';
 import { useAllSubjectsTimeline, TimelineSubject } from '@/hooks/useAllSubjectsTimeline';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import html2pdf from 'html2pdf.js';
 const CLASS_COLORS = [
@@ -68,6 +69,7 @@ export function SubjectsGanttChart() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [exporting, setExporting] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Helper function to calculate subject status
   const getSubjectStatus = (startDate: string, endDate: string): 'ongoing' | 'finished' | 'future' => {
@@ -180,6 +182,16 @@ export function SubjectsGanttChart() {
         )
       }));
   }, [filteredSubjects]);
+
+  // Filter groups by search term
+  const searchedGroups = useMemo(() => {
+    if (!searchTerm.trim()) return groupedSubjects;
+    
+    const term = searchTerm.toLowerCase().trim();
+    return groupedSubjects.filter(group => 
+      group.className.toLowerCase().includes(term)
+    );
+  }, [groupedSubjects, searchTerm]);
 
   // Initialize all groups as expanded when data loads
   useEffect(() => {
@@ -456,7 +468,25 @@ export function SubjectsGanttChart() {
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Search field */}
+          <div className="relative flex-1 max-w-xs min-w-[180px]">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar turma..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 pr-8 h-9"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -536,8 +566,9 @@ export function SubjectsGanttChart() {
           </div>
 
           {/* Rows grouped by class */}
-          {groupedSubjects.map((group) => {
+          {searchedGroups.map((group) => {
             const color = classColorMap.get(group.classId) || CLASS_COLORS[0];
+            const isExpanded = expandedGroups.has(group.classId);
             
             return (
               <div key={group.classId}>
@@ -551,12 +582,12 @@ export function SubjectsGanttChart() {
                     className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
                     style={{ backgroundColor: `${color}15` }}
                   >
-                    {/* Chevron icon */}
-                    {expandedGroups.has(group.classId) ? (
-                      <ChevronDown className="w-4 h-4 flex-shrink-0" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 flex-shrink-0" />
-                    )}
+                    {/* Chevron icon with rotation animation */}
+                    <ChevronRight 
+                      className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ${
+                        isExpanded ? 'rotate-90' : ''
+                      }`}
+                    />
                     <div 
                       className="w-3 h-3 rounded-sm flex-shrink-0"
                       style={{ backgroundColor: color }}
@@ -580,62 +611,71 @@ export function SubjectsGanttChart() {
                   </div>
                 </div>
                 
-                {/* Subject rows within group - only show if expanded */}
-                {expandedGroups.has(group.classId) && group.subjects.map((subject, index) => {
-                  const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
-                  
-                  return (
-                    <div
-                      key={subject.id}
-                      className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-                      style={{ borderLeftWidth: '3px', borderLeftColor: color }}
-                    >
-                      <div 
-                        className="w-64 flex-shrink-0 p-2 pl-4 text-xs overflow-hidden" 
-                        title={`${subject.name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}
-                      >
-                        <div className="font-medium break-words">{subject.name}</div>
-                        {subject.teacher_name && (
-                          <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
-                        )}
-                      </div>
-                      <div className="flex-1 relative min-h-10 flex items-center">
-                        {/* Month grid lines */}
-                        {months.map((month, monthIndex) => {
-                          const monthStart = startOfMonth(month);
-                          const monthEnd = endOfMonth(month);
-                          const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
-                          const widthPercent = (daysInMonth / totalDays) * 100;
-                          const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
-                          
-                          return (
-                            <div
-                              key={monthIndex}
-                              className="absolute h-full border-l border-border/50"
-                              style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
+                {/* Subject rows container with animation */}
+                <div
+                  className="grid transition-all duration-300 ease-in-out overflow-hidden"
+                  style={{
+                    gridTemplateRows: isExpanded ? '1fr' : '0fr'
+                  }}
+                >
+                  <div className="min-h-0">
+                    {group.subjects.map((subject, index) => {
+                      const { leftPercent, widthPercent } = calculatePosition(subject.start_date, subject.end_date);
+                      
+                      return (
+                        <div
+                          key={subject.id}
+                          className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
+                          style={{ borderLeftWidth: '3px', borderLeftColor: color }}
+                        >
+                          <div 
+                            className="w-64 flex-shrink-0 p-2 pl-4 text-xs overflow-hidden" 
+                            title={`${subject.name}${subject.teacher_name ? ` - ${subject.teacher_name}` : ''}`}
+                          >
+                            <div className="font-medium break-words">{subject.name}</div>
+                            {subject.teacher_name && (
+                              <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
+                            )}
+                          </div>
+                          <div className="flex-1 relative min-h-10 flex items-center">
+                            {/* Month grid lines */}
+                            {months.map((month, monthIndex) => {
+                              const monthStart = startOfMonth(month);
+                              const monthEnd = endOfMonth(month);
+                              const daysInMonth = differenceInDays(monthEnd, monthStart) + 1;
+                              const widthPercent = (daysInMonth / totalDays) * 100;
+                              const leftPercent = (differenceInDays(monthStart, timelineStart) / totalDays) * 100;
+                              
+                              return (
+                                <div
+                                  key={monthIndex}
+                                  className="absolute h-full border-l border-border/50"
+                                  style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
+                                />
+                              );
+                            })}
+                            
+                            {/* Today marker line */}
+                            {todayPosition !== null && (
+                              <div
+                                className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10 pointer-events-none"
+                                style={{ left: `${todayPosition}%` }}
+                              />
+                            )}
+                            
+                            {/* Gantt bar */}
+                            <GanttBar
+                              subject={subject}
+                              color={color}
+                              leftPercent={leftPercent}
+                              widthPercent={widthPercent}
                             />
-                          );
-                        })}
-                        
-                        {/* Today marker line */}
-                        {todayPosition !== null && (
-                          <div
-                            className="absolute top-0 bottom-0 w-0.5 bg-destructive z-10 pointer-events-none"
-                            style={{ left: `${todayPosition}%` }}
-                          />
-                        )}
-                        
-                        {/* Gantt bar */}
-                        <GanttBar
-                          subject={subject}
-                          color={color}
-                          leftPercent={leftPercent}
-                          widthPercent={widthPercent}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             );
           })}

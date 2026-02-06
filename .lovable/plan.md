@@ -1,13 +1,10 @@
 
 
-## Plano: Agrupar Disciplinas por Turma no Grafico Gantt
+## Plano: Adicionar Botao Expandir/Colapsar por Turma no Grafico Gantt
 
 ### Objetivo
 
-Reorganizar o grafico Gantt para agrupar visualmente as disciplinas por turma, facilitando a identificacao de quais disciplinas pertencem a mesma turma. Cada grupo tera:
-- Um cabecalho destacado com o nome da turma e a cor correspondente
-- Borda lateral colorida para identificacao visual
-- Separador visual entre grupos de turmas diferentes
+Adicionar funcionalidade interativa para expandir e colapsar os grupos de disciplinas por turma, permitindo que o usuario foque em turmas especificas e reduza a quantidade de informacao visual quando necessario.
 
 ---
 
@@ -15,40 +12,28 @@ Reorganizar o grafico Gantt para agrupar visualmente as disciplinas por turma, f
 
 | Arquivo | Acao | Descricao |
 |---------|------|-----------|
-| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Agrupar disciplinas por turma com separadores visuais |
+| `src/components/charts/SubjectsGanttChart.tsx` | **MODIFICAR** | Adicionar estado e botoes de expandir/colapsar |
 
 ---
 
-### Estrutura Visual Proposta
+### Estrutura Visual
 
 ```text
 +---------------------------+--------------------------------------------+
 | Disciplina / Turma / Prof |  JAN    FEV    MAR    ABR    MAI    JUN   |
 +===========================+============================================+
-| JOVEM TECH T02ABC - NOITE                        (6 disciplinas)       |
+| [v] JOVEM TECH T02ABC - NOITE                    (6 disciplinas)       |
 +---------------------------+--------------------------------------------+
-| | Banco de Dados          |  ████████                                  |
-| | Jailson Silva           |                                            |
-+---------------------------+--------------------------------------------+
-| | React                   |       ████████                             |
-| | Maria Santos            |                                            |
-+---------------------------+--------------------------------------------+
-| | C#                      |            ████████                        |
-| | Joao Lima               |                                            |
-+---------------------------+--------------------------------------------+
-| | React Native            |                  ████████                  |
-| | Pedro Costa             |                                            |
-+---------------------------+--------------------------------------------+
-| | Computacao em Nuvens    |                        ████████            |
-| | Ana Souza               |                                            |
-+---------------------------+--------------------------------------------+
-| | Ciclo de Projeto 02     |                              ████████      |
-| | Carlos Dias             |                                            |
+|   | Banco de Dados        |  ████████                                  |
+|   | React                 |       ████████                             |
+|   | C#                    |            ████████                        |
+|   | React Native          |                  ████████                  |
 +===========================+============================================+
-| JOVEM TECH T02XYZ - MANHA                        (4 disciplinas)       |
+| [>] JOVEM TECH T02XYZ - MANHA (COLAPSADO)        (4 disciplinas)       |
++===========================+============================================+
+| [v] OUTRA TURMA                                  (3 disciplinas)       |
 +---------------------------+--------------------------------------------+
-| | Python                  |  ████████                                  |
-| | Maria Santos            |                                            |
+|   | Python                |  ████████                                  |
 +---------------------------+--------------------------------------------+
 ```
 
@@ -56,131 +41,155 @@ Reorganizar o grafico Gantt para agrupar visualmente as disciplinas por turma, f
 
 ### Mudancas Tecnicas
 
-#### 1. Agrupar Disciplinas por Turma
-
-Criar um `useMemo` para organizar as disciplinas filtradas em grupos por turma:
+#### 1. Adicionar Estado para Controlar Grupos Expandidos
 
 ```typescript
-// Group subjects by class
-const groupedSubjects = useMemo(() => {
-  const groups = new Map<string, { 
-    classId: string; 
-    className: string; 
-    subjects: TimelineSubject[] 
-  }>();
-  
-  filteredSubjects.forEach(subject => {
-    const key = subject.class_id;
-    if (!groups.has(key)) {
-      groups.set(key, {
-        classId: subject.class_id,
-        className: subject.class_name,
-        subjects: []
-      });
+// State to track expanded/collapsed groups
+const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+// Initialize all groups as expanded on first load
+useEffect(() => {
+  if (groupedSubjects.length > 0 && expandedGroups.size === 0) {
+    setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)));
+  }
+}, [groupedSubjects]);
+```
+
+#### 2. Funcao para Alternar Estado de Expansao
+
+```typescript
+const toggleGroup = (classId: string) => {
+  setExpandedGroups(prev => {
+    const newSet = new Set(prev);
+    if (newSet.has(classId)) {
+      newSet.delete(classId);
+    } else {
+      newSet.add(classId);
     }
-    groups.get(key)!.subjects.push(subject);
+    return newSet;
   });
-  
-  // Sort by class name
-  return Array.from(groups.values())
-    .sort((a, b) => a.className.localeCompare(b.className));
-}, [filteredSubjects]);
+};
 ```
 
-#### 2. Renderizar com Cabecalhos de Grupo
+#### 3. Botoes para Expandir/Colapsar Todos
 
-Substituir o `map` simples por uma renderizacao aninhada:
-
-```tsx
-{/* Rows grouped by class */}
-{groupedSubjects.map((group) => {
-  const color = classColorMap.get(group.classId) || CLASS_COLORS[0];
-  
-  return (
-    <div key={group.classId}>
-      {/* Class header row */}
-      <div 
-        className="flex border-b-2 border-t-2"
-        style={{ borderColor: color }}
-      >
-        <div 
-          className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
-          style={{ backgroundColor: `${color}15` }}
-        >
-          <div 
-            className="w-3 h-3 rounded-sm flex-shrink-0"
-            style={{ backgroundColor: color }}
-          />
-          <span className="break-words">{group.className}</span>
-          <Badge variant="secondary" className="ml-auto text-[10px]">
-            {group.subjects.length}
-          </Badge>
-        </div>
-        <div 
-          className="flex-1"
-          style={{ backgroundColor: `${color}08` }}
-        />
-      </div>
-      
-      {/* Subject rows within group */}
-      {group.subjects.map((subject, index) => (
-        <div
-          key={subject.id}
-          className={`flex border-b border-border ${index % 2 === 0 ? 'bg-background' : 'bg-muted/30'}`}
-          style={{ borderLeftWidth: '3px', borderLeftColor: color }}
-        >
-          {/* ... existing row content ... */}
-        </div>
-      ))}
-    </div>
-  );
-})}
-```
-
-#### 3. Ajustar Coluna Lateral
-
-Na coluna lateral das disciplinas, remover o nome da turma (ja esta no cabecalho do grupo) e manter apenas disciplina + professor:
+Adicionar na barra de ferramentas junto aos botoes de exportacao:
 
 ```tsx
-<div className="w-64 flex-shrink-0 p-2 pl-4 text-xs overflow-hidden">
-  <div className="font-medium break-words">{subject.name}</div>
-  {subject.teacher_name && (
-    <div className="text-muted-foreground/70 break-words text-[10px]">{subject.teacher_name}</div>
-  )}
+<div className="flex items-center gap-2">
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => setExpandedGroups(new Set(groupedSubjects.map(g => g.classId)))}
+    disabled={expandedGroups.size === groupedSubjects.length}
+  >
+    <ChevronsDown className="h-4 w-4 mr-1" />
+    Expandir Todos
+  </Button>
+  <Button
+    variant="outline"
+    size="sm"
+    onClick={() => setExpandedGroups(new Set())}
+    disabled={expandedGroups.size === 0}
+  >
+    <ChevronsUp className="h-4 w-4 mr-1" />
+    Colapsar Todos
+  </Button>
 </div>
 ```
 
+#### 4. Modificar Cabecalho do Grupo
+
+Tornar o cabecalho clicavel e adicionar icone de chevron:
+
+```tsx
+{/* Class header row - clickable */}
+<div 
+  className="flex border-b-2 border-t-2 cursor-pointer hover:opacity-90 transition-opacity"
+  style={{ borderColor: color }}
+  onClick={() => toggleGroup(group.classId)}
+>
+  <div 
+    className="w-64 flex-shrink-0 p-2 font-semibold text-sm flex items-center gap-2"
+    style={{ backgroundColor: `${color}15` }}
+  >
+    {/* Chevron icon */}
+    {expandedGroups.has(group.classId) ? (
+      <ChevronDown className="w-4 h-4 flex-shrink-0" />
+    ) : (
+      <ChevronRight className="w-4 h-4 flex-shrink-0" />
+    )}
+    <div 
+      className="w-3 h-3 rounded-sm flex-shrink-0"
+      style={{ backgroundColor: color }}
+    />
+    <span className="break-words flex-1">{group.className}</span>
+    <Badge variant="secondary" className="ml-auto text-[10px] flex-shrink-0">
+      {group.subjects.length}
+    </Badge>
+  </div>
+  <div 
+    className="flex-1 relative"
+    style={{ backgroundColor: `${color}08` }}
+  >
+    {/* Today marker in header */}
+    {todayPosition !== null && (
+      <div
+        className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+        style={{ left: `${todayPosition}%` }}
+      />
+    )}
+  </div>
+</div>
+```
+
+#### 5. Renderizacao Condicional das Disciplinas
+
+```tsx
+{/* Subject rows within group - only show if expanded */}
+{expandedGroups.has(group.classId) && group.subjects.map((subject, index) => {
+  // ... existing row content ...
+})}
+```
+
 ---
 
-### Estilos Visuais
+### Imports Adicionais
 
-| Elemento | Estilo | Descricao |
-|----------|--------|-----------|
-| Cabecalho do grupo | `backgroundColor: ${color}15` | Fundo suave com cor da turma |
-| Borda lateral | `borderLeftWidth: 3px, borderLeftColor: color` | Faixa colorida identificando o grupo |
-| Borda superior/inferior do grupo | `border-b-2 border-t-2` com cor | Separador forte entre grupos |
-| Badge de contagem | `text-[10px]` | Numero de disciplinas no grupo |
+```typescript
+import { ChevronDown, ChevronRight, ChevronsDown, ChevronsUp } from 'lucide-react';
+```
 
 ---
 
-### Beneficios
+### Comportamento
 
-| Antes | Depois |
-|-------|--------|
-| Disciplinas listadas individualmente | Disciplinas agrupadas por turma |
-| Nome da turma repetido em cada linha | Nome da turma no cabecalho do grupo |
-| Dificil identificar quais disciplinas sao da mesma turma | Identificacao visual clara por cor e agrupamento |
-| Lista longa sem separacao | Grupos com separadores visuais |
-
----
-
-### Ordenacao dentro do Grupo
-
-As disciplinas dentro de cada grupo serao ordenadas por data de inicio, facilitando a visualizacao da sequencia cronologica do curso.
+| Acao | Resultado |
+|------|-----------|
+| Clique no cabecalho da turma | Expande/colapsa apenas aquela turma |
+| Botao "Expandir Todos" | Expande todas as turmas |
+| Botao "Colapsar Todos" | Colapsa todas as turmas |
+| Grupo colapsado | Mostra apenas cabecalho com nome da turma e contagem |
+| Grupo expandido | Mostra cabecalho + todas as disciplinas |
 
 ---
 
-### Compatibilidade com Exportacao
+### Consideracoes para Exportacao
 
-As mudancas mantem compatibilidade com as exportacoes PDF e Imagem existentes, pois usam apenas CSS inline e classes Tailwind.
+Importante: Durante a exportacao (PDF/Imagem), o estado atual sera mantido. Se o usuario quiser exportar o grafico completo, deve expandir todos os grupos antes de exportar.
+
+---
+
+### Localizacao das Mudancas
+
+| Linha | Mudanca |
+|-------|---------|
+| ~1 | Adicionar `useEffect` ao import |
+| ~4 | Adicionar icones `ChevronDown, ChevronRight, ChevronsDown, ChevronsUp` |
+| ~69 | Adicionar estado `expandedGroups` |
+| ~70-76 | Adicionar `useEffect` para inicializar grupos expandidos |
+| ~77-85 | Adicionar funcao `toggleGroup` |
+| ~438 | Adicionar botoes "Expandir Todos" e "Colapsar Todos" |
+| ~506-535 | Modificar cabecalho do grupo para ser clicavel com icone |
+| ~537 | Adicionar condicao `expandedGroups.has(group.classId)` |
 

@@ -190,6 +190,10 @@ const menuItems = {
     icon: AlertTriangle,
     label: 'Alunos em Risco',
     path: '/students-at-risk'
+  }, {
+    icon: GraduationCap,
+    label: 'Visão de Turmas',
+    path: '/class-timeline'
   }],
   teacher: [{
     icon: LayoutDashboard,

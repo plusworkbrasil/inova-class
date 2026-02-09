@@ -7,7 +7,7 @@ import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
-import { useClasses } from '@/hooks/useClasses';
+
 import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +37,10 @@ const AdminDashboard = () => {
     loading: reportsLoading
   } = useReportsData();
   
-  const { data: classes, loading: classesLoading } = useClasses();
+  const classesFromAbsences = useMemo(() => {
+    const uniqueClasses = [...new Set(reportsData.topAbsentStudents.map(s => s.class))].filter(Boolean);
+    return uniqueClasses.sort();
+  }, [reportsData.topAbsentStudents]);
   const { stats: equipmentStats } = useEquipmentStats();
   const { data: studentsAtRisk, loading: riskLoading } = useStudentsAtRisk();
   
@@ -89,9 +92,9 @@ const AdminDashboard = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as Turmas</SelectItem>
-              {!classesLoading && classes?.map((cls) => (
-                <SelectItem key={cls.id} value={cls.name}>
-                  {cls.name}
+              {classesFromAbsences.map((className) => (
+                <SelectItem key={className} value={className}>
+                  {className}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -398,9 +401,9 @@ const AdminDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
-                    {!classesLoading && classes?.map((cls) => (
-                      <SelectItem key={cls.id} value={cls.name}>
-                        {cls.name}
+                    {classesFromAbsences.map((className) => (
+                      <SelectItem key={className} value={className}>
+                        {className}
                       </SelectItem>
                     ))}
                   </SelectContent>

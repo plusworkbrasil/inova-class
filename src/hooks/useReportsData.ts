@@ -359,8 +359,7 @@ export const useReportsData = () => {
         percentage: parseFloat(((student.absences / student.total) * 100).toFixed(1)),
         studentId: student.studentId
       }))
-      .sort((a, b) => b.absences - a.absences)
-      .slice(0, 10);
+      .sort((a, b) => b.absences - a.absences);
     
     console.log('✅ [processTopAbsentStudents] Top alunos com faltas:', result.length);
     console.log('📊 [processTopAbsentStudents] Amostra:', result.slice(0, 3));

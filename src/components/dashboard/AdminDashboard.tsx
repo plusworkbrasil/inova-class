@@ -37,7 +37,10 @@ const AdminDashboard = () => {
     loading: reportsLoading
   } = useReportsData();
   
-  const { data: classes, loading: classesLoading } = useClasses();
+  const classesFromAbsences = useMemo(() => {
+    const uniqueClasses = [...new Set(reportsData.topAbsentStudents.map(s => s.class))].filter(Boolean);
+    return uniqueClasses.sort();
+  }, [reportsData.topAbsentStudents]);
   const { stats: equipmentStats } = useEquipmentStats();
   const { data: studentsAtRisk, loading: riskLoading } = useStudentsAtRisk();
   

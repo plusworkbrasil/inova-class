@@ -48,9 +48,7 @@ export const useStudentsWithExcessAbsences = () => {
           is_present
         `);
 
-      if (classId) {
-        attendanceQuery = attendanceQuery.eq('class_id', classId);
-      }
+      // Não filtrar por class_id no attendance - será filtrado pelo profile depois
 
       const { data: attendanceData, error: attendanceError } = await attendanceQuery;
       if (attendanceError) throw attendanceError;

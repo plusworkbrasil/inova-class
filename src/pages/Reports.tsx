@@ -14,10 +14,12 @@ import { UserRole } from '@/types/user';
 import html2pdf from 'html2pdf.js';
 import { useReportsData } from '@/hooks/useReportsData';
 import { useReportsMetrics } from '@/hooks/useReportsMetrics';
+import { useAuth } from '@/hooks/useAuth';
 
 const Reports = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const { profile } = useAuth();
+  const userRole = (profile?.role as UserRole) || 'admin';
+  const userName = profile?.name || 'Usuário';
   const navigate = useNavigate();
   const { toast } = useToast();
   const { data: reportsData, loading: reportsLoading } = useReportsData();

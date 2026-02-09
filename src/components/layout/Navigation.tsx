@@ -159,6 +159,10 @@ const menuItems = {
     label: 'Disciplinas',
     path: '/subjects'
   }, {
+    icon: BookOpen,
+    label: 'Notas por Disciplina',
+    path: '/subject-grades'
+  }, {
     icon: UserX,
     label: 'Evasões',
     path: '/evasions'
@@ -182,6 +186,10 @@ const menuItems = {
     icon: AlertTriangle,
     label: 'Alunos Faltosos',
     path: '/student-absences'
+  }, {
+    icon: AlertTriangle,
+    label: 'Alunos em Risco',
+    path: '/students-at-risk'
   }],
   teacher: [{
     icon: LayoutDashboard,

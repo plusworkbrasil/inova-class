@@ -1,129 +1,67 @@
 
 
-## Reorganizar Menu Admin em Categorias Colapsaveis
+## Tutor com Dashboard e Relatorios de Admin
 
-### Estrutura Proposta (ajustada)
+### Objetivo
+Fazer o role **Tutor** utilizar o mesmo Dashboard e Relatorios do Admin, em vez do TutorDashboard simplificado.
 
-Itens que existem hoje no menu admin mas nao estavam na proposta: **Usuarios** e **Comunicacao**. Foram incluidos abaixo em "Gestao Administrativa".
+### Mudancas
 
-O item "Alunos" sera mapeado para `/users` (mesma pagina de Usuarios, possivelmente com filtro futuro).
+| Arquivo | O que muda |
+|---------|------------|
+| `src/pages/Dashboard.tsx` | Tutor passa a renderizar `AdminDashboard` em vez de `TutorDashboard` |
+| `src/pages/Reports.tsx` | Usar o role real do usuario (via `useAuth`) em vez de hardcoded `'admin'` |
+| `src/components/layout/Navigation.tsx` | Adicionar ao menu do tutor as rotas de relatorios que faltam (`/students-at-risk`, `/class-timeline`) e o item de Notas por Disciplina (`/subject-grades`) para paridade com admin |
 
-```text
-> Dashboard                    (/)
+### Detalhes Tecnicos
 
-v Gestao de Aulas
-  - Turmas                     (/classes)
-  - Usuarios                   (/users)
-  - Disciplinas                (/subjects)
-  - Frequencia                 (/attendance)
-  - Evasoes                    (/evasions)
-  - Notas por Disciplina       (/subject-grades)
+**1. `src/pages/Dashboard.tsx` (linhas 79-85)**
 
-v Relatorios
-  - Relatorio Geral            (/reports)
-  - Historico do Aluno         (/student-history)
-  - Alunos Faltosos            (/student-absences)
-
-v Gestao Administrativa
-  - Equipamentos               (/equipment)
-  - Comunicacao                (/communications)
-
-> Configuracoes                (/settings)
-```
-
-Dashboard e Configuracoes ficam como itens avulsos (sem grupo). Os 3 grupos intermediarios sao colapsaveis usando o componente Collapsible do Radix (ja instalado no projeto).
-
-### Mudancas Tecnicas
-
-**Arquivo: `src/components/layout/Navigation.tsx`**
-
-1. **Adicionar imports**: `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` de `@/components/ui/collapsible`, e `ChevronDown` do lucide-react.
-
-2. **Reestruturar `menuItems.admin`** de array plano para estrutura com grupos:
+Alterar o bloco do tutor para renderizar o AdminDashboard:
 
 ```typescript
-const adminMenuGroups = [
-  {
-    // Item avulso (sem grupo)
-    type: 'item' as const,
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/',
-  },
-  {
-    type: 'group' as const,
-    label: 'Gestão de Aulas',
-    icon: GraduationCap,
-    items: [
-      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
-      { icon: Users, label: 'Usuários', path: '/users' },
-      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
-      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
-      { icon: UserX, label: 'Evasões', path: '/evasions' },
-      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Relatórios',
-    icon: FileText,
-    items: [
-      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
-      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
-      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
-    ],
-  },
-  {
-    type: 'group' as const,
-    label: 'Gestão Administrativa',
-    icon: Monitor,
-    items: [
-      { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
-      { icon: Mail, label: 'Comunicação', path: '/communications' },
-    ],
-  },
-  {
-    type: 'item' as const,
-    icon: Settings,
-    label: 'Configurações',
-    path: '/settings',
-  },
-];
+if (userRole === 'tutor') {
+  return (
+    <Layout userRole={userRole} userName={userName} userAvatar="">
+      <AdminDashboard />
+    </Layout>
+  );
+}
 ```
 
-3. **Renderizacao no JSX**: Para o role `admin`, renderizar `adminMenuGroups` em vez do array plano. Cada grupo usa `Collapsible`:
+O titulo dentro do AdminDashboard diz "Dashboard do Administrador" - opcionalmente pode ser parametrizado, mas como o tutor tera a mesma visao, nao e obrigatorio alterar agora.
+
+**2. `src/pages/Reports.tsx` (linhas 18-20)**
+
+Substituir o role hardcoded por dados reais do usuario autenticado:
 
 ```typescript
-// Para cada grupo colapsavel:
-<Collapsible defaultOpen={grupoContemRotaAtiva}>
-  <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
-    <span className="flex items-center gap-2">
-      <GroupIcon className="h-4 w-4" />
-      {group.label}
-    </span>
-    <ChevronDown className="h-4 w-4 transition-transform duration-200 [&[data-state=open]]:rotate-180" />
-  </CollapsibleTrigger>
-  <CollapsibleContent className="pl-4 space-y-1">
-    {group.items.map(item => (
-      <Button variant={isActive ? "default" : "ghost"} ...>
-        <item.icon /> {item.label}
-      </Button>
-    ))}
-  </CollapsibleContent>
-</Collapsible>
+// Remover:
+const [userRole, setUserRole] = useState<UserRole>('admin');
+const [userName, setUserName] = useState('Admin');
+
+// Adicionar:
+import { useAuth } from '@/hooks/useAuth';
+// ...
+const { profile } = useAuth();
+const userRole = (profile?.role as UserRole) || 'admin';
+const userName = profile?.name || 'Usuário';
 ```
 
-- Grupos que contem a rota ativa iniciam abertos (`defaultOpen={true}`)
-- Itens avulsos (Dashboard, Configuracoes) renderizam como botoes simples, sem Collapsible
+Isso garante que o Layout receba o role correto (tutor) e mostre o menu lateral adequado.
 
-4. **Demais roles** (coordinator, secretary, tutor, teacher, instructor, student) continuam com o array plano e renderizacao atual -- sem alteracao.
+**3. `src/components/layout/Navigation.tsx` - Menu do Tutor**
 
-### Componentes Utilizados
+Adicionar ao array `menuItems.tutor` os itens que o admin tem em Dashboard/Relatorios e que o tutor ainda nao possui:
 
-- `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent` -- ja existem em `src/components/ui/collapsible.tsx`
-- `ChevronDown` -- ja disponivel no lucide-react
+- `{ icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' }` - dentro do contexto de aulas
+- `{ icon: AlertTriangle, label: 'Alunos em Risco', path: '/students-at-risk' }` - relatorios
 
-### Resultado Visual
+O menu do tutor ja inclui: Dashboard, Turmas, Frequencia, Disciplinas, Evasoes, Declaracoes, Comunicacao, Relatorios, Historico do Aluno, Alunos Faltosos. Com essas adicoes, tera paridade com o admin nas areas de Dashboard e Relatorios.
 
-O menu lateral do admin tera grupos colapsaveis com seta indicativa. Clicar no titulo do grupo expande/recolhe os sub-itens. O grupo que contem a pagina atual inicia expandido automaticamente.
+### O que NAO muda
+
+- O tutor continua sem acesso a **Gestao Administrativa** (Usuarios, Equipamentos, Configuracoes, Avisos) - essas funcionalidades permanecem exclusivas do admin/secretary.
+- As rotas ja estao registradas no `App.tsx` e nao precisam de alteracao.
+- Os hooks de dados (`useReportsData`, `useDashboardStats`, etc.) nao filtram por role, entao funcionam normalmente para o tutor.
 

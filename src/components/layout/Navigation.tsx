@@ -306,11 +306,46 @@ const Navigation = ({
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4 space-y-2">
-          {currentMenuItems.map((item, index) => <Button key={index} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
-              <item.icon className="mr-3 h-4 w-4" />
-              {item.label}
-            </Button>)}
+        <nav className="p-4 space-y-1 overflow-y-auto flex-1">
+          {userRole === 'admin' ? (
+            adminMenuGroups.map((entry, index) => {
+              if (entry.type === 'item') {
+                return (
+                  <Button key={index} variant={isActivePath(entry.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(entry.path)}>
+                    <entry.icon className="mr-3 h-4 w-4" />
+                    {entry.label}
+                  </Button>
+                );
+              }
+              const groupHasActiveRoute = entry.items.some(item => isActivePath(item.path));
+              return (
+                <Collapsible key={index} defaultOpen={groupHasActiveRoute}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground rounded-md">
+                    <span className="flex items-center gap-2">
+                      <entry.icon className="h-4 w-4" />
+                      {entry.label}
+                    </span>
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                    {entry.items.map((item, itemIndex) => (
+                      <Button key={itemIndex} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
+                        <item.icon className="mr-3 h-4 w-4" />
+                        {item.label}
+                      </Button>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })
+          ) : (
+            currentMenuItems.map((item, index) => (
+              <Button key={index} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
+                <item.icon className="mr-3 h-4 w-4" />
+                {item.label}
+              </Button>
+            ))
+          )}
         </nav>
 
         {/* Logout Button */}

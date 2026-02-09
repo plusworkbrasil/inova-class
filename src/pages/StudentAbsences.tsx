@@ -100,7 +100,7 @@ const StudentAbsences = () => {
               <h1 className="text-3xl font-bold">Alunos com Excesso de Faltas</h1>
             </div>
             <p className="text-muted-foreground mt-1">
-              Lista de alunos com mais de 3 faltas em disciplinas ativas
+              Lista de alunos com faltas em disciplinas ativas
             </p>
           </div>
           <Badge variant="secondary" className="text-lg px-4 py-2">

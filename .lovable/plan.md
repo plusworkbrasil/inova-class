@@ -1,36 +1,42 @@
 
 
-## Plano: Incluir Todos Alunos Faltosos e Corrigir Filtro por Turma
+## Ajustar Badges de Severidade com Faixas Menores
 
-### Problemas Identificados
+### Problema
+Atualmente, o badge de severidade so tem 3 faixas, e a menor ("Atencao") cobre de 1 a 6 faltas, que e uma faixa muito ampla. Com a inclusao de todos os alunos faltosos, faz sentido diferenciar melhor os niveis.
 
-1. **Filtro "mais de 3 faltas" exclui alunos**: O hook `useStudentsWithExcessAbsences` filtra apenas alunos com `total_absences > 3` (linha 100). Isso exclui alunos com 1, 2 ou 3 faltas.
+### Mudanca Proposta
 
-2. **Filtro por turma usa `class_id` da tabela `attendance`**: Quando o filtro por turma e aplicado, ele filtra pelo `class_id` registrado na tabela `attendance`. Porem, o `class_id` na tabela attendance pode estar inconsistente com a turma real do aluno (campo `class_id` em `profiles`). Alem disso, a turma exibida na coluna "Turma" tambem vem do attendance e nao do profile do aluno.
+| Arquivo | Acao |
+|---------|------|
+| `src/pages/StudentAbsences.tsx` | Atualizar funcao `getSeverityBadge` |
 
-### Mudancas Propostas
+### Novas Faixas de Severidade
 
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/hooks/useStudentsWithExcessAbsences.ts` | MODIFICAR | Remover filtro de `> 3 faltas`, incluir todos com pelo menos 1 falta |
-| `src/pages/StudentAbsences.tsx` | MODIFICAR | Atualizar texto descritivo e ajustar filtro por turma para usar `class_id` do profile |
+| Faltas | Nivel | Cor | Badge |
+|--------|-------|-----|-------|
+| 10+ | Critico | Vermelho (`bg-red-500`) | Critico (X) |
+| 7-9 | Alerta | Laranja (`bg-orange-500`) | Alerta (X) |
+| 4-6 | Atencao | Amarelo (`bg-yellow-500`) | Atencao (X) |
+| 1-3 | Leve | Azul (`bg-blue-500`) | Leve (X) |
 
-### Detalhes Tecnicos
+### Detalhe Tecnico
 
-#### 1. Hook `useStudentsWithExcessAbsences.ts`
+Modificar a funcao `getSeverityBadge` (linhas 65-73) em `src/pages/StudentAbsences.tsx` para adicionar a nova faixa:
 
-- **Linha 99-100**: Alterar filtro de `item.total_absences > 3` para `item.total_absences >= 1` (incluir todos alunos com faltas)
-- **Filtro por turma**: Quando `classId` e informado, filtrar pelo `class_id` do **profile do aluno** (nao do attendance). Isso significa:
-  - Buscar todos os attendance sem filtro de class_id
-  - Apos obter os profiles dos alunos, filtrar os resultados pelo `class_id` do profile
+```typescript
+const getSeverityBadge = (absences: number) => {
+  if (absences >= 10) {
+    return <Badge variant="destructive" className="bg-red-500">Critico ({absences})</Badge>;
+  } else if (absences >= 7) {
+    return <Badge className="bg-orange-500 text-white">Alerta ({absences})</Badge>;
+  } else if (absences >= 4) {
+    return <Badge className="bg-yellow-500 text-white">Atencao ({absences})</Badge>;
+  } else {
+    return <Badge className="bg-blue-500 text-white">Leve ({absences})</Badge>;
+  }
+};
+```
 
-#### 2. Pagina `StudentAbsences.tsx`
-
-- **Linha 103-104**: Atualizar texto de "mais de 3 faltas" para "com faltas em disciplinas ativas"
-
-### Resultado Esperado
-
-- A lista mostrara **todos os alunos que possuem pelo menos 1 falta** em disciplinas ativas
-- O filtro por turma usara a turma cadastrada no perfil do aluno, garantindo consistencia
-- Severidade continua funcionando: Critico (10+), Alerta (7-9), Atencao (1-6)
+Apenas 1 arquivo modificado, mudanca pontual na funcao de badge.
 

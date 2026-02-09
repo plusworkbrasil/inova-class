@@ -12,60 +12,50 @@ interface NavigationProps {
   userName: string;
   userAvatar?: string;
 }
-const menuItems = {
-  admin: [{
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/'
-  }, {
-    icon: Users,
-    label: 'Usuários',
-    path: '/users'
-  }, {
+
+type MenuItem = { icon: any; label: string; path: string };
+type AdminMenuEntry =
+  | { type: 'item'; icon: any; label: string; path: string }
+  | { type: 'group'; label: string; icon: any; items: MenuItem[] };
+
+const adminMenuGroups: AdminMenuEntry[] = [
+  { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    type: 'group',
+    label: 'Gestão de Aulas',
     icon: GraduationCap,
-    label: 'Turmas',
-    path: '/classes'
-  }, {
-    icon: BookOpen,
-    label: 'Disciplinas',
-    path: '/subjects'
-  }, {
-    icon: Monitor,
-    label: 'Equipamentos',
-    path: '/equipment'
-  }, {
-    icon: ClipboardCheck,
-    label: 'Frequência',
-    path: '/attendance'
-  }, {
-    icon: BookOpen,
-    label: 'Notas por Disciplina',
-    path: '/subject-grades'
-  }, {
-    icon: UserX,
-    label: 'Evasões',
-    path: '/evasions'
-  }, {
-    icon: FileText,
-    label: 'Comunicação',
-    path: '/communications'
-  }, {
-    icon: FileText,
+    items: [
+      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+      { icon: Users, label: 'Usuários', path: '/users' },
+      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: UserX, label: 'Evasões', path: '/evasions' },
+      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Relatórios',
-    path: '/reports'
-  }, {
-    icon: History,
-    label: 'Histórico do Aluno',
-    path: '/student-history'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos Faltosos',
-    path: '/student-absences'
-  }, {
-    icon: Settings,
-    label: 'Configurações',
-    path: '/settings'
-  }],
+    icon: FileText,
+    items: [
+      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
+      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
+      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Gestão Administrativa',
+    icon: Monitor,
+    items: [
+      { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
+      { icon: Mail, label: 'Comunicação', path: '/communications' },
+    ],
+  },
+  { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },
+];
+
+const menuItems = {
   coordinator: [{
     icon: LayoutDashboard,
     label: 'Dashboard',

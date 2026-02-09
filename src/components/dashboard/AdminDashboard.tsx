@@ -92,9 +92,9 @@ const AdminDashboard = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as Turmas</SelectItem>
-              {!classesLoading && classes?.map((cls) => (
-                <SelectItem key={cls.id} value={cls.name}>
-                  {cls.name}
+              {classesFromAbsences.map((className) => (
+                <SelectItem key={className} value={className}>
+                  {className}
                 </SelectItem>
               ))}
             </SelectContent>

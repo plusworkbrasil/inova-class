@@ -97,7 +97,7 @@ export const useStudentsWithExcessAbsences = () => {
       const studentsWithAbsences = Array.from(groupedData.values())
         .filter(item => item.total_absences >= 1);
 
-      if (studentsWithExcessAbsences.length === 0) {
+      if (studentsWithAbsences.length === 0) {
         setData([]);
         setStatistics({
           totalStudents: 0,
@@ -109,7 +109,7 @@ export const useStudentsWithExcessAbsences = () => {
       }
 
       // Buscar dados dos alunos
-      const studentIds = [...new Set(studentsWithExcessAbsences.map(s => s.student_id))];
+      const studentIds = [...new Set(studentsWithAbsences.map(s => s.student_id))];
       const { data: studentsData, error: studentsError } = await supabase
         .from('profiles')
         .select('id, name, enrollment_number, class_id')
@@ -117,12 +117,12 @@ export const useStudentsWithExcessAbsences = () => {
 
       if (studentsError) throw studentsError;
 
-      // Buscar dados das turmas
-      const classIds = [...new Set(studentsWithExcessAbsences.map(s => s.class_id))];
+      // Buscar dados das turmas (usando class_id do profile)
+      const profileClassIds = [...new Set((studentsData || []).map(s => s.class_id).filter(Boolean))] as string[];
       const { data: classesData, error: classesError } = await supabase
         .from('classes')
         .select('id, name')
-        .in('id', classIds);
+        .in('id', profileClassIds.length > 0 ? profileClassIds : ['__none__']);
 
       if (classesError) throw classesError;
 
@@ -131,8 +131,8 @@ export const useStudentsWithExcessAbsences = () => {
       const classesMap = new Map(classesData?.map(c => [c.id, c.name]));
       const subjectsMap = new Map(activeSubjects?.map(s => [s.id, s.name]));
 
-      // Formatar resultados
-      const formatted = studentsWithExcessAbsences.map(item => {
+      // Formatar resultados usando class_id do profile
+      const formatted = studentsWithAbsences.map(item => {
         const student = studentsMap.get(item.student_id);
         const absence_percentage = (item.total_absences / item.total_classes) * 100;
 

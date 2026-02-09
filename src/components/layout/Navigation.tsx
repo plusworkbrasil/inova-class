@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown } from 'lucide-react';
 import { UserRole } from '@/types/user';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleTranslation } from '@/lib/roleTranslations';
 interface NavigationProps {
@@ -11,60 +12,50 @@ interface NavigationProps {
   userName: string;
   userAvatar?: string;
 }
-const menuItems = {
-  admin: [{
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/'
-  }, {
-    icon: Users,
-    label: 'Usuários',
-    path: '/users'
-  }, {
+
+type MenuItem = { icon: any; label: string; path: string };
+type AdminMenuEntry =
+  | { type: 'item'; icon: any; label: string; path: string }
+  | { type: 'group'; label: string; icon: any; items: MenuItem[] };
+
+const adminMenuGroups: AdminMenuEntry[] = [
+  { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    type: 'group',
+    label: 'Gestão de Aulas',
     icon: GraduationCap,
-    label: 'Turmas',
-    path: '/classes'
-  }, {
-    icon: BookOpen,
-    label: 'Disciplinas',
-    path: '/subjects'
-  }, {
-    icon: Monitor,
-    label: 'Equipamentos',
-    path: '/equipment'
-  }, {
-    icon: ClipboardCheck,
-    label: 'Frequência',
-    path: '/attendance'
-  }, {
-    icon: BookOpen,
-    label: 'Notas por Disciplina',
-    path: '/subject-grades'
-  }, {
-    icon: UserX,
-    label: 'Evasões',
-    path: '/evasions'
-  }, {
-    icon: FileText,
-    label: 'Comunicação',
-    path: '/communications'
-  }, {
-    icon: FileText,
+    items: [
+      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+      { icon: Users, label: 'Usuários', path: '/users' },
+      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: UserX, label: 'Evasões', path: '/evasions' },
+      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Relatórios',
-    path: '/reports'
-  }, {
-    icon: History,
-    label: 'Histórico do Aluno',
-    path: '/student-history'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos Faltosos',
-    path: '/student-absences'
-  }, {
-    icon: Settings,
-    label: 'Configurações',
-    path: '/settings'
-  }],
+    icon: FileText,
+    items: [
+      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
+      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
+      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Gestão Administrativa',
+    icon: Monitor,
+    items: [
+      { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
+      { icon: Mail, label: 'Comunicação', path: '/communications' },
+    ],
+  },
+  { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },
+];
+
+const menuItems = {
   coordinator: [{
     icon: LayoutDashboard,
     label: 'Dashboard',
@@ -259,7 +250,7 @@ const Navigation = ({
   const {
     signOut
   } = useAuth();
-  const currentMenuItems = menuItems[userRole] || [];
+  const currentMenuItems = userRole === 'admin' ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
   const toggleMenu = () => setIsOpen(!isOpen);
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -315,11 +306,46 @@ const Navigation = ({
         </div>
 
         {/* Navigation Menu */}
-        <nav className="p-4 space-y-2">
-          {currentMenuItems.map((item, index) => <Button key={index} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
-              <item.icon className="mr-3 h-4 w-4" />
-              {item.label}
-            </Button>)}
+        <nav className="p-4 space-y-1 overflow-y-auto flex-1">
+          {userRole === 'admin' ? (
+            adminMenuGroups.map((entry, index) => {
+              if (entry.type === 'item') {
+                return (
+                  <Button key={index} variant={isActivePath(entry.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(entry.path)}>
+                    <entry.icon className="mr-3 h-4 w-4" />
+                    {entry.label}
+                  </Button>
+                );
+              }
+              const groupHasActiveRoute = entry.items.some(item => isActivePath(item.path));
+              return (
+                <Collapsible key={index} defaultOpen={groupHasActiveRoute}>
+                  <CollapsibleTrigger className="flex items-center justify-between w-full px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground rounded-md">
+                    <span className="flex items-center gap-2">
+                      <entry.icon className="h-4 w-4" />
+                      {entry.label}
+                    </span>
+                    <ChevronDown className="h-4 w-4 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                    {entry.items.map((item, itemIndex) => (
+                      <Button key={itemIndex} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
+                        <item.icon className="mr-3 h-4 w-4" />
+                        {item.label}
+                      </Button>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })
+          ) : (
+            currentMenuItems.map((item, index) => (
+              <Button key={index} variant={isActivePath(item.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(item.path)}>
+                <item.icon className="mr-3 h-4 w-4" />
+                {item.label}
+              </Button>
+            ))
+          )}
         </nav>
 
         {/* Logout Button */}

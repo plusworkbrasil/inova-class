@@ -7,7 +7,7 @@ import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
-import { useClasses } from '@/hooks/useClasses';
+
 import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';

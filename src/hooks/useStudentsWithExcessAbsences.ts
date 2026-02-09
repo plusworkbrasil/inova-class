@@ -93,9 +93,9 @@ export const useStudentsWithExcessAbsences = () => {
         }
       });
 
-      // Filtrar apenas com mais de 3 faltas
-      const studentsWithExcessAbsences = Array.from(groupedData.values())
-        .filter(item => item.total_absences > 3);
+      // Incluir todos alunos com pelo menos 1 falta
+      const studentsWithAbsences = Array.from(groupedData.values())
+        .filter(item => item.total_absences >= 1);
 
       if (studentsWithExcessAbsences.length === 0) {
         setData([]);

@@ -79,7 +79,7 @@ const Dashboard = () => {
   if (userRole === 'tutor') {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
-        <TutorDashboard />
+        <AdminDashboard />
       </Layout>
     );
   }

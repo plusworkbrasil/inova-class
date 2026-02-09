@@ -1,62 +1,38 @@
 
 
-## Plano: Corrigir Filtro de "Alunos com Maior Numero de Faltas" no Dashboard
+## Corrigir Filtro de "Alunos com Maior Numero de Faltas"
 
-### Problema Identificado
+### Problema
+O `.slice(0, 10)` na linha 363 de `useReportsData.ts` limita os dados a apenas 10 alunos antes do filtro por turma ser aplicado no Dashboard. Resultado: turmas sem alunos no top 10 global aparecem vazias ao filtrar.
 
-O filtro por turma na secao "Alunos com Maior Numero de Faltas" do Dashboard Admin nao funciona corretamente porque:
+### Mudancas
 
-1. **Limite aplicado antes do filtro**: Em `useReportsData.ts` (linha 363), o resultado e cortado para apenas 10 alunos com `.slice(0, 10)` **antes** de o filtro por turma ser aplicado no `AdminDashboard.tsx`. Assim, ao selecionar uma turma que nao tem alunos entre os top 10, o resultado fica vazio - mesmo que existam alunos faltosos nessa turma.
+**1. `src/hooks/useReportsData.ts` (linha 363)**
 
-2. **Dropdown mostra todas as turmas**: O `useClasses` retorna **todas** as turmas do sistema (inclusive as sem alunos ou sem disciplinas ativas), tornando o dropdown confuso com opcoes que nunca terao resultados.
+Remover `.slice(0, 10)`:
 
-### Mudancas Propostas
-
-| Arquivo | Acao | Descricao |
-|---------|------|-----------|
-| `src/hooks/useReportsData.ts` | MODIFICAR | Remover `.slice(0, 10)` para retornar todos alunos faltosos |
-| `src/components/dashboard/AdminDashboard.tsx` | MODIFICAR | Usar classes filtradas a partir dos dados reais de faltas |
-
-### Detalhes Tecnicos
-
-#### 1. `src/hooks/useReportsData.ts` (linha 362-363)
-
-Remover o `.slice(0, 10)` da funcao `processTopAbsentStudents`. Isso permite que o filtro por turma no Dashboard funcione sobre todos os alunos com faltas, e nao apenas sobre os 10 primeiros.
-
-Antes:
-```typescript
+```
+// Antes:
 .sort((a, b) => b.absences - a.absences)
 .slice(0, 10);
-```
 
-Depois:
-```typescript
+// Depois:
 .sort((a, b) => b.absences - a.absences);
 ```
 
-A paginacao existente no Dashboard (5 por pagina) ja limita o que e exibido visualmente.
+**2. `src/components/dashboard/AdminDashboard.tsx`**
 
-#### 2. `src/components/dashboard/AdminDashboard.tsx` (linhas 394-407)
+- Remover import de `useClasses` (linha 10) e sua chamada (linha 40)
+- Adicionar `useMemo` para extrair turmas dos dados reais de faltas:
 
-Trocar a fonte de turmas no dropdown: ao inves de usar `useClasses` (que traz todas as turmas), extrair as turmas diretamente dos dados de alunos faltosos. Isso garante que so aparecem turmas que realmente possuem alunos com faltas.
-
-Antes:
 ```typescript
-{!classesLoading && classes?.map((cls) => (
-  <SelectItem key={cls.id} value={cls.name}>
-    {cls.name}
-  </SelectItem>
-))}
-```
-
-Depois:
-```typescript
-// Extrair turmas unicas dos proprios dados de faltas
 const classesFromAbsences = useMemo(() => {
-  const uniqueClasses = [...new Set(reportsData.topAbsentStudents.map(s => s.class))];
+  const uniqueClasses = [...new Set(reportsData.topAbsentStudents.map(s => s.class))].filter(Boolean);
   return uniqueClasses.sort();
 }, [reportsData.topAbsentStudents]);
 ```
+
+- Atualizar os dois dropdowns de turma (linhas 92-96 e 401-405) para usar `classesFromAbsences`:
 
 ```typescript
 {classesFromAbsences.map((className) => (
@@ -66,11 +42,5 @@ const classesFromAbsences = useMemo(() => {
 ))}
 ```
 
-E remover o import/uso de `useClasses` se nao for usado em outro lugar no componente.
-
-### Resultado Esperado
-
-- Ao selecionar uma turma no filtro, a lista mostrara **todos os alunos faltosos daquela turma**, nao apenas os que estavam entre os top 10 gerais
-- O dropdown so exibira turmas que realmente possuem alunos com faltas nos ultimos 7 dias
-- A paginacao existente (5 por pagina) continua limitando a exibicao visual
+A paginacao existente (5 por pagina) continua controlando a exibicao visual.
 

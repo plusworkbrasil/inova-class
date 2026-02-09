@@ -136,19 +136,23 @@ export const useStudentsWithExcessAbsences = () => {
         const student = studentsMap.get(item.student_id);
         const absence_percentage = (item.total_absences / item.total_classes) * 100;
 
+        const profileClassId = student?.class_id || item.class_id;
         return {
           student_id: item.student_id,
           student_name: student?.name || 'N/A',
           student_enrollment: student?.enrollment_number || '-',
-          class_id: item.class_id,
-          class_name: classesMap.get(item.class_id) || 'N/A',
+          class_id: profileClassId,
+          class_name: classesMap.get(profileClassId) || 'N/A',
           subject_id: item.subject_id,
           subject_name: subjectsMap.get(item.subject_id) || 'N/A',
           total_absences: item.total_absences,
           total_classes: item.total_classes,
           absence_percentage: Math.round(absence_percentage * 10) / 10
         };
-      }).sort((a, b) => b.total_absences - a.total_absences);
+      })
+      // Filtrar por turma do profile (não do attendance)
+      .filter(item => !classId || item.class_id === classId)
+      .sort((a, b) => b.total_absences - a.total_absences);
 
       // Calcular estatísticas
       const classCount = new Map<string, number>();

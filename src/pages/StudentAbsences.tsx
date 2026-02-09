@@ -64,8 +64,10 @@ const StudentAbsences = () => {
       return <Badge variant="destructive" className="bg-red-500">Crítico ({absences})</Badge>;
     } else if (absences >= 7) {
       return <Badge className="bg-orange-500 text-white">Alerta ({absences})</Badge>;
-    } else {
+    } else if (absences >= 4) {
       return <Badge className="bg-yellow-500 text-white">Atenção ({absences})</Badge>;
+    } else {
+      return <Badge className="bg-blue-500 text-white">Leve ({absences})</Badge>;
     }
   };
 

@@ -250,7 +250,7 @@ const Navigation = ({
   const {
     signOut
   } = useAuth();
-  const currentMenuItems = menuItems[userRole] || [];
+  const currentMenuItems = userRole === 'admin' ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
   const toggleMenu = () => setIsOpen(!isOpen);
   const handleNavigation = (path: string) => {
     navigate(path);

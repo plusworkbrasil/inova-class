@@ -142,59 +142,6 @@ const menuItems = {
     label: 'Relatórios',
     path: '/reports'
   }],
-  tutor: [{
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/'
-  }, {
-    icon: GraduationCap,
-    label: 'Turmas',
-    path: '/classes'
-  }, {
-    icon: ClipboardCheck,
-    label: 'Frequência',
-    path: '/attendance'
-  }, {
-    icon: BookOpen,
-    label: 'Disciplinas',
-    path: '/subjects'
-  }, {
-    icon: BookOpen,
-    label: 'Notas por Disciplina',
-    path: '/subject-grades'
-  }, {
-    icon: UserX,
-    label: 'Evasões',
-    path: '/evasions'
-  }, {
-    icon: FileText,
-    label: 'Declarações',
-    path: '/declarations'
-  }, {
-    icon: Mail,
-    label: 'Comunicação',
-    path: '/communications'
-  }, {
-    icon: FileText,
-    label: 'Relatórios',
-    path: '/reports'
-  }, {
-    icon: History,
-    label: 'Histórico do Aluno',
-    path: '/student-history'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos Faltosos',
-    path: '/student-absences'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos em Risco',
-    path: '/students-at-risk'
-  }, {
-    icon: GraduationCap,
-    label: 'Visão de Turmas',
-    path: '/class-timeline'
-  }],
   teacher: [{
     icon: LayoutDashboard,
     label: 'Dashboard',

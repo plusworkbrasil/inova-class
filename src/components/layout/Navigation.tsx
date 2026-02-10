@@ -303,8 +303,8 @@ const Navigation = ({
 
         {/* Navigation Menu */}
         <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-          {userRole === 'admin' ? (
-            adminMenuGroups.map((entry, index) => {
+          {(userRole === 'admin' || userRole === 'tutor') ? (
+            (userRole === 'admin' ? adminMenuGroups : tutorMenuGroups).map((entry, index) => {
               if (entry.type === 'item') {
                 return (
                   <Button key={index} variant={isActivePath(entry.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(entry.path)}>

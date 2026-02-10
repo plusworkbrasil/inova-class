@@ -55,6 +55,43 @@ const adminMenuGroups: MenuEntry[] = [
   { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
+const tutorMenuGroups: MenuEntry[] = [
+  { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    type: 'group',
+    label: 'Gestão de Aulas',
+    icon: GraduationCap,
+    items: [
+      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+      { icon: UserX, label: 'Evasões', path: '/evasions' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Relatórios',
+    icon: FileText,
+    items: [
+      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
+      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
+      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
+      { icon: AlertTriangle, label: 'Alunos em Risco', path: '/students-at-risk' },
+      { icon: GraduationCap, label: 'Visão de Turmas', path: '/class-timeline' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Acompanhamento',
+    icon: Mail,
+    items: [
+      { icon: FileText, label: 'Declarações', path: '/declarations' },
+      { icon: Mail, label: 'Comunicação', path: '/communications' },
+    ],
+  },
+];
+
 const menuItems = {
   coordinator: [{
     icon: LayoutDashboard,

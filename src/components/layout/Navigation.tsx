@@ -14,11 +14,11 @@ interface NavigationProps {
 }
 
 type MenuItem = { icon: any; label: string; path: string };
-type AdminMenuEntry =
+type MenuEntry =
   | { type: 'item'; icon: any; label: string; path: string }
   | { type: 'group'; label: string; icon: any; items: MenuItem[] };
 
-const adminMenuGroups: AdminMenuEntry[] = [
+const adminMenuGroups: MenuEntry[] = [
   { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   {
     type: 'group',

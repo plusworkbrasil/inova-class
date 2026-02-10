@@ -14,11 +14,11 @@ interface NavigationProps {
 }
 
 type MenuItem = { icon: any; label: string; path: string };
-type AdminMenuEntry =
+type MenuEntry =
   | { type: 'item'; icon: any; label: string; path: string }
   | { type: 'group'; label: string; icon: any; items: MenuItem[] };
 
-const adminMenuGroups: AdminMenuEntry[] = [
+const adminMenuGroups: MenuEntry[] = [
   { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   {
     type: 'group',
@@ -53,6 +53,43 @@ const adminMenuGroups: AdminMenuEntry[] = [
     ],
   },
   { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },
+];
+
+const tutorMenuGroups: MenuEntry[] = [
+  { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    type: 'group',
+    label: 'Gestão de Aulas',
+    icon: GraduationCap,
+    items: [
+      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+      { icon: UserX, label: 'Evasões', path: '/evasions' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Relatórios',
+    icon: FileText,
+    items: [
+      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
+      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
+      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
+      { icon: AlertTriangle, label: 'Alunos em Risco', path: '/students-at-risk' },
+      { icon: GraduationCap, label: 'Visão de Turmas', path: '/class-timeline' },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Acompanhamento',
+    icon: Mail,
+    items: [
+      { icon: FileText, label: 'Declarações', path: '/declarations' },
+      { icon: Mail, label: 'Comunicação', path: '/communications' },
+    ],
+  },
 ];
 
 const menuItems = {
@@ -142,59 +179,6 @@ const menuItems = {
     label: 'Relatórios',
     path: '/reports'
   }],
-  tutor: [{
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/'
-  }, {
-    icon: GraduationCap,
-    label: 'Turmas',
-    path: '/classes'
-  }, {
-    icon: ClipboardCheck,
-    label: 'Frequência',
-    path: '/attendance'
-  }, {
-    icon: BookOpen,
-    label: 'Disciplinas',
-    path: '/subjects'
-  }, {
-    icon: BookOpen,
-    label: 'Notas por Disciplina',
-    path: '/subject-grades'
-  }, {
-    icon: UserX,
-    label: 'Evasões',
-    path: '/evasions'
-  }, {
-    icon: FileText,
-    label: 'Declarações',
-    path: '/declarations'
-  }, {
-    icon: Mail,
-    label: 'Comunicação',
-    path: '/communications'
-  }, {
-    icon: FileText,
-    label: 'Relatórios',
-    path: '/reports'
-  }, {
-    icon: History,
-    label: 'Histórico do Aluno',
-    path: '/student-history'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos Faltosos',
-    path: '/student-absences'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos em Risco',
-    path: '/students-at-risk'
-  }, {
-    icon: GraduationCap,
-    label: 'Visão de Turmas',
-    path: '/class-timeline'
-  }],
   teacher: [{
     icon: LayoutDashboard,
     label: 'Dashboard',
@@ -262,7 +246,7 @@ const Navigation = ({
   const {
     signOut
   } = useAuth();
-  const currentMenuItems = userRole === 'admin' ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
+  const currentMenuItems = (userRole === 'admin' || userRole === 'tutor') ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
   const toggleMenu = () => setIsOpen(!isOpen);
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -319,8 +303,8 @@ const Navigation = ({
 
         {/* Navigation Menu */}
         <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-          {userRole === 'admin' ? (
-            adminMenuGroups.map((entry, index) => {
+          {(userRole === 'admin' || userRole === 'tutor') ? (
+            (userRole === 'admin' ? adminMenuGroups : tutorMenuGroups).map((entry, index) => {
               if (entry.type === 'item') {
                 return (
                   <Button key={index} variant={isActivePath(entry.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(entry.path)}>

@@ -92,44 +92,33 @@ const tutorMenuGroups: MenuEntry[] = [
   },
 ];
 
-const menuItems = {
-  coordinator: [{
-    icon: LayoutDashboard,
-    label: 'Dashboard',
-    path: '/'
-  }, {
+const coordinatorMenuGroups: MenuEntry[] = [
+  { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+  {
+    type: 'group',
+    label: 'Gestão de Aulas',
     icon: GraduationCap,
-    label: 'Turmas',
-    path: '/classes'
-  }, {
-    icon: ClipboardCheck,
-    label: 'Frequência',
-    path: '/attendance'
-  }, {
-    icon: BookOpen,
-    label: 'Disciplinas',
-    path: '/subjects'
-  }, {
-    icon: UserX,
-    label: 'Acompanhamento',
-    path: '/evasions'
-  }, {
-    icon: Mail,
-    label: 'Comunicação',
-    path: '/communications'
-  }, {
-    icon: FileText,
+    items: [
+      { icon: GraduationCap, label: 'Turmas', path: '/classes' },
+      { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
+      { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Relatórios',
-    path: '/reports'
-  }, {
-    icon: History,
-    label: 'Histórico do Aluno',
-    path: '/student-history'
-  }, {
-    icon: AlertTriangle,
-    label: 'Alunos Faltosos',
-    path: '/student-absences'
-  }],
+    icon: FileText,
+    items: [
+      { icon: FileText, label: 'Relatórios', path: '/reports' },
+      { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
+      { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
+    ],
+  },
+  { type: 'item', icon: Mail, label: 'Comunicação', path: '/communications' },
+];
+
+const menuItems = {
   secretary: [{
     icon: LayoutDashboard,
     label: 'Dashboard',
@@ -246,7 +235,8 @@ const Navigation = ({
   const {
     signOut
   } = useAuth();
-  const currentMenuItems = (userRole === 'admin' || userRole === 'tutor') ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
+  const useGroupedMenu = userRole === 'admin' || userRole === 'tutor' || userRole === 'coordinator';
+  const currentMenuItems = useGroupedMenu ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
   const toggleMenu = () => setIsOpen(!isOpen);
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -303,8 +293,8 @@ const Navigation = ({
 
         {/* Navigation Menu */}
         <nav className="p-4 space-y-1 overflow-y-auto flex-1">
-          {(userRole === 'admin' || userRole === 'tutor') ? (
-            (userRole === 'admin' ? adminMenuGroups : tutorMenuGroups).map((entry, index) => {
+          {useGroupedMenu ? (
+            (userRole === 'admin' ? adminMenuGroups : userRole === 'tutor' ? tutorMenuGroups : coordinatorMenuGroups).map((entry, index) => {
               if (entry.type === 'item') {
                 return (
                   <Button key={index} variant={isActivePath(entry.path) ? "default" : "ghost"} className="w-full justify-start" onClick={() => handleNavigation(entry.path)}>

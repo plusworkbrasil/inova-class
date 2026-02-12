@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,13 @@ import { cn } from '@/lib/utils';
 import { exportEvasionsToExcel } from '@/lib/evasionsExport';
 import { exportEvasionsToPdf } from '@/lib/evasionsExportPdf';
 import { EvasionsChart } from '@/components/charts/EvasionsChart';
+import {
+  Pagination, PaginationContent, PaginationItem,
+  PaginationLink, PaginationNext, PaginationPrevious,
+  PaginationEllipsis
+} from '@/components/ui/pagination';
+
+const ITEMS_PER_PAGE = 10;
 
 const Evasions = () => {
   const { profile } = useAuth();
@@ -46,6 +53,9 @@ const Evasions = () => {
   const { alerts, hasAlerts, highSeverityCount, loading: alertsLoading } = useEvasionAlerts();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [evasionToCancel, setEvasionToCancel] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedClass, selectedReason, startDate, endDate]);
 
   const handleCreateEvasion = async (data: any) => {
     if (!profile?.id) return;
@@ -172,6 +182,24 @@ const Evasions = () => {
       return true;
     });
   }, [evasions, searchTerm, selectedReason, selectedClass, startDate, endDate]);
+
+  const totalPages = Math.ceil(filteredEvasions.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedEvasions = filteredEvasions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('ellipsis');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const handleExportExcel = () => {
     if (filteredEvasions.length === 0) {
@@ -496,7 +524,7 @@ const Evasions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEvasions.map((evasion) => (
+                {paginatedEvasions.map((evasion) => (
                   <TableRow key={evasion.id}>
                     <TableCell className="font-medium">{evasion.profiles?.name || 'N/A'}</TableCell>
                     <TableCell>
@@ -540,6 +568,45 @@ const Evasions = () => {
                 ))}
               </TableBody>
             </Table>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Mostrando {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredEvasions.length)} de {filteredEvasions.length} registros
+                </p>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                    {getPageNumbers().map((page, idx) => (
+                      <PaginationItem key={idx}>
+                        {page === 'ellipsis' ? (
+                          <PaginationEllipsis />
+                        ) : (
+                          <PaginationLink
+                            isActive={currentPage === page}
+                            onClick={() => setCurrentPage(page)}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        )}
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
           </CardContent>
         </Card>
         

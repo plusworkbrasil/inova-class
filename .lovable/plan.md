@@ -1,27 +1,27 @@
 
 
-## Organizar Menu do Tutor em Categorias Colapsaveis
+## Organizar Menu do Coordinator em Categorias Colapsaveis
 
 ### Objetivo
-Reorganizar o menu lateral do Tutor em grupos colapsaveis, seguindo o mesmo padrao ja implementado para o Admin.
+Reorganizar o menu do Coordinator em grupos colapsaveis, seguindo o mesmo padrao do Admin e Tutor.
 
 ### Estrutura proposta
 
 | Categoria | Itens |
 |-----------|-------|
 | Dashboard (item solto) | Dashboard (`/`) |
-| Gestao de Aulas | Turmas, Frequencia, Disciplinas, Notas por Disciplina, Evasoes |
-| Relatorios | Relatorio Geral, Historico do Aluno, Alunos Faltosos, Alunos em Risco, Visao de Turmas |
-| Acompanhamento | Declaracoes, Comunicacao |
+| Gestao de Aulas | Turmas, Frequencia, Disciplinas, Evasoes |
+| Relatorios | Relatorios, Historico do Aluno, Alunos Faltosos |
+| Comunicacao (item solto) | Comunicacao (`/communications`) |
 
 ### Mudancas Tecnicas
 
 **Arquivo: `src/components/layout/Navigation.tsx`**
 
-1. Criar um novo array `tutorMenuGroups` usando o mesmo tipo `AdminMenuEntry[]` (renomeado para `MenuEntry` para ficar generico):
+1. Criar o array `coordinatorMenuGroups` do tipo `MenuEntry[]`:
 
 ```typescript
-const tutorMenuGroups: MenuEntry[] = [
+const coordinatorMenuGroups: MenuEntry[] = [
   { type: 'item', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   {
     type: 'group',
@@ -31,8 +31,7 @@ const tutorMenuGroups: MenuEntry[] = [
       { icon: GraduationCap, label: 'Turmas', path: '/classes' },
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
-      { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
-      { icon: UserX, label: 'Evasões', path: '/evasions' },
+      { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
     ],
   },
   {
@@ -40,40 +39,35 @@ const tutorMenuGroups: MenuEntry[] = [
     label: 'Relatórios',
     icon: FileText,
     items: [
-      { icon: FileText, label: 'Relatório Geral', path: '/reports' },
+      { icon: FileText, label: 'Relatórios', path: '/reports' },
       { icon: History, label: 'Histórico do Aluno', path: '/student-history' },
       { icon: AlertTriangle, label: 'Alunos Faltosos', path: '/student-absences' },
-      { icon: AlertTriangle, label: 'Alunos em Risco', path: '/students-at-risk' },
-      { icon: GraduationCap, label: 'Visão de Turmas', path: '/class-timeline' },
     ],
   },
-  {
-    type: 'group',
-    label: 'Acompanhamento',
-    icon: Mail,
-    items: [
-      { icon: FileText, label: 'Declarações', path: '/declarations' },
-      { icon: Mail, label: 'Comunicação', path: '/communications' },
-    ],
-  },
+  { type: 'item', icon: Mail, label: 'Comunicação', path: '/communications' },
 ];
 ```
 
-2. Renomear o tipo `AdminMenuEntry` para `MenuEntry` para refletir o uso compartilhado.
-
-3. Atualizar a condicao de renderizacao no `<nav>` para tratar tambem o tutor com a logica de grupos colapsaveis:
+2. Atualizar a condicao de renderizacao no JSX para incluir `coordinator`:
 
 ```typescript
-{(userRole === 'admin' || userRole === 'tutor') ? (
-  (userRole === 'admin' ? adminMenuGroups : tutorMenuGroups).map(...)
+const useGroupedMenu = userRole === 'admin' || userRole === 'tutor' || userRole === 'coordinator';
+
+// No nav:
+{useGroupedMenu ? (
+  (userRole === 'admin' ? adminMenuGroups : userRole === 'tutor' ? tutorMenuGroups : coordinatorMenuGroups).map(...)
 ) : (
   currentMenuItems.map(...)
 )}
 ```
 
-A logica de renderizacao dos grupos (Collapsible com defaultOpen baseado na rota ativa) ja existe e sera reutilizada sem alteracao.
+3. Atualizar a linha do `currentMenuItems` para excluir tambem o coordinator:
 
-4. Remover a entrada `tutor` do objeto `menuItems` (flat list), pois nao sera mais utilizada.
+```typescript
+const currentMenuItems = (userRole === 'admin' || userRole === 'tutor' || userRole === 'coordinator') ? [] : (menuItems[userRole as keyof typeof menuItems] || []);
+```
+
+4. Remover a entrada `coordinator` do objeto `menuItems` (flat list).
 
 ### O que NAO muda
 - Nenhum outro role e afetado.

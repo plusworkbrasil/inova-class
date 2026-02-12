@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
 import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X, Check } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
@@ -32,7 +33,10 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [isAttendanceFormOpen, setIsAttendanceFormOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -64,6 +68,11 @@ const Attendance = () => {
       setUserName(profile.name);
     }
   }, [profile]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedClass, selectedSubject, startDate, endDate]);
 
   const handleOpenAttendanceForm = () => {
     // Para instrutores, verificar se tem subjects antes de abrir
@@ -292,9 +301,14 @@ const Attendance = () => {
       filtered = filtered.filter(record => record.subject_id === selectedSubject);
     }
     
-    if (selectedDate) {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      filtered = filtered.filter(record => record.date === dateStr);
+    if (startDate) {
+      const startStr = format(startDate, 'yyyy-MM-dd');
+      filtered = filtered.filter(record => record.date >= startStr);
+    }
+    
+    if (endDate) {
+      const endStr = format(endDate, 'yyyy-MM-dd');
+      filtered = filtered.filter(record => record.date <= endStr);
     }
     
     return filtered;
@@ -304,7 +318,9 @@ const Attendance = () => {
     setSearchTerm('');
     setSelectedClass('all');
     setSelectedSubject('all');
-    setSelectedDate(undefined);
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setCurrentPage(1);
   };
 
   const filteredRecords = getFilteredData();
@@ -323,20 +339,87 @@ const Attendance = () => {
       filteredGroups = filteredGroups.filter(group => group.subject_id === selectedSubject);
     }
     
-    if (selectedDate) {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      filteredGroups = filteredGroups.filter(group => group.date === dateStr);
+    if (startDate) {
+      const startStr = format(startDate, 'yyyy-MM-dd');
+      filteredGroups = filteredGroups.filter(group => group.date >= startStr);
+    }
+    
+    if (endDate) {
+      const endStr = format(endDate, 'yyyy-MM-dd');
+      filteredGroups = filteredGroups.filter(group => group.date <= endStr);
     }
     
     return filteredGroups;
   };
 
   const groupedRecords = userRole !== 'student' ? getFilteredGroupedRecords() : [];
-  
-  // Debug log para instrutores
-  if (userRole === 'instructor' && !attendanceLoading) {
-    console.log('Attendance (instrutor):', { total: attendanceData.length, grouped: groupedRecords.length });
-  }
+
+  // Pagination logic
+  const totalItems = userRole === 'student' ? filteredRecords.length : groupedRecords.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedStudentRecords = filteredRecords.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedGroupedRecords = groupedRecords.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const getPageNumbers = () => {
+    const pages: (number | 'ellipsis')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('ellipsis');
+      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) pages.push('ellipsis');
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-2">
+        <p className="text-sm text-muted-foreground">
+          Mostrando {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} de {totalItems} registros
+        </p>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            {getPageNumbers().map((page, idx) =>
+              page === 'ellipsis' ? (
+                <PaginationItem key={`ellipsis-${idx}`}>
+                  <PaginationEllipsis />
+                </PaginationItem>
+              ) : (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    isActive={currentPage === page}
+                    onClick={() => setCurrentPage(page as number)}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            )}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    );
+  };
 
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
@@ -428,7 +511,7 @@ const Attendance = () => {
               <CardTitle>Filtros</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div className="relative lg:col-span-2">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -473,18 +556,43 @@ const Attendance = () => {
                       variant="outline"
                       className={cn(
                         "justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground"
+                        !startDate && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: ptBR }) : "Filtrar por data"}
+                      {startDate ? format(startDate, "dd/MM/yyyy", { locale: ptBR }) : "Data início"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                      locale={ptBR}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "justify-start text-left font-normal",
+                        !endDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {endDate ? format(endDate, "dd/MM/yyyy", { locale: ptBR }) : "Data fim"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={endDate}
+                      onSelect={setEndDate}
                       initialFocus
                       locale={ptBR}
                       className="pointer-events-auto"
@@ -493,7 +601,7 @@ const Attendance = () => {
                 </Popover>
               </div>
               
-              {(searchTerm || selectedClass || selectedSubject || selectedDate) && (
+              {(searchTerm || selectedClass || selectedSubject || startDate || endDate) && (
                 <div className="mt-4 flex items-center gap-2">
                   <Button 
                     variant="ghost" 
@@ -518,130 +626,136 @@ const Attendance = () => {
           </CardHeader>
           <CardContent>
             {userRole === 'student' ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Turma</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Disciplina</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Justificativa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceLoading ? (
+              <>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        Carregando registros de frequência...
-                      </TableCell>
+                      <TableHead>Turma</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Disciplina</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Justificativa</TableHead>
                     </TableRow>
-                  ) : filteredRecords.length === 0 ? (
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">
+                          Carregando registros de frequência...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredRecords.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">
+                          Nenhum registro de frequência encontrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedStudentRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
+                          <TableCell>{formatDateBR(record.date)}</TableCell>
+                          <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
+                          <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
+                          <TableCell>
+                            {record.justification ? (
+                              <Badge variant="outline" title={record.justification}>
+                                Com justificativa
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">-</Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                {renderPagination()}
+              </>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        Nenhum registro de frequência encontrado.
-                      </TableCell>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Turma</TableHead>
+                      <TableHead>Disciplina</TableHead>
+                      <TableHead className="text-center">Estatísticas</TableHead>
+                      <TableHead>Ações</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell>{record.class_name || 'Turma não encontrada'}</TableCell>
-                        <TableCell>{formatDateBR(record.date)}</TableCell>
-                        <TableCell>{record.subject_name || 'Disciplina não encontrada'}</TableCell>
-                        <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
-                        <TableCell>
-                          {record.justification ? (
-                            <Badge variant="outline" title={record.justification}>
-                              Com justificativa
-                            </Badge>
+                  </TableHeader>
+                  <TableBody>
+                    {attendanceLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">
+                          Carregando registros de frequência...
+                        </TableCell>
+                      </TableRow>
+                    ) : groupedRecords.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center">
+                          {userRole === 'instructor' ? (
+                            <div className="py-4">
+                              <p className="text-muted-foreground">
+                                Nenhum registro visível para você.
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-2">
+                                Se você acabou de registrar uma chamada e ela não aparece, verifique se você está vinculado à disciplina correspondente.
+                              </p>
+                            </div>
                           ) : (
-                            <Badge variant="outline">-</Badge>
+                            'Nenhum registro de frequência encontrado.'
                           )}
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Turma</TableHead>
-                    <TableHead>Disciplina</TableHead>
-                    <TableHead className="text-center">Estatísticas</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendanceLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        Carregando registros de frequência...
-                      </TableCell>
-                    </TableRow>
-                  ) : groupedRecords.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center">
-                        {userRole === 'instructor' ? (
-                          <div className="py-4">
-                            <p className="text-muted-foreground">
-                              Nenhum registro visível para você.
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-2">
-                              Se você acabou de registrar uma chamada e ela não aparece, verifique se você está vinculado à disciplina correspondente.
-                            </p>
-                          </div>
-                        ) : (
-                          'Nenhum registro de frequência encontrado.'
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    groupedRecords.map((group) => (
-                      <TableRow key={`${group.date}-${group.subject_id}-${group.class_id}`}>
-                        <TableCell>{formatDateBR(group.date)}</TableCell>
-                        <TableCell>
-                          <div className="font-medium">{group.class_name}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{group.subject_name}</div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-center gap-2">
-                              <Badge variant="outline" className="text-xs">
-                                <Users size={12} className="mr-1" />
-                                Total: {group.total_students}
-                              </Badge>
+                    ) : (
+                      paginatedGroupedRecords.map((group) => (
+                        <TableRow key={`${group.date}-${group.subject_id}-${group.class_id}`}>
+                          <TableCell>{formatDateBR(group.date)}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{group.class_name}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{group.subject_name}</div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-2">
+                              <div className="flex items-center justify-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  <Users size={12} className="mr-1" />
+                                  Total: {group.total_students}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-center gap-2">
+                                <Badge variant="default" className="bg-green-600 text-xs">
+                                  <Check size={12} className="mr-1" />
+                                  {group.present_count}
+                                </Badge>
+                                <Badge variant="destructive" className="text-xs">
+                                  <X size={12} className="mr-1" />
+                                  {group.absent_count}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center justify-center gap-2">
-                              <Badge variant="default" className="bg-green-600 text-xs">
-                                <Check size={12} className="mr-1" />
-                                {group.present_count}
-                              </Badge>
-                              <Badge variant="destructive" className="text-xs">
-                                <X size={12} className="mr-1" />
-                                {group.absent_count}
-                              </Badge>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewGroupDetails(group)}
-                          >
-                            <Users size={14} className="mr-1" />
-                            Ver Alunos
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                          </TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewGroupDetails(group)}
+                            >
+                              <Users size={14} className="mr-1" />
+                              Ver Alunos
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                {renderPagination()}
+              </>
             )}
           </CardContent>
         </Card>

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from '@/components/ui/pagination';
-import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X, Check } from 'lucide-react';
+import { Search, Plus, Edit, UserX, Calendar, AlertTriangle, Users, CalendarIcon, X, Check, FileDown } from 'lucide-react';
 import { AttendanceForm } from '@/components/forms/AttendanceForm';
 import { AttendanceViewDialog } from '@/components/ui/attendance-view-dialog';
 import { AttendanceEditForm } from '@/components/forms/AttendanceEditForm';
@@ -22,6 +22,7 @@ import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toBrasiliaDate, formatDateBR, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -659,9 +660,35 @@ const Attendance = () => {
                           <TableCell>{getStatusBadge(record.is_present ? 'presente' : 'falta')}</TableCell>
                           <TableCell>
                             {record.justification ? (
-                              <Badge variant="outline" title={record.justification}>
-                                Com justificativa
-                              </Badge>
+                              (() => {
+                                const docMatch = record.justification.match(/\[doc:(.+?)\]/);
+                                if (docMatch) {
+                                  const filePath = docMatch[1];
+                                  const { data: urlData } = supabase.storage
+                                    .from('declarations')
+                                    .getPublicUrl(filePath);
+                                  return (
+                                    <div className="flex items-center gap-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        Justificada
+                                      </Badge>
+                                      <a
+                                        href={urlData.publicUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title="Ver documento"
+                                      >
+                                        <FileDown className="h-4 w-4 text-primary hover:text-primary/80" />
+                                      </a>
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <Badge variant="outline" title={record.justification}>
+                                    {record.justification.includes('justificada') ? 'Justificada' : 'Com justificativa'}
+                                  </Badge>
+                                );
+                              })()
                             ) : (
                               <Badge variant="outline">-</Badge>
                             )}

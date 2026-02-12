@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
+import { supabase } from '@/integrations/supabase/client';
 
 const Declarations = () => {
   const { profile } = useAuth();
@@ -43,10 +44,26 @@ const Declarations = () => {
         urgency: data.urgency,
         subject_id: data.subjectId,
         status: 'pending',
-        file_path: data.filePath || null
+        file_path: data.filePath || null,
+        delivery_date: data.absence_date || null,
       };
 
       await createDeclaration(declarationData);
+
+      // Notify admin/coordinator/tutor about new justification
+      if (userRole === 'student') {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          await supabase.functions.invoke('notify-justification', {
+            body: {
+              declaration_id: declarationData.student_id, // will be replaced by actual id from insert
+              student_name: profile?.name || 'Aluno',
+            },
+          });
+        } catch (notifyErr) {
+          console.error('Error sending notification:', notifyErr);
+        }
+      }
       
       const actionText = declarationType === 'submit' ? 'enviado' : 'solicitada';
       toast({
@@ -94,6 +111,46 @@ const Declarations = () => {
       }
 
       await updateDeclaration(declarationId, updateData);
+
+      // If approved, automatically update attendance record
+      if (newStatus === 'approved') {
+        const declaration = declarations.find(d => d.id === declarationId);
+        if (declaration) {
+          const absenceDate = declaration.delivery_date || declaration.purpose?.match(/\d{4}-\d{2}-\d{2}/)?.[0];
+          
+          if (absenceDate) {
+            // Find matching attendance record
+            const { data: attendanceRecords, error: attError } = await supabase
+              .from('attendance')
+              .select('id')
+              .eq('student_id', declaration.student_id)
+              .eq('date', absenceDate)
+              .eq('is_present', false);
+
+            if (!attError && attendanceRecords && attendanceRecords.length > 0) {
+              const justificationText = `Falta justificada - ${declaration.title}${declaration.file_path ? ` [doc:${declaration.file_path}]` : ''}`;
+              
+              for (const record of attendanceRecords) {
+                await supabase
+                  .from('attendance')
+                  .update({ justification: justificationText })
+                  .eq('id', record.id);
+              }
+              
+              toast({
+                title: "Frequência atualizada!",
+                description: `${attendanceRecords.length} registro(s) de falta atualizado(s) como justificada(s).`,
+              });
+            } else if (!attError && (!attendanceRecords || attendanceRecords.length === 0)) {
+              toast({
+                title: "Aviso",
+                description: "Nenhum registro de falta encontrado para a data informada.",
+                variant: "destructive",
+              });
+            }
+          }
+        }
+      }
       
       toast({
         title: "Status atualizado!",

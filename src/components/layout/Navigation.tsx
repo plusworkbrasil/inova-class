@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown } from 'lucide-react';
+import { NotificationsPopover } from '@/components/ui/notifications-popover';
 import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
@@ -270,11 +271,16 @@ const Navigation = ({
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         {/* Header */}
-        <div className="flex items-center justify-center p-6 bg-gradient-to-r from-primary to-secondary">
+        <div className="flex items-center justify-center p-6 bg-gradient-to-r from-primary to-secondary relative">
           <div className="text-center">
             <h1 className="font-bold text-primary-foreground text-3xl">Inova Class</h1>
             <p className="text-primary-foreground/80 text-xs font-extrabold">Acompanhamento de Curso</p>
           </div>
+          {(userRole === 'admin' || userRole === 'coordinator' || userRole === 'tutor') && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-primary-foreground">
+              <NotificationsPopover />
+            </div>
+          )}
         </div>
 
         {/* User Info */}

@@ -18,12 +18,12 @@ import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useInstructorClasses } from '@/hooks/useInstructorClasses';
 import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
-import { useSupabaseAttendance, type Attendance, type GroupedAttendance } from '@/hooks/useSupabaseAttendance';
+import { useSupabaseAttendance, type Attendance, type GroupedAttendance, type AttendanceFilters } from '@/hooks/useSupabaseAttendance';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useSupabaseSubjects } from '@/hooks/useSupabaseSubjects';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { toBrasiliaDate, formatDateBR, cn } from '@/lib/utils';
+import { toBrasiliaDate, formatDateBR, getTodayInBrasilia, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -46,6 +46,13 @@ const Attendance = () => {
   const [selectedGroup, setSelectedGroup] = useState<GroupedAttendance | null>(null);
   const { toast } = useToast();
   const { user, profile } = useAuth();
+  const attendanceFilters: AttendanceFilters = {
+    class_id: selectedClass || undefined,
+    subject_id: selectedSubject || undefined,
+    start_date: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
+    end_date: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
+  };
+
   const { 
     data: attendanceData, 
     loading: attendanceLoading, 
@@ -57,7 +64,7 @@ const Attendance = () => {
     createBatchAttendance,
     checkDuplicateAttendance,
     getGroupedAttendance
-  } = useSupabaseAttendance();
+  } = useSupabaseAttendance(attendanceFilters);
   const { data: classes } = useSupabaseClasses();
   const { data: subjects } = useSupabaseSubjects();
   const { classes: instructorClasses } = useInstructorClasses();
@@ -241,7 +248,7 @@ const Attendance = () => {
       };
     } else {
       // Para admins/instrutores - dados gerais do dia atual
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayInBrasilia();
       const todayRecords = attendanceData.filter(record => record.date === today);
       const presentCount = todayRecords.filter(record => record.is_present).length;
       const absentCount = todayRecords.filter(record => !record.is_present).length;

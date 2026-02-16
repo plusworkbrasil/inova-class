@@ -36,20 +36,44 @@ export interface GroupedAttendance {
   records: Attendance[];
 }
 
-export const useSupabaseAttendance = () => {
+export interface AttendanceFilters {
+  class_id?: string;
+  subject_id?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export const useSupabaseAttendance = (filters?: AttendanceFilters) => {
   const [data, setData] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const fetchAttendance = async () => {
+  const fetchAttendance = async (overrideFilters?: AttendanceFilters) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Usar RPC function que bypassa RLS para joins mantendo autorização
+      const activeFilters = overrideFilters || filters;
+      
+      // Build RPC params - only include non-empty values
+      const rpcParams: Record<string, any> = {};
+      if (activeFilters?.class_id && activeFilters.class_id !== 'all') {
+        rpcParams.p_class_id = activeFilters.class_id;
+      }
+      if (activeFilters?.subject_id && activeFilters.subject_id !== 'all') {
+        rpcParams.p_subject_id = activeFilters.subject_id;
+      }
+      if (activeFilters?.start_date) {
+        rpcParams.p_start_date = activeFilters.start_date;
+      }
+      if (activeFilters?.end_date) {
+        rpcParams.p_end_date = activeFilters.end_date;
+      }
+      
+      // Usar RPC function com filtros server-side
       const { data: attendance, error } = await supabase
-        .rpc('get_attendance_with_details');
+        .rpc('get_attendance_with_details', rpcParams);
 
       if (error) throw error;
 
@@ -356,7 +380,7 @@ export const useSupabaseAttendance = () => {
 
   useEffect(() => {
     fetchAttendance();
-  }, []);
+  }, [filters?.class_id, filters?.subject_id, filters?.start_date, filters?.end_date]);
 
   return {
     data,

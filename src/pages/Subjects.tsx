@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus, Edit, Trash2, BookOpen, Clock, User, Calendar, AlertTriangle, FileSpreadsheet, FileBarChart, ClipboardList, CalendarDays } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { SubjectForm } from '@/components/forms/SubjectForm';
@@ -29,6 +30,8 @@ const Subjects = () => {
   const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClassFilter, setSelectedClassFilter] = useState('all');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<any>(null);
   const [deletingSubject, setDeletingSubject] = useState<any>(null);
@@ -340,9 +343,12 @@ const Subjects = () => {
     }
   };
 
-  const filteredSubjects = subjects.filter(subject =>
-    subject.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSubjects = subjects.filter(subject => {
+    const matchesSearch = subject.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesClass = selectedClassFilter === 'all' || subject.class_id === selectedClassFilter;
+    const matchesStatus = selectedStatusFilter === 'all' || subject.status === selectedStatusFilter;
+    return matchesSearch && matchesClass && matchesStatus;
+  });
 
   if (loading) {
     return (
@@ -402,6 +408,43 @@ const Subjects = () => {
             </CardContent>
           </Card>
         </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Buscar disciplina pelo nome..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={selectedClassFilter} onValueChange={setSelectedClassFilter}>
+                <SelectTrigger className="w-full md:w-[220px]">
+                  <SelectValue placeholder="Filtrar por turma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as turmas</SelectItem>
+                  {classes.map(cls => (
+                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectedStatusFilter} onValueChange={setSelectedStatusFilter}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <SelectValue placeholder="Filtrar por status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os status</SelectItem>
+                  <SelectItem value="ativo">Ativo</SelectItem>
+                  <SelectItem value="inativo">Inativo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

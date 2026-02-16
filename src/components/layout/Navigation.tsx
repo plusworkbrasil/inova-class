@@ -175,7 +175,7 @@ const menuItems = {
     path: '/'
   }, {
     icon: ClipboardCheck,
-    label: 'Chamada',
+    label: 'Frequência',
     path: '/attendance'
   }, {
     icon: BookOpen,

@@ -556,7 +556,7 @@ const Subjects = () => {
                             onClick={() => handleExportAttendance(subject)}
                           >
                             <FileSpreadsheet className="w-3 h-3 mr-1" />
-                            Exportar Chamadas
+                            Exportar Frequência
                           </Button>
                           <Button 
                             variant="outline" 
@@ -718,7 +718,7 @@ const Subjects = () => {
                             variant="outline" 
                             size="sm"
                             onClick={() => handleExportAttendance(subject)}
-                            title="Exportar Chamadas"
+                            title="Exportar Frequência"
                           >
                             <FileSpreadsheet size={14} />
                           </Button>

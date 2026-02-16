@@ -50,7 +50,7 @@ const InstructorSubjects = () => {
 
   const handleAttendanceSubmit = async (data: any) => {
     try {
-      console.log('📝 Registrando chamada para:', data);
+      console.log('📝 Registrando frequência para:', data);
       
       for (const student of data.attendance) {
         await createAttendance({
@@ -64,7 +64,7 @@ const InstructorSubjects = () => {
       }
       
       toast({
-        title: "Chamada registrada com sucesso!",
+        title: "Frequência registrada com sucesso!",
         description: `Frequência registrada para ${data.attendance.length} alunos.`,
       });
       
@@ -72,7 +72,7 @@ const InstructorSubjects = () => {
       setIsAttendanceFormOpen(false);
       setSelectedSubject(null);
     } catch (error: any) {
-      console.error('❌ Erro ao registrar chamada:', error);
+      console.error('❌ Erro ao registrar frequência:', error);
       toast({
         variant: "destructive",
         title: "Erro ao registrar frequência",

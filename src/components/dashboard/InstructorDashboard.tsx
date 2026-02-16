@@ -148,7 +148,7 @@ const InstructorDashboard = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Acesse o menu "Chamada" para registrar presença
+              Acesse o menu "Frequência" para registrar presença
             </p>
           </CardContent>
         </Card>

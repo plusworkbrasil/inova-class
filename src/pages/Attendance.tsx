@@ -124,8 +124,8 @@ const Attendance = () => {
       if (isDuplicate) {
         toast({
           variant: "destructive",
-          title: "Chamada já registrada!",
-          description: "Já existe uma chamada registrada para esta turma, disciplina e data. Use 'Alterar Chamada' para modificar.",
+          title: "Frequência já registrada!",
+          description: "Já existe uma frequência registrada para esta turma, disciplina e data. Use 'Alterar Frequência' para modificar.",
         });
         return;
       }
@@ -144,7 +144,7 @@ const Attendance = () => {
       await createBatchAttendance(attendanceRecords, data.dailyActivity);
       
       toast({
-        title: "✅ Chamada registrada com sucesso!",
+        title: "✅ Frequência registrada com sucesso!",
         description: `Frequência registrada para ${data.attendance.length} alunos.`,
       });
       
@@ -735,7 +735,7 @@ const Attendance = () => {
                                 Nenhum registro visível para você.
                               </p>
                               <p className="text-sm text-muted-foreground mt-2">
-                                Se você acabou de registrar uma chamada e ela não aparece, verifique se você está vinculado à disciplina correspondente.
+                                Se você acabou de registrar uma frequência e ela não aparece, verifique se você está vinculado à disciplina correspondente.
                               </p>
                             </div>
                           ) : (

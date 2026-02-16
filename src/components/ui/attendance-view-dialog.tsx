@@ -19,7 +19,7 @@ export function AttendanceViewDialog({ open, onOpenChange, attendance }: Attenda
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Detalhes da Chamada
+            Detalhes da Frequência
           </DialogTitle>
           <DialogDescription>
             Visualizar informações completas do registro de frequência

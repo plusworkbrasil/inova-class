@@ -629,7 +629,7 @@ const Evasions = () => {
                 <br/><br/>
                 <strong>Consequências:</strong>
                 <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>O aluno não aparecerá em novas chamadas</li>
+                  <li>O aluno não aparecerá em novos registros de frequência</li>
                   <li>Não poderá ser alocado em novos equipamentos</li>
                   <li>Não será incluído em novas disciplinas</li>
                   <li>Todos os dados históricos serão preservados</li>

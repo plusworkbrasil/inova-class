@@ -134,7 +134,7 @@ export const SubjectAttendanceMatrixDialog = ({
             <div className="flex-1">
               <DialogTitle className="flex items-center gap-2 text-2xl">
                 <CalendarDays className="h-6 w-6 text-primary" />
-                Chamadas - {subjectName}
+                Frequência - {subjectName}
               </DialogTitle>
               <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export const SubjectAttendanceMatrixDialog = ({
                 )}
                 {!loading && dates.length > 0 && (
                   <Badge variant="outline">
-                    {dates.length} {dates.length === 1 ? 'chamada' : 'chamadas'}
+                    {dates.length} {dates.length === 1 ? 'registro' : 'registros'}
                   </Badge>
                 )}
               </div>
@@ -200,7 +200,7 @@ export const SubjectAttendanceMatrixDialog = ({
           ) : dates.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <CalendarDays className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-semibold">Nenhuma chamada registrada</p>
+              <p className="text-lg font-semibold">Nenhuma frequência registrada</p>
               <p className="text-sm text-muted-foreground">
                 Ainda não há registros de frequência para esta disciplina
               </p>

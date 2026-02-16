@@ -48,7 +48,7 @@ export const AttendanceGroupDetailsDialog = ({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>Detalhes da Chamada</span>
+            <span>Detalhes da Frequência</span>
             <div className="flex gap-2">
               {['admin', 'secretary', 'tutor', 'coordinator'].includes(userRole || '') && onBatchUpdate && (
                 <Button 
@@ -67,7 +67,7 @@ export const AttendanceGroupDetailsDialog = ({
                   onClick={() => setDeleteConfirmOpen(true)}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir Chamada
+                  Excluir Frequência
                 </Button>
               )}
             </div>
@@ -200,8 +200,8 @@ export const AttendanceGroupDetailsDialog = ({
           open={deleteConfirmOpen}
           onOpenChange={setDeleteConfirmOpen}
           onConfirm={handleDelete}
-          title="Excluir Registro de Chamada"
-          description={`Tem certeza que deseja excluir esta chamada? Esta ação excluirá ${group.total_students} registro(s) de frequência e não poderá ser desfeita.`}
+          title="Excluir Registro de Frequência"
+          description={`Tem certeza que deseja excluir esta frequência? Esta ação excluirá ${group.total_students} registro(s) de frequência e não poderá ser desfeita.`}
         />
 
         <BatchAttendanceEditDialog

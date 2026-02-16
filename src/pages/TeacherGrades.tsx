@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Search, Edit, BookOpen, Users, TrendingUp, AlertTriangle } from 'lucide-react';
 import { GradeForm } from '@/components/forms/GradeForm';
 import { InstructorGradesBySubjectForm } from '@/components/forms/InstructorGradesBySubjectForm';
 import { GradesByClassGroup } from '@/components/grades/GradesByClassGroup';
@@ -16,6 +16,7 @@ import { useSupabaseGrades } from '@/hooks/useSupabaseGrades';
 import { useSupabaseClasses } from '@/hooks/useSupabaseClasses';
 import { useInstructorSubjects } from '@/hooks/useInstructorSubjects';
 import { useInstructorClasses } from '@/hooks/useInstructorClasses';
+import { supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/user';
 
 const TeacherGrades = () => {
@@ -24,6 +25,7 @@ const TeacherGrades = () => {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isGradeFormOpen, setIsGradeFormOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<any>(null);
+  const [subjectsDetails, setSubjectsDetails] = useState<Record<string, { end_date: string | null; status: string | null }>>({});
   const [isInstructorGradeFormOpen, setIsInstructorGradeFormOpen] = useState(false);
   const { toast } = useToast();
   
@@ -32,6 +34,37 @@ const TeacherGrades = () => {
   const { data: grades, createGrade, updateGrade, refetch } = useSupabaseGrades();
   const { subjects: instructorSubjects, loading: subjectsLoading } = useInstructorSubjects();
   const { classes: instructorClasses, loading: classesLoading } = useInstructorClasses();
+
+  // Buscar end_date e status das disciplinas
+  useEffect(() => {
+    async function fetchSubjectDetails() {
+      if (!instructorSubjects?.length) return;
+      const ids = instructorSubjects.map(s => s.id);
+      const { data } = await supabase
+        .from('subjects')
+        .select('id, end_date, status')
+        .in('id', ids);
+      if (data) {
+        const details: Record<string, { end_date: string | null; status: string | null }> = {};
+        data.forEach(s => { details[s.id] = { end_date: s.end_date, status: s.status }; });
+        setSubjectsDetails(details);
+      }
+    }
+    fetchSubjectDetails();
+  }, [instructorSubjects]);
+
+  // Ordenar disciplinas: por end_date desc, sem end_date no topo
+  const sortedInstructorSubjects = useMemo(() => {
+    if (!instructorSubjects) return [];
+    return [...instructorSubjects].sort((a, b) => {
+      const aDate = subjectsDetails[a.id]?.end_date;
+      const bDate = subjectsDetails[b.id]?.end_date;
+      if (!aDate && !bDate) return 0;
+      if (!aDate) return -1;
+      if (!bDate) return 1;
+      return new Date(bDate).getTime() - new Date(aDate).getTime();
+    });
+  }, [instructorSubjects, subjectsDetails]);
 
   // Filtrar notas das disciplinas do instrutor
   const instructorGrades = grades?.filter(grade => 
@@ -125,10 +158,6 @@ const TeacherGrades = () => {
     setIsGradeFormOpen(true);
   };
 
-  const openCreateForm = () => {
-    setEditingGrade(null);
-    setIsGradeFormOpen(true);
-  };
 
   const openBatchGradeForm = () => {
     setIsInstructorGradeFormOpen(true);
@@ -188,10 +217,6 @@ const TeacherGrades = () => {
             <Button onClick={openBatchGradeForm} size="lg">
               <Users size={18} className="mr-2" />
               Lançar Notas por Turma
-            </Button>
-            <Button variant="outline" onClick={openCreateForm}>
-              <Plus size={16} className="mr-2" />
-              Nota Individual
             </Button>
           </div>
         </div>
@@ -255,11 +280,18 @@ const TeacherGrades = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {instructorSubjects?.map(subject => {
+              {sortedInstructorSubjects.map(subject => {
                 const subjectClass = instructorClasses?.find(c => c.id === subject.class_id);
+                const details = subjectsDetails[subject.id];
+                const isActive = !details?.status || details.status === 'ativo' || details.status === 'active';
                 return (
-                  <div key={subject.id} className="space-y-3">
-                    <h4 className="font-semibold text-lg text-primary">{subject.name}</h4>
+                  <div key={subject.id} className={`space-y-3 ${!isActive ? 'opacity-50' : ''}`}>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-lg text-primary">{subject.name}</h4>
+                      {!isActive && (
+                        <Badge variant="outline" className="text-muted-foreground">Inativa</Badge>
+                      )}
+                    </div>
                     <div className="space-y-2">
                       {subjectClass && (
                         <div className="flex items-center justify-between p-3 border rounded-lg bg-card">

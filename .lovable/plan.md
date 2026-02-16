@@ -1,38 +1,45 @@
 
 
-## Aplicar ordenacao e esmaecimento na secao "Minhas Disciplinas e Turmas"
+## Corrigir erro "PGRST203" na pagina de Registro de Frequencia
 
-### Alteracao
+### Problema
 
-**Arquivo: `src/pages/TeacherGrades.tsx`** (linhas 328-332)
+O erro `PGRST203` ocorre porque existem duas versoes da funcao `get_attendance_with_details` no banco de dados:
+1. Uma sem parametros (`Args: never`)
+2. Uma com parametros opcionais (`p_class_id, p_subject_id, p_start_date, p_end_date, p_limit`)
 
-Na secao "Minhas Disciplinas e Turmas", a lista de disciplinas (badges) atualmente usa `instructorSubjects` diretamente, sem ordenacao nem indicacao visual de disciplinas inativas.
+Quando nenhum filtro e aplicado, o objeto `rpcParams` fica vazio (`{}`), e o PostgREST nao consegue decidir qual versao chamar.
 
-A alteracao consiste em:
+### Solucao
 
-1. **Usar `sortedInstructorSubjects`** em vez de `instructorSubjects` para manter a mesma ordem decrescente por `end_date` ja implementada na secao "Lancamento Rapido".
+**Arquivo: `src/hooks/useSupabaseAttendance.ts`** (linhas 59-76)
 
-2. **Esmaecer disciplinas inativas**: Aplicar `opacity-50` e adicionar o texto "(Inativa)" ao lado do nome da disciplina no badge, usando a mesma logica de verificacao de status ja existente (`subjectsDetails`).
+Sempre enviar todos os parametros na chamada RPC, usando `null` para os que nao foram preenchidos. Isso forca o PostgREST a usar a versao com parametros, eliminando a ambiguidade.
 
-### Codigo atual (linhas 328-332)
-```
-{instructorSubjects?.map(subject => (
-  <Badge key={subject.id} variant="secondary">{subject.name}</Badge>
-))}
-```
+```typescript
+// Sempre incluir todos os parametros para evitar ambiguidade PGRST203
+const rpcParams: Record<string, any> = {
+  p_class_id: null,
+  p_subject_id: null,
+  p_start_date: null,
+  p_end_date: null,
+  p_limit: 5000
+};
 
-### Codigo proposto
-```
-{sortedInstructorSubjects.map(subject => {
-  const details = subjectsDetails[subject.id];
-  const isActive = !details?.status || details.status === 'ativo' || details.status === 'active';
-  return (
-    <Badge key={subject.id} variant="secondary" className={!isActive ? 'opacity-50' : ''}>
-      {subject.name}{!isActive ? ' (Inativa)' : ''}
-    </Badge>
-  );
-})}
+if (activeFilters?.class_id && activeFilters.class_id !== 'all') {
+  rpcParams.p_class_id = activeFilters.class_id;
+}
+if (activeFilters?.subject_id && activeFilters.subject_id !== 'all') {
+  rpcParams.p_subject_id = activeFilters.subject_id;
+}
+if (activeFilters?.start_date) {
+  rpcParams.p_start_date = activeFilters.start_date;
+}
+if (activeFilters?.end_date) {
+  rpcParams.p_end_date = activeFilters.end_date;
+}
 ```
 
 ### Arquivo alterado
-- `src/pages/TeacherGrades.tsx`
+- `src/hooks/useSupabaseAttendance.ts`
+

@@ -75,7 +75,7 @@ const generateAttendanceHTML = ({
         <p style="margin: 5px 0; font-weight: bold;">Legenda:</p>
         <p style="margin: 5px 0;">C = Compareceu | F = Faltou | - = Sem registro</p>
         <p style="margin: 5px 0;">Total de alunos: ${students.length}</p>
-        <p style="margin: 5px 0;">Total de chamadas realizadas: ${dates.length}</p>
+        <p style="margin: 5px 0;">Total de frequências realizadas: ${dates.length}</p>
       </div>
     </div>
   `;
@@ -318,7 +318,7 @@ export const exportAttendanceMatrixToExcel = ({
     [''],
     ['Estatísticas:'],
     [`Total de alunos: ${students.length}`],
-    [`Total de chamadas: ${dates.length}`]
+    [`Total de frequências: ${dates.length}`]
   ]);
   XLSX.utils.book_append_sheet(wb, metaWs, 'Informações');
 

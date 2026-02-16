@@ -313,7 +313,7 @@ const StudentHistory = () => {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="p-4 bg-muted/50 rounded-lg text-center">
                           <div className="text-2xl font-bold">{historyData.totalAttendance}</div>
-                          <div className="text-sm text-muted-foreground">Total de Chamadas</div>
+                          <div className="text-sm text-muted-foreground">Total de Frequências</div>
                         </div>
                         
                         <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg text-center">
@@ -394,7 +394,7 @@ const StudentHistory = () => {
                                   <XCircle className="h-3 w-3 text-red-500" />
                                   {subject.absent_count} faltas
                                 </span>
-                                <span>| {subject.attendance_count} chamadas</span>
+                                <span>| {subject.attendance_count} frequências</span>
                               </div>
                             </div>
                           ))}

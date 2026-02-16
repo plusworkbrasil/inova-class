@@ -366,7 +366,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Users size={20} />
-                        <h3 className="text-lg font-medium">Lista de Chamada ({students.length} alunos)</h3>
+                        <h3 className="text-lg font-medium">Lista de Frequência ({students.length} alunos)</h3>
                       </div>
                       <div className="flex gap-4 text-sm">
                         <span className="flex items-center gap-1">
@@ -470,7 +470,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                 className="flex-1"
                 disabled={!showStudents || Object.keys(studentAttendance).length === 0}
               >
-                Salvar Chamada
+                Salvar Frequência
               </Button>
               <Button 
                 type="button" 

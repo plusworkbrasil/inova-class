@@ -127,10 +127,10 @@ export const SubjectAttendanceExportDialog = ({
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
-            Chamadas - {subjectName} ({className})
+            Frequência - {subjectName} ({className})
           </DialogTitle>
           <DialogDescription>
-            Visualize e exporte as chamadas registradas para esta disciplina
+            Visualize e exporte as frequências registradas para esta disciplina
           </DialogDescription>
         </DialogHeader>
 
@@ -164,11 +164,11 @@ export const SubjectAttendanceExportDialog = ({
             </div>
           ) : error ? (
             <div className="text-center py-8 text-destructive">
-              <p>Erro ao carregar chamadas: {error}</p>
+              <p>Erro ao carregar frequência: {error}</p>
             </div>
           ) : students.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>Nenhuma chamada registrada para esta disciplina ainda.</p>
+              <p>Nenhuma frequência registrada para esta disciplina ainda.</p>
             </div>
           ) : (
             <div className="space-y-4">

@@ -142,24 +142,14 @@ const InstructorSubjects = () => {
                     <Badge variant="outline">Ativa</Badge>
                   </div>
                   
-                  <div className="flex gap-2">
-                    <Button 
-                      className="flex-1" 
-                      onClick={() => handleAttendanceClick(subject.id)}
-                    >
-                      <ClipboardCheck className="mr-2 h-4 w-4" />
-                      Fazer Chamada
-                    </Button>
-                    
-                    <Button 
-                      variant="outline"
-                      className="flex-1" 
-                      onClick={() => handleViewAttendanceClick(subject)}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Ver Chamadas
-                    </Button>
-                  </div>
+                  <Button 
+                    variant="outline"
+                    className="w-full" 
+                    onClick={() => handleViewAttendanceClick(subject)}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Ver Frequência
+                  </Button>
                 </CardContent>
               </Card>
             ))}

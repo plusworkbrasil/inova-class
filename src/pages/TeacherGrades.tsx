@@ -326,9 +326,15 @@ const TeacherGrades = () => {
               <div>
                 <h4 className="font-medium mb-2">Disciplinas:</h4>
                 <div className="flex flex-wrap gap-2">
-                  {instructorSubjects?.map(subject => (
-                    <Badge key={subject.id} variant="secondary">{subject.name}</Badge>
-                  ))}
+                  {sortedInstructorSubjects.map(subject => {
+                    const details = subjectsDetails[subject.id];
+                    const isActive = !details?.status || details.status === 'ativo' || details.status === 'active';
+                    return (
+                      <Badge key={subject.id} variant="secondary" className={!isActive ? 'opacity-50' : ''}>
+                        {subject.name}{!isActive ? ' (Inativa)' : ''}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
               <div>

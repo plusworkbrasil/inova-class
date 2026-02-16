@@ -1,17 +1,12 @@
 
 
-## Ajustes nos cards de disciplinas do instrutor
+## Renomear "Registrar Chamada" para "Registrar Frequência"
 
 ### Alteracoes
 
-**Arquivo: `src/pages/InstructorSubjects.tsx`**
+Trocar o texto em 3 locais:
 
-1. Remover o botao "Fazer Chamada" (linhas 133-138)
-2. Renomear o botao "Ver Chamadas" para "Ver Frequencia"
-3. Como sobra apenas um botao, ele pode ocupar a largura total (`w-full` em vez de `flex-1`)
-
-### O que NAO muda
-- A funcionalidade de visualizar frequencia permanece igual
-- O dialog `SubjectAttendanceMatrixDialog` continua funcionando normalmente
-- O `AttendanceForm` permanece no codigo (pode ser usado futuramente), apenas o botao e removido da interface
+1. **`src/pages/Attendance.tsx`** (linha 445): Botao `+ Registrar Chamada` -> `+ Registrar Frequência`
+2. **`src/components/forms/AttendanceForm.tsx`** (linha 223): Titulo do dialog `Registrar Chamada` -> `Registrar Frequência`
+3. **`src/pages/Attendance.tsx`** (linha 156) e **`src/pages/InstructorSubjects.tsx`** (linha 78): Mensagens de erro de toast tambem atualizadas para manter consistencia
 

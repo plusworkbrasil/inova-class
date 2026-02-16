@@ -56,8 +56,15 @@ export const useSupabaseAttendance = (filters?: AttendanceFilters) => {
       
       const activeFilters = overrideFilters || filters;
       
-      // Build RPC params - only include non-empty values
-      const rpcParams: Record<string, any> = {};
+      // Sempre incluir todos os parametros para evitar ambiguidade PGRST203
+      const rpcParams: Record<string, any> = {
+        p_class_id: null,
+        p_subject_id: null,
+        p_start_date: null,
+        p_end_date: null,
+        p_limit: 5000
+      };
+
       if (activeFilters?.class_id && activeFilters.class_id !== 'all') {
         rpcParams.p_class_id = activeFilters.class_id;
       }

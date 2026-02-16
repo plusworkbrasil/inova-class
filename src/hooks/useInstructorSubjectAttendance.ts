@@ -123,7 +123,7 @@ const transformToMatrix = (
 ): { students: StudentAttendanceRow[]; dates: string[] } => {
   // Extrair datas únicas e ordenar
   const dates = [...new Set(attendances.map(a => a.date))]
-    .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    .sort((a, b) => a.localeCompare(b));
 
   // Criar mapa de attendance por estudante e data
   const attendanceMap = new Map<string, Map<string, {

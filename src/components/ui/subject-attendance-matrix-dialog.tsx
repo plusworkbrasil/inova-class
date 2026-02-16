@@ -48,7 +48,8 @@ export const SubjectAttendanceMatrixDialog = ({
 
   const formatDate = (dateStr: string) => {
     try {
-      return format(new Date(dateStr), 'dd/MM', { locale: ptBR });
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return format(new Date(year, month - 1, day), 'dd/MM', { locale: ptBR });
     } catch {
       return dateStr;
     }

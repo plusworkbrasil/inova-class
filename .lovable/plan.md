@@ -1,68 +1,47 @@
 
 
-## Correcao da Inconsistencia de Datas na Frequencia
+## Adicionar Busca e Filtros na pagina de Gerenciamento de Disciplinas
 
-### Problema Identificado
-
-O banco de dados possui **8.456 registros** de frequencia, mas o Supabase tem um limite padrao de **1.000 linhas** por consulta. A funcao RPC `get_attendance_with_details` retorna dados ordenados por `date DESC`, entao apenas os ~1.000 registros mais recentes sao carregados. Registros de datas anteriores (como 12/12/2025 da turma T04B) ficam fora desse limite e nao aparecem na tela.
-
-Alem disso, a linha 244 do `Attendance.tsx` usa `new Date().toISOString().split('T')[0]` para calcular "hoje", o que pode gerar data errada por causa do UTC (por exemplo, mostrar o dia anterior apos 21h no horario de Brasilia).
+### Problema
+A pagina de Disciplinas (`/subjects`) ja possui a logica de filtragem por nome no codigo (estado `searchTerm` na linha 31 e filtro na linha 343), mas **nao exibe nenhum campo de busca nem filtros na interface**. O usuario nao tem como procurar disciplinas ou filtrar por turma.
 
 ### Solucao
-
-**1. Alterar a funcao RPC no banco de dados** para aceitar filtros de data/turma/disciplina e aplicar paginacao diretamente no SQL, evitando o limite de 1.000 linhas e trazendo apenas os dados necessarios.
-
-**2. Corrigir o calculo de "hoje"** na linha 244 de `Attendance.tsx`, trocando `new Date().toISOString().split('T')[0]` por `getTodayInBrasilia()` que ja existe em `src/lib/utils.ts`.
+Adicionar um card de filtros entre os cards de estatisticas e a listagem, contendo:
+1. **Campo de busca por texto** - para procurar disciplinas pelo nome (ja conectado ao estado existente `searchTerm`)
+2. **Filtro por turma (Select)** - dropdown com todas as turmas disponiveis para filtrar disciplinas de uma turma especifica
+3. **Filtro por status** - dropdown para filtrar entre Ativo/Inativo/Todos
 
 ### Detalhes Tecnicos
 
-**Migracao SQL - Recriar funcao RPC com filtros:**
+**Arquivo: `src/pages/Subjects.tsx`**
 
-```sql
-CREATE OR REPLACE FUNCTION get_attendance_with_details(
-  p_class_id uuid DEFAULT NULL,
-  p_subject_id uuid DEFAULT NULL,
-  p_start_date date DEFAULT NULL,
-  p_end_date date DEFAULT NULL,
-  p_limit integer DEFAULT 5000
-)
-RETURNS TABLE(...) AS $$
-  SELECT ...
-  FROM attendance a
-  LEFT JOIN profiles p ON p.id = a.student_id
-  LEFT JOIN classes c ON c.id = a.class_id
-  LEFT JOIN subjects s ON s.id = a.subject_id
-  WHERE 
-    (autorizacao por role - mesmo codigo atual)
-    AND (p_class_id IS NULL OR a.class_id = p_class_id)
-    AND (p_subject_id IS NULL OR a.subject_id = p_subject_id)
-    AND (p_start_date IS NULL OR a.date >= p_start_date)
-    AND (p_end_date IS NULL OR a.date <= p_end_date)
-  ORDER BY a.date DESC, a.created_at DESC
-  LIMIT p_limit;
-$$ LANGUAGE sql SECURITY DEFINER;
-```
+1. Adicionar dois novos estados:
+   - `selectedClassFilter` (string) - ID da turma selecionada ou "all"
+   - `selectedStatusFilter` (string) - "all", "ativo" ou "inativo"
 
-**Arquivo: `src/hooks/useSupabaseAttendance.ts`**
+2. Inserir um card de filtros (entre as linhas 404-406) com:
+   - Input de busca com icone de lupa (mesmo padrao da pagina de Turmas/Classes)
+   - Select de turma populado a partir de `classes` ja carregado pelo hook `useSupabaseClasses`
+   - Select de status com opcoes Todos/Ativo/Inativo
 
-Alterar `fetchAttendance` para passar filtros para a RPC e aumentar o limite. Aceitar parametros opcionais de filtro (class_id, subject_id, start_date, end_date).
+3. Atualizar a logica de `filteredSubjects` (linha 343) para incluir os novos filtros:
+   ```typescript
+   const filteredSubjects = subjects.filter(subject => {
+     const matchesSearch = subject.name?.toLowerCase().includes(searchTerm.toLowerCase());
+     const matchesClass = selectedClassFilter === 'all' || subject.class_id === selectedClassFilter;
+     const matchesStatus = selectedStatusFilter === 'all' || subject.status === selectedStatusFilter;
+     return matchesSearch && matchesClass && matchesStatus;
+   });
+   ```
 
-**Arquivo: `src/pages/Attendance.tsx`**
-
-1. Linha 244: trocar `new Date().toISOString().split('T')[0]` por `getTodayInBrasilia()`
-2. Passar os filtros selecionados (turma, disciplina, periodo) para o hook `useSupabaseAttendance`, fazendo a filtragem no servidor em vez de no cliente
-3. Chamar `refetch` quando os filtros mudarem
+4. Importar o componente `Select` de `@/components/ui/select` (SelectTrigger, SelectContent, SelectItem, SelectValue)
 
 ### Arquivos Alterados
-
-- **Migracao SQL**: recriar `get_attendance_with_details` com parametros de filtro e limite de 5000
-- **`src/hooks/useSupabaseAttendance.ts`**: passar filtros para a chamada RPC
-- **`src/pages/Attendance.tsx`**: corrigir calculo de "hoje" com `getTodayInBrasilia()` e passar filtros para o hook
+- **`src/pages/Subjects.tsx`** - unico arquivo modificado
 
 ### O Que NAO Muda
-
-- A interface visual da tabela de frequencia permanece igual
-- A logica de agrupamento (`getGroupedAttendance`) permanece igual
-- Os formularios de criacao/edicao permanecem iguais
-- As politicas RLS e a autorizacao por role dentro da RPC permanecem iguais
+- A estrutura de cards de disciplinas agrupadas por turma permanece igual
+- Os botoes de acao (editar, excluir, exportar) permanecem iguais
+- Os hooks e dados carregados permanecem os mesmos
+- O layout geral da pagina permanece igual
 

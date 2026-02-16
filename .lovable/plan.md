@@ -1,47 +1,58 @@
 
 
-## Adicionar Busca e Filtros na pagina de Gerenciamento de Disciplinas
+## Correcao do Deslocamento de Datas na Matriz de Chamadas
 
-### Problema
-A pagina de Disciplinas (`/subjects`) ja possui a logica de filtragem por nome no codigo (estado `searchTerm` na linha 31 e filtro na linha 343), mas **nao exibe nenhum campo de busca nem filtros na interface**. O usuario nao tem como procurar disciplinas ou filtrar por turma.
+### Problema Identificado
+As datas das chamadas estao sendo exibidas com **1 dia a menos** do que o correto. Por exemplo:
+- O banco de dados tem registros para **12/12**, mas a tela mostra **11/12**
+- O registro de **18/12** aparece como **17/12**
+
+Isso acontece porque o JavaScript interpreta `new Date("2025-12-12")` como meia-noite UTC (00:00 UTC). Quando o `date-fns` formata essa data, ele converte para o fuso horario de Brasilia (UTC-3), resultando em **11/12 as 21:00** -- ou seja, o dia anterior.
 
 ### Solucao
-Adicionar um card de filtros entre os cards de estatisticas e a listagem, contendo:
-1. **Campo de busca por texto** - para procurar disciplinas pelo nome (ja conectado ao estado existente `searchTerm`)
-2. **Filtro por turma (Select)** - dropdown com todas as turmas disponiveis para filtrar disciplinas de uma turma especifica
-3. **Filtro por status** - dropdown para filtrar entre Ativo/Inativo/Todos
+Corrigir a funcao `formatDate` no componente `subject-attendance-matrix-dialog.tsx` para evitar a conversao de fuso horario. A data vinda do banco ("2025-12-12") deve ser tratada como data local, nao UTC.
 
 ### Detalhes Tecnicos
 
-**Arquivo: `src/pages/Subjects.tsx`**
+**Arquivo: `src/components/ui/subject-attendance-matrix-dialog.tsx`**
 
-1. Adicionar dois novos estados:
-   - `selectedClassFilter` (string) - ID da turma selecionada ou "all"
-   - `selectedStatusFilter` (string) - "all", "ativo" ou "inativo"
+Alterar a funcao `formatDate` (linhas 49-55) para parsear a data como local em vez de UTC:
 
-2. Inserir um card de filtros (entre as linhas 404-406) com:
-   - Input de busca com icone de lupa (mesmo padrao da pagina de Turmas/Classes)
-   - Select de turma populado a partir de `classes` ja carregado pelo hook `useSupabaseClasses`
-   - Select de status com opcoes Todos/Ativo/Inativo
+```typescript
+// ANTES (bugado - interpreta como UTC):
+const formatDate = (dateStr: string) => {
+  try {
+    return format(new Date(dateStr), 'dd/MM', { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+};
 
-3. Atualizar a logica de `filteredSubjects` (linha 343) para incluir os novos filtros:
-   ```typescript
-   const filteredSubjects = subjects.filter(subject => {
-     const matchesSearch = subject.name?.toLowerCase().includes(searchTerm.toLowerCase());
-     const matchesClass = selectedClassFilter === 'all' || subject.class_id === selectedClassFilter;
-     const matchesStatus = selectedStatusFilter === 'all' || subject.status === selectedStatusFilter;
-     return matchesSearch && matchesClass && matchesStatus;
-   });
-   ```
+// DEPOIS (correto - interpreta como data local):
+const formatDate = (dateStr: string) => {
+  try {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return format(new Date(year, month - 1, day), 'dd/MM', { locale: ptBR });
+  } catch {
+    return dateStr;
+  }
+};
+```
 
-4. Importar o componente `Select` de `@/components/ui/select` (SelectTrigger, SelectContent, SelectItem, SelectValue)
+Tambem verificar o mesmo problema no hook `useInstructorSubjectAttendance.ts` na linha 126 onde as datas sao ordenadas:
+
+```typescript
+// Linha 126 - mesma correcao na ordenacao
+const dates = [...new Set(attendances.map(a => a.date))]
+  .sort((a, b) => a.localeCompare(b)); // strings ISO ja ordenam corretamente
+```
 
 ### Arquivos Alterados
-- **`src/pages/Subjects.tsx`** - unico arquivo modificado
+- **`src/components/ui/subject-attendance-matrix-dialog.tsx`** - corrigir `formatDate` para usar data local
+- **`src/hooks/useInstructorSubjectAttendance.ts`** - corrigir ordenacao de datas (opcional, mas mais seguro)
 
 ### O Que NAO Muda
-- A estrutura de cards de disciplinas agrupadas por turma permanece igual
-- Os botoes de acao (editar, excluir, exportar) permanecem iguais
-- Os hooks e dados carregados permanecem os mesmos
-- O layout geral da pagina permanece igual
-
+- A logica de busca de dados no banco permanece igual
+- A estrutura da tabela/matriz permanece igual
+- Os calculos de porcentagem de presenca permanecem iguais
+- A exportacao PDF/Excel permanece igual

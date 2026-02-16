@@ -1149,27 +1149,55 @@ export type Database = {
           user_name: string
         }[]
       }
-      get_attendance_with_details: {
-        Args: never
-        Returns: {
-          class_id: string
-          class_name: string
-          created_at: string
-          daily_activity: string
-          date: string
-          id: string
-          is_present: boolean
-          justification: string
-          student_enrollment: string
-          student_id: string
-          student_name: string
-          student_number: string
-          student_status: string
-          subject_id: string
-          subject_name: string
-          updated_at: string
-        }[]
-      }
+      get_attendance_with_details:
+        | {
+            Args: never
+            Returns: {
+              class_id: string
+              class_name: string
+              created_at: string
+              daily_activity: string
+              date: string
+              id: string
+              is_present: boolean
+              justification: string
+              student_enrollment: string
+              student_id: string
+              student_name: string
+              student_number: string
+              student_status: string
+              subject_id: string
+              subject_name: string
+              updated_at: string
+            }[]
+          }
+        | {
+            Args: {
+              p_class_id?: string
+              p_end_date?: string
+              p_limit?: number
+              p_start_date?: string
+              p_subject_id?: string
+            }
+            Returns: {
+              class_id: string
+              class_name: string
+              created_at: string
+              daily_activity: string
+              date: string
+              id: string
+              is_present: boolean
+              justification: string
+              student_enrollment: string
+              student_id: string
+              student_name: string
+              student_number: string
+              student_status: string
+              subject_id: string
+              subject_name: string
+              updated_at: string
+            }[]
+          }
       get_instructor_academic_info: {
         Args: { instructor_id: string }
         Returns: {

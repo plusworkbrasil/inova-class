@@ -220,7 +220,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar size={20} />
-            Registrar Chamada
+            Registrar Frequência
           </DialogTitle>
         </DialogHeader>
         

@@ -75,7 +75,7 @@ const InstructorSubjects = () => {
       console.error('❌ Erro ao registrar chamada:', error);
       toast({
         variant: "destructive",
-        title: "Erro ao registrar chamada",
+        title: "Erro ao registrar frequência",
         description: error.message || "Ocorreu um erro ao salvar a frequência. Verifique suas permissões.",
       });
     }

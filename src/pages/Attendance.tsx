@@ -153,7 +153,7 @@ const Attendance = () => {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Erro ao registrar chamada",
+        title: "Erro ao registrar frequência",
         description: "Ocorreu um erro ao salvar a frequência.",
       });
     }
@@ -442,7 +442,7 @@ const Attendance = () => {
               onClick={handleOpenAttendanceForm}
             >
               <Plus size={16} />
-              Registrar Chamada
+              Registrar Frequência
             </Button>
           )}
         </div>

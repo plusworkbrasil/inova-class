@@ -135,7 +135,7 @@ export const AttendanceGroupDetailsDialog = ({
             <TableHeader>
               <TableRow>
                 <TableHead>Aluno</TableHead>
-                <TableHead>Matrícula</TableHead>
+                <TableHead>Nº Aluno</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Justificativa</TableHead>
                 {onEdit && <TableHead>Ações</TableHead>}
@@ -154,7 +154,7 @@ export const AttendanceGroupDetailsDialog = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{record.student_id || 'N/A'}</TableCell>
+                  <TableCell>{record.student_enrollment || record.student_number || 'N/A'}</TableCell>
                   <TableCell>
                     {record.is_present ? (
                       <Badge variant="default" className="bg-green-600">

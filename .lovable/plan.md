@@ -1,42 +1,29 @@
 
 
-## Tornar a tabela de frequencia compacta e responsiva para caber na tela
+## Corrigir datas na exportacao PDF e Excel
 
 ### Problema
-Mesmo com o dialog em 100% da largura, a tabela tem celulas, paddings e min-widths grandes demais para exibir todos os dados sem scroll horizontal.
+A funcao `formatDate` em `src/lib/attendanceExport.ts` (linha 28-34) usa `new Date(dateStr)` para converter strings "YYYY-MM-DD". O JavaScript interpreta esse formato como UTC meia-noite, e no fuso horario do Brasil (UTC-3) a data recua 1 dia.
+
+Exemplo: "2024-12-09" vira 8 de dezembro as 21h no Brasil.
 
 ### Solucao
 
-**Arquivo: `src/components/ui/subject-attendance-matrix-dialog.tsx`**
+**Arquivo: `src/lib/attendanceExport.ts`**
 
-#### 1. Reduzir tamanho das celulas de status (renderCell, linhas 93 e 101)
-- Altura das celulas: `h-10` -> `h-6`
-- Adicionar `text-xs` para texto menor
+Alterar a funcao `formatDate` (linhas 28-34) para usar parsing manual com `split('-')`, igual ao que ja foi feito no dialog:
 
-#### 2. Compactar cabecalho da tabela (linhas 254-267)
-- Coluna "Aluno": `min-w-[200px] px-4 py-3` -> `min-w-[120px] px-2 py-1.5 text-xs`
-- Colunas de datas: `min-w-[60px] px-3 py-3 text-sm` -> `min-w-[36px] px-1 py-1.5 text-[10px]`
-- Coluna "% Presenca": `min-w-[100px] px-4 py-3` -> `min-w-[60px] px-1 py-1.5 text-xs`
+```
+De:
+  return format(new Date(dateStr), formatStr, { locale: ptBR });
 
-#### 3. Compactar celulas do corpo da tabela (linhas 280-312)
-- Celula do nome do aluno: `px-4 py-2` -> `px-2 py-1`
-- Nome: adicionar `text-xs` e `truncate max-w-[120px]`
-- Celulas de data: `px-2 py-2` -> `px-0.5 py-1`
-- Celula de porcentagem: `px-4 py-2` -> `px-1 py-1`
-- Badge de porcentagem: adicionar `text-[10px] px-1.5 py-0`
+Para:
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return format(new Date(year, month - 1, day), formatStr, { locale: ptBR });
+```
 
-#### 4. Compactar cards de resumo (linhas 217-244)
-- Icones: `h-8 w-8` -> `h-6 w-6`
-- Valores: `text-2xl` -> `text-lg`
-- Gap e padding: `gap-3 p-3` -> `gap-2 p-2`
-
-#### 5. Compactar legenda (linhas 326-346)
-- Quadrados: `w-8 h-8` -> `w-6 h-6`
-- Texto: `text-sm` -> `text-xs`
-- Gap: `gap-4` -> `gap-3`
-
-### Resultado esperado
-A tabela inteira ficara significativamente mais compacta, permitindo visualizar mais colunas de datas sem precisar de scroll horizontal. Em telas grandes, todas as informacoes devem caber sem scroll.
+Isso cria a data usando o construtor local (ano, mes, dia), evitando a interpretacao UTC.
 
 ### Arquivo alterado
-- `src/components/ui/subject-attendance-matrix-dialog.tsx` (alteracoes em ~15 locais)
+- `src/lib/attendanceExport.ts` (1 alteracao na funcao formatDate, linha 30)
+

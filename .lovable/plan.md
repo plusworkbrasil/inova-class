@@ -1,45 +1,34 @@
 
 
-## Corrigir erro "PGRST203" na pagina de Registro de Frequencia
+## Corrigir dialog de "Ver Frequencia" que ultrapassa a tela
 
 ### Problema
-
-O erro `PGRST203` ocorre porque existem duas versoes da funcao `get_attendance_with_details` no banco de dados:
-1. Uma sem parametros (`Args: never`)
-2. Uma com parametros opcionais (`p_class_id, p_subject_id, p_start_date, p_end_date, p_limit`)
-
-Quando nenhum filtro e aplicado, o objeto `rpcParams` fica vazio (`{}`), e o PostgREST nao consegue decidir qual versao chamar.
+O dialog de frequencia usa `max-w-6xl` (72rem/1152px) que excede a largura da viewport em telas menores, cortando o botao de fechar e os botoes de exportacao no lado direito.
 
 ### Solucao
 
-**Arquivo: `src/hooks/useSupabaseAttendance.ts`** (linhas 59-76)
+**Arquivo: `src/components/ui/subject-attendance-matrix-dialog.tsx`**
 
-Sempre enviar todos os parametros na chamada RPC, usando `null` para os que nao foram preenchidos. Isso forca o PostgREST a usar a versao com parametros, eliminando a ambiguidade.
+1. **Linha 131**: Adicionar constraint de viewport ao DialogContent:
+   - De: `max-w-6xl max-h-[90vh] p-0`
+   - Para: `max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden`
 
-```typescript
-// Sempre incluir todos os parametros para evitar ambiguidade PGRST203
-const rpcParams: Record<string, any> = {
-  p_class_id: null,
-  p_subject_id: null,
-  p_start_date: null,
-  p_end_date: null,
-  p_limit: 5000
-};
+2. **Linhas 133-177 (Header)**: Tornar o header responsivo para que os botoes de exportacao nao sejam cortados em telas menores:
+   - Alterar layout dos botoes de exportacao para empilhar em telas pequenas (`flex-col sm:flex-row`)
+   - Mover os botoes para baixo do titulo em telas menores
 
-if (activeFilters?.class_id && activeFilters.class_id !== 'all') {
-  rpcParams.p_class_id = activeFilters.class_id;
-}
-if (activeFilters?.subject_id && activeFilters.subject_id !== 'all') {
-  rpcParams.p_subject_id = activeFilters.subject_id;
-}
-if (activeFilters?.start_date) {
-  rpcParams.p_start_date = activeFilters.start_date;
-}
-if (activeFilters?.end_date) {
-  rpcParams.p_end_date = activeFilters.end_date;
-}
+3. **Linha 249 (ScrollArea)**: Garantir que a area de scroll ocupe o espaco disponivel corretamente.
+
+### Alteracoes especificas
+
+**DialogContent (linha 131)**:
+```
+<DialogContent className="max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
 ```
 
-### Arquivo alterado
-- `src/hooks/useSupabaseAttendance.ts`
+**Header layout (linhas 133-177)**: Reestruturar para ser responsivo:
+- Titulo e info na primeira linha
+- Botoes de exportacao abaixo em telas pequenas, ao lado em telas grandes
 
+### Arquivo alterado
+- `src/components/ui/subject-attendance-matrix-dialog.tsx`

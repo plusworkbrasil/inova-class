@@ -1,29 +1,17 @@
 
-
-## Corrigir datas na exportacao PDF e Excel
+## Atualizar coluna "Matrícula" no dialog de detalhes de frequência
 
 ### Problema
-A funcao `formatDate` em `src/lib/attendanceExport.ts` (linha 28-34) usa `new Date(dateStr)` para converter strings "YYYY-MM-DD". O JavaScript interpreta esse formato como UTC meia-noite, e no fuso horario do Brasil (UTC-3) a data recua 1 dia.
+A coluna "Matrícula" no dialog de detalhes de frequência exibe o UUID bruto do aluno (ex: `01abdad2-7c06-49ef-96c3-2cfdc64dbc41`), que não é amigável para o usuário.
 
-Exemplo: "2024-12-09" vira 8 de dezembro as 21h no Brasil.
+### Solução
 
-### Solucao
+**Arquivo: `src/components/ui/attendance-group-details-dialog.tsx`**
 
-**Arquivo: `src/lib/attendanceExport.ts`**
+1. **Renomear coluna** (linha 138): "Matrícula" -> "Nº Aluno"
+2. **Exibir dado amigável** (linha 157): Trocar `record.student_id` por `record.student_enrollment || record.student_number || 'N/A'`
 
-Alterar a funcao `formatDate` (linhas 28-34) para usar parsing manual com `split('-')`, igual ao que ja foi feito no dialog:
-
-```
-De:
-  return format(new Date(dateStr), formatStr, { locale: ptBR });
-
-Para:
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return format(new Date(year, month - 1, day), formatStr, { locale: ptBR });
-```
-
-Isso cria a data usando o construtor local (ano, mes, dia), evitando a interpretacao UTC.
+Isso exibirá o número de matrícula real do aluno (campo `student_enrollment`) ou o número do aluno (`student_number`), que já estão disponíveis no tipo `Attendance` do hook `useSupabaseAttendance`.
 
 ### Arquivo alterado
-- `src/lib/attendanceExport.ts` (1 alteracao na funcao formatDate, linha 30)
-
+- `src/components/ui/attendance-group-details-dialog.tsx` (2 alterações: linhas 138 e 157)

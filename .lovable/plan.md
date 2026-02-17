@@ -1,34 +1,36 @@
 
-
-## Corrigir dialog de "Ver Frequencia" que ultrapassa a tela
+## Corrigir overflow do dialog "Ver Frequencia"
 
 ### Problema
-O dialog de frequencia usa `max-w-6xl` (72rem/1152px) que excede a largura da viewport em telas menores, cortando o botao de fechar e os botoes de exportacao no lado direito.
+O conteudo do dialog (cards de resumo + tabela) ultrapassa os limites do dialog porque:
+1. O container do body (`div.px-6.pb-6` na linha 180) nao tem controle de overflow
+2. Os cards de resumo em grid nao estao contidos dentro da largura do dialog
+3. Apenas a tabela tem ScrollArea, mas todo o body precisa de scroll vertical
 
 ### Solucao
 
 **Arquivo: `src/components/ui/subject-attendance-matrix-dialog.tsx`**
 
-1. **Linha 131**: Adicionar constraint de viewport ao DialogContent:
-   - De: `max-w-6xl max-h-[90vh] p-0`
-   - Para: `max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden`
+1. **Linha 180**: Adicionar `overflow-y-auto` e limitar a altura do body para permitir scroll vertical de todo o conteudo (cards + tabela + legenda):
+   ```
+   <div className="px-4 sm:px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+   ```
 
-2. **Linhas 133-177 (Header)**: Tornar o header responsivo para que os botoes de exportacao nao sejam cortados em telas menores:
-   - Alterar layout dos botoes de exportacao para empilhar em telas pequenas (`flex-col sm:flex-row`)
-   - Mover os botoes para baixo do titulo em telas menores
+2. **Linha 216**: Garantir que o grid de cards nao ultrapasse a largura, adicionando `overflow-hidden`:
+   ```
+   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-hidden">
+   ```
 
-3. **Linha 249 (ScrollArea)**: Garantir que a area de scroll ocupe o espaco disponivel corretamente.
-
-### Alteracoes especificas
-
-**DialogContent (linha 131)**:
-```
-<DialogContent className="max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
-```
-
-**Header layout (linhas 133-177)**: Reestruturar para ser responsivo:
-- Titulo e info na primeira linha
-- Botoes de exportacao abaixo em telas pequenas, ao lado em telas grandes
+3. **Linha 249**: Adicionar `ScrollBar` horizontal explicito ao ScrollArea da tabela para garantir rolagem horizontal visivel:
+   ```
+   <ScrollArea className="h-[400px] w-full border rounded-lg">
+     <div className="min-w-max">
+       ...tabela...
+     </div>
+     <ScrollBar orientation="horizontal" />
+   </ScrollArea>
+   ```
+   E adicionar `ScrollBar` ao import.
 
 ### Arquivo alterado
 - `src/components/ui/subject-attendance-matrix-dialog.tsx`

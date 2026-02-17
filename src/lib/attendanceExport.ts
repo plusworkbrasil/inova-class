@@ -27,7 +27,8 @@ interface WeeklyFrequencyOptions {
 
 const formatDate = (dateStr: string, formatStr: string = 'dd/MM') => {
   try {
-    return format(new Date(dateStr), formatStr, { locale: ptBR });
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return format(new Date(year, month - 1, day), formatStr, { locale: ptBR });
   } catch {
     return dateStr;
   }

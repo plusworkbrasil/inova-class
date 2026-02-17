@@ -99,9 +99,9 @@ export const SubjectAttendanceMatrixDialog = ({
     const content = (
       <div 
         className={`flex items-center justify-center h-10 font-semibold rounded ${
-          status === 'present' 
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
-            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+        status === 'present' 
+            ? 'bg-secondary/10 text-secondary-foreground dark:bg-secondary/20' 
+            : 'bg-destructive/10 text-destructive dark:bg-destructive/20'
         }`}
       >
         {status === 'present' ? 'C' : 'F'}
@@ -222,21 +222,21 @@ export const SubjectAttendanceMatrixDialog = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <TrendingUp className="h-8 w-8 text-blue-500" />
+                    <TrendingUp className="h-8 w-8 text-primary" />
                     <div>
                       <div className="text-2xl font-bold">{classStats.averageAttendance.toFixed(1)}%</div>
                       <div className="text-xs text-muted-foreground">Média de Presença</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <CheckCircle className="h-8 w-8 text-green-500" />
+                    <CheckCircle className="h-8 w-8 text-secondary" />
                     <div>
                       <div className="text-2xl font-bold">{classStats.totalPresent}</div>
                       <div className="text-xs text-muted-foreground">Presenças</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <XCircle className="h-8 w-8 text-red-500" />
+                    <XCircle className="h-8 w-8 text-destructive" />
                     <div>
                       <div className="text-2xl font-bold">{classStats.totalAbsent}</div>
                       <div className="text-xs text-muted-foreground">Faltas</div>
@@ -273,13 +273,13 @@ export const SubjectAttendanceMatrixDialog = ({
                           key={student.student_id} 
                           className={`border-b hover:bg-muted/50 ${
                             student.attendance_percentage < 75 
-                              ? 'bg-red-50 dark:bg-red-950/30' 
+                              ? 'bg-destructive/5 dark:bg-destructive/10' 
                               : ''
                           }`}
                         >
                           <td className={`sticky left-0 z-10 px-4 py-2 ${
                             student.attendance_percentage < 75 
-                              ? 'bg-red-50 dark:bg-red-950/30' 
+                              ? 'bg-destructive/5 dark:bg-destructive/10' 
                               : 'bg-background'
                           }`}>
                             <div>
@@ -323,13 +323,13 @@ export const SubjectAttendanceMatrixDialog = ({
                 <p className="text-sm font-semibold mb-2">Legenda:</p>
                 <div className="flex flex-wrap gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-green-100 dark:bg-green-900/30 flex items-center justify-center font-semibold text-green-700 dark:text-green-300">
+                    <div className="w-8 h-8 rounded bg-secondary/10 dark:bg-secondary/20 flex items-center justify-center font-semibold text-secondary-foreground">
                       C
                     </div>
                     <span>Compareceu</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center font-semibold text-red-700 dark:text-red-300">
+                    <div className="w-8 h-8 rounded bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center font-semibold text-destructive">
                       F
                     </div>
                     <span>Faltou</span>
@@ -341,7 +341,7 @@ export const SubjectAttendanceMatrixDialog = ({
                     <span>Sem registro</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800"></div>
+                    <div className="w-8 h-8 rounded bg-destructive/5 dark:bg-destructive/10 border border-destructive/30"></div>
                     <span>Frequência abaixo de 75%</span>
                   </div>
                 </div>

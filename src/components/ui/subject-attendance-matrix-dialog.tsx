@@ -128,7 +128,7 @@ export const SubjectAttendanceMatrixDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="w-[95vw] xl:w-auto xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 border-b">
           <div className="flex flex-col gap-3">
             <div className="flex-1">
@@ -177,7 +177,7 @@ export const SubjectAttendanceMatrixDialog = ({
           </div>
         </DialogHeader>
 
-        <div className="px-4 sm:px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
+        <div className="px-4 sm:px-6 pb-6 overflow-y-auto overflow-x-hidden" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-full" />
@@ -246,7 +246,7 @@ export const SubjectAttendanceMatrixDialog = ({
               </div>
 
               {/* Tabela com barra de rolagem vertical e horizontal */}
-              <ScrollArea className="h-[400px] w-full border rounded-lg">
+              <ScrollArea className="h-[400px] w-full overflow-hidden border rounded-lg">
                 <div className="min-w-max">
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0 z-20 bg-background">

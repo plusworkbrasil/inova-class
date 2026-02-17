@@ -128,7 +128,7 @@ export const SubjectAttendanceMatrixDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] xl:w-auto xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-none max-h-[90vh] p-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-6 pb-4 border-b">
           <div className="flex flex-col gap-3">
             <div className="flex-1">

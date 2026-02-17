@@ -128,15 +128,15 @@ export const SubjectAttendanceMatrixDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-4 border-b">
-          <div className="flex items-start justify-between gap-4">
+      <DialogContent className="max-w-[95vw] xl:max-w-6xl max-h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-6 pb-4 border-b">
+          <div className="flex flex-col gap-3">
             <div className="flex-1">
-              <DialogTitle className="flex items-center gap-2 text-2xl">
-                <CalendarDays className="h-6 w-6 text-primary" />
+              <DialogTitle className="flex items-center gap-2 text-lg sm:text-2xl">
+                <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                 Frequência - {subjectName}
               </DialogTitle>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground mt-2">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
                   <span>{className}</span>
@@ -154,7 +154,7 @@ export const SubjectAttendanceMatrixDialog = ({
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 size="sm"

@@ -90,7 +90,7 @@ export const SubjectAttendanceMatrixDialog = ({
   const renderCell = (status: 'present' | 'absent' | null, justification?: string) => {
     if (status === null) {
       return (
-        <div className="flex items-center justify-center h-10 text-muted-foreground">
+        <div className="flex items-center justify-center h-6 text-muted-foreground text-xs">
           -
         </div>
       );
@@ -98,7 +98,7 @@ export const SubjectAttendanceMatrixDialog = ({
 
     const content = (
       <div 
-        className={`flex items-center justify-center h-10 font-semibold rounded ${
+        className={`flex items-center justify-center h-6 text-xs font-semibold rounded ${
         status === 'present' 
             ? 'bg-secondary/10 text-secondary-foreground dark:bg-secondary/20' 
             : 'bg-destructive/10 text-destructive dark:bg-destructive/20'
@@ -214,31 +214,31 @@ export const SubjectAttendanceMatrixDialog = ({
                   Resumo da Turma
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-hidden">
-                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <Users className="h-8 w-8 text-primary" />
+                  <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                    <Users className="h-6 w-6 text-primary" />
                     <div>
-                      <div className="text-2xl font-bold">{students.length}</div>
+                      <div className="text-lg font-bold">{students.length}</div>
                       <div className="text-xs text-muted-foreground">Alunos</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <TrendingUp className="h-8 w-8 text-primary" />
+                  <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                    <TrendingUp className="h-6 w-6 text-primary" />
                     <div>
-                      <div className="text-2xl font-bold">{classStats.averageAttendance.toFixed(1)}%</div>
+                      <div className="text-lg font-bold">{classStats.averageAttendance.toFixed(1)}%</div>
                       <div className="text-xs text-muted-foreground">Média de Presença</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <CheckCircle className="h-8 w-8 text-secondary" />
+                  <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                    <CheckCircle className="h-6 w-6 text-secondary" />
                     <div>
-                      <div className="text-2xl font-bold">{classStats.totalPresent}</div>
+                      <div className="text-lg font-bold">{classStats.totalPresent}</div>
                       <div className="text-xs text-muted-foreground">Presenças</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
-                    <XCircle className="h-8 w-8 text-destructive" />
+                  <div className="flex items-center gap-2 p-2 bg-background rounded-lg border">
+                    <XCircle className="h-6 w-6 text-destructive" />
                     <div>
-                      <div className="text-2xl font-bold">{classStats.totalAbsent}</div>
+                      <div className="text-lg font-bold">{classStats.totalAbsent}</div>
                       <div className="text-xs text-muted-foreground">Faltas</div>
                     </div>
                   </div>
@@ -251,18 +251,18 @@ export const SubjectAttendanceMatrixDialog = ({
                   <table className="w-full border-collapse">
                     <thead className="sticky top-0 z-20 bg-background">
                       <tr className="border-b">
-                        <th className="sticky left-0 z-30 bg-background px-4 py-3 text-left font-semibold min-w-[200px]">
+                        <th className="sticky left-0 z-30 bg-background px-2 py-1.5 text-left font-semibold min-w-[120px] text-xs">
                           Aluno
                         </th>
                         {dates.map((date) => (
                           <th 
                             key={date} 
-                            className="px-3 py-3 text-center font-semibold min-w-[60px] text-sm"
+                            className="px-1 py-1.5 text-center font-semibold min-w-[36px] text-[10px]"
                           >
                             {formatDate(date)}
                           </th>
                         ))}
-                        <th className="px-4 py-3 text-center font-semibold min-w-[100px]">
+                        <th className="px-1 py-1.5 text-center font-semibold min-w-[60px] text-xs">
                           % Presença
                         </th>
                       </tr>
@@ -277,31 +277,32 @@ export const SubjectAttendanceMatrixDialog = ({
                               : ''
                           }`}
                         >
-                          <td className={`sticky left-0 z-10 px-4 py-2 ${
+                          <td className={`sticky left-0 z-10 px-2 py-1 ${
                             student.attendance_percentage < 75 
                               ? 'bg-destructive/5 dark:bg-destructive/10' 
                               : 'bg-background'
                           }`}>
-                            <div>
-                              <div className="font-medium">{student.student_name}</div>
+                            <div className="max-w-[120px]">
+                              <div className="font-medium text-xs truncate">{student.student_name}</div>
                               {student.student_number && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-[10px] text-muted-foreground">
                                   #{student.student_number}
                                 </div>
                               )}
                             </div>
                           </td>
                           {dates.map((date) => (
-                            <td key={date} className="px-2 py-2">
+                            <td key={date} className="px-0.5 py-1">
                               {renderCell(
                                 student.attendance_by_date[date]?.status || null,
                                 student.attendance_by_date[date]?.justification
                               )}
                             </td>
                           ))}
-                          <td className="px-4 py-2 text-center">
+                          <td className="px-1 py-1 text-center">
                             <Badge 
                               variant={student.attendance_percentage >= 75 ? 'default' : 'destructive'}
+                              className="text-[10px] px-1.5 py-0"
                             >
                               {student.attendance_percentage.toFixed(0)}%
                             </Badge>
@@ -321,27 +322,27 @@ export const SubjectAttendanceMatrixDialog = ({
 
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <p className="text-sm font-semibold mb-2">Legenda:</p>
-                <div className="flex flex-wrap gap-4 text-sm">
+                <div className="flex flex-wrap gap-3 text-xs">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-secondary/10 dark:bg-secondary/20 flex items-center justify-center font-semibold text-secondary-foreground">
+                    <div className="w-6 h-6 rounded bg-secondary/10 dark:bg-secondary/20 flex items-center justify-center font-semibold text-secondary-foreground text-xs">
                       C
                     </div>
                     <span>Compareceu</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center font-semibold text-destructive">
+                    <div className="w-6 h-6 rounded bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center font-semibold text-destructive text-xs">
                       F
                     </div>
                     <span>Faltou</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded flex items-center justify-center text-muted-foreground">
+                    <div className="w-6 h-6 rounded flex items-center justify-center text-muted-foreground text-xs">
                       -
                     </div>
                     <span>Sem registro</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-destructive/5 dark:bg-destructive/10 border border-destructive/30"></div>
+                    <div className="w-6 h-6 rounded bg-destructive/5 dark:bg-destructive/10 border border-destructive/30"></div>
                     <span>Frequência abaixo de 75%</span>
                   </div>
                 </div>

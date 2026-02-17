@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useInstructorSubjectAttendance } from '@/hooks/useInstructorSubjectAttendance';
@@ -177,7 +177,7 @@ export const SubjectAttendanceMatrixDialog = ({
           </div>
         </DialogHeader>
 
-        <div className="px-6 pb-6">
+        <div className="px-4 sm:px-6 pb-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           {loading ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-full" />
@@ -213,7 +213,7 @@ export const SubjectAttendanceMatrixDialog = ({
                   <BarChart3 className="h-5 w-5 text-primary" />
                   Resumo da Turma
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 overflow-hidden">
                   <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
                     <Users className="h-8 w-8 text-primary" />
                     <div>
@@ -316,6 +316,7 @@ export const SubjectAttendanceMatrixDialog = ({
                     </tbody>
                   </table>
                 </div>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
 
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">

@@ -1153,6 +1153,7 @@ export type Database = {
         | {
             Args: never
             Returns: {
+              auto_student_id: number
               class_id: string
               class_name: string
               created_at: string
@@ -1180,6 +1181,7 @@ export type Database = {
               p_subject_id?: string
             }
             Returns: {
+              auto_student_id: number
               class_id: string
               class_name: string
               created_at: string

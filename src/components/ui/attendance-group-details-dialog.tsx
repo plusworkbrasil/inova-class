@@ -154,7 +154,7 @@ export const AttendanceGroupDetailsDialog = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{record.student_enrollment || record.student_number || 'N/A'}</TableCell>
+                  <TableCell>{record.auto_student_id || record.student_enrollment || record.student_number || 'N/A'}</TableCell>
                   <TableCell>
                     {record.is_present ? (
                       <Badge variant="default" className="bg-green-600">

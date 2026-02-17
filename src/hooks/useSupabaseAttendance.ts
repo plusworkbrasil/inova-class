@@ -21,6 +21,7 @@ export interface Attendance {
   subject_name?: string;
   is_evaded?: boolean; // Indica se o aluno está evadido
   student_status?: string; // Status do aluno no perfil
+  auto_student_id?: number; // Número automático do aluno
 }
 
 export interface GroupedAttendance {

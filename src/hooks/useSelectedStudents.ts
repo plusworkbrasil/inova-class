@@ -23,6 +23,9 @@ export interface SelectedStudent {
   whatsapp_sent_at: string | null;
   whatsapp_message_id: string | null;
   whatsapp_status: string | null;
+  course_name: string | null;
+  withdrawal_reason: string | null;
+  withdrawn_at: string | null;
 }
 
 export interface CreateSelectedStudentInput {
@@ -31,6 +34,7 @@ export interface CreateSelectedStudentInput {
   phone: string;
   cpf: string;
   shift?: string;
+  course_name?: string;
 }
 
 export const useSelectedStudents = () => {

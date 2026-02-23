@@ -98,6 +98,12 @@ const SelectedStudents = () => {
             <TableCell>{s.cpf}</TableCell>
             <TableCell>{shiftLabel[s.confirmed_shift || s.shift || ''] || '-'}</TableCell>
             <TableCell><Badge variant={statusVariant[s.status]}>{statusLabel[s.status]}</Badge></TableCell>
+            <TableCell className="text-center">
+              {s.whatsapp_status === 'sent' && <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />}
+              {s.whatsapp_status === 'failed' && <XCircle className="h-4 w-4 text-destructive mx-auto" />}
+              {s.whatsapp_status === 'sending' && <Clock className="h-4 w-4 text-muted-foreground mx-auto animate-pulse" />}
+              {!s.whatsapp_status && <span className="text-muted-foreground text-xs">—</span>}
+            </TableCell>
             {showActions && (
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

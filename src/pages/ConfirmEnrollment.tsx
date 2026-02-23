@@ -17,6 +17,7 @@ interface StudentData {
   phone: string;
   shift: string | null;
   course_name: string | null;
+  birth_date: string | null;
 }
 
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;

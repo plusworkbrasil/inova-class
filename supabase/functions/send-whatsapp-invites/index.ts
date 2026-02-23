@@ -59,9 +59,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { student_ids } = await req.json();
+    const { student_ids, custom_message } = await req.json();
     if (!Array.isArray(student_ids) || student_ids.length === 0) {
       return new Response(JSON.stringify({ error: "Nenhum aluno informado" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate custom_message if provided
+    if (custom_message && typeof custom_message === "string" && !custom_message.includes("{link}")) {
+      return new Response(JSON.stringify({ error: "O template deve conter {link}" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

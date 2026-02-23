@@ -16,7 +16,10 @@ const schema = z.object({
   full_name: z.string().trim().min(2, 'Mínimo 2 caracteres').max(100, 'Máximo 100 caracteres'),
   email: z.string().trim().email('E-mail inválido').max(255),
   phone: z.string().trim().regex(phoneRegex, 'Telefone deve ter 10-15 dígitos (apenas números)'),
-  cpf: z.string().trim().regex(cpfRegex, 'CPF deve estar no formato 000.000.000-00'),
+  cpf: z.string().trim()
+    .refine(val => !val || cpfRegex.test(val), { message: 'CPF deve estar no formato 000.000.000-00' })
+    .optional()
+    .or(z.literal('')),
   shift: z.string().optional(),
   course_name: z.string().trim().max(100).optional(),
 });

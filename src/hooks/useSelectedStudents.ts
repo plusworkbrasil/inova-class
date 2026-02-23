@@ -32,7 +32,7 @@ export interface CreateSelectedStudentInput {
   full_name: string;
   email: string;
   phone: string;
-  cpf: string;
+  cpf?: string;
   shift?: string;
   course_name?: string;
 }

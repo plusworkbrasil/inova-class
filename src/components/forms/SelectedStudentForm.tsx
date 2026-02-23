@@ -36,7 +36,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
   const { createStudent } = useSelectedStudents();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '' },
+    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '', birth_date: '' },
   });
 
   const onSubmit = async (values: FormValues) => {

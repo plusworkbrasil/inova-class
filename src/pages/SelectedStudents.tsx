@@ -86,7 +86,7 @@ const SelectedStudents = () => {
       </TableHeader>
       <TableBody>
         {list.length === 0 ? (
-          <TableRow><TableCell colSpan={showCheckbox ? 8 : 7} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
+          <TableRow><TableCell colSpan={showCheckbox ? 9 : 8} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
         ) : list.map(s => (
           <TableRow key={s.id}>
             {showCheckbox && (

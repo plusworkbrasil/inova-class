@@ -24,6 +24,18 @@ interface SendResult {
 
 const PUBLISHED_URL = 'https://inovaclass2000.lovable.app';
 
+const DEFAULT_TEMPLATE = `Olá {nome}! 🎓
+
+Parabéns! Você foi selecionado(a) para o nosso curso!
+
+Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:
+
+{link}
+
+⚠️ Este link é pessoal e intransferível. Válido por 48 horas.
+
+Equipe Inova Class`;
+
 export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) => {
   const { generateTokens } = useSelectedStudents();
   const queryClient = useQueryClient();
@@ -32,6 +44,7 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
   const [sending, setSending] = useState(false);
   const [sendResults, setSendResults] = useState<SendResult[] | null>(null);
   const [mode, setMode] = useState<'choose' | 'manual' | 'auto'>('choose');
+  const [messageTemplate, setMessageTemplate] = useState(DEFAULT_TEMPLATE);
 
   const handleGenerateTokens = async () => {
     setProcessing(true);

@@ -30,6 +30,8 @@ import ClassTimeline from "./pages/ClassTimeline";
 import StudentHistory from "./pages/StudentHistory";
 import StudentAbsences from "./pages/StudentAbsences";
 import StudentsAtRisk from "./pages/StudentsAtRisk";
+import SelectedStudents from "./pages/SelectedStudents";
+import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 
 const queryClient = new QueryClient();
 

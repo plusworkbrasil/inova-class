@@ -80,6 +80,7 @@ const ConfirmEnrollment = () => {
       setCpfError('CPF obrigatório no formato 000.000.000-00');
       return;
     }
+    if (!birthDateValue) return;
     setCpfError('');
     setConfirming(true);
     try {

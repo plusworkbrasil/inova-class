@@ -885,6 +885,66 @@ export type Database = {
           },
         ]
       }
+      selected_students: {
+        Row: {
+          confirmed_at: string | null
+          confirmed_shift: string | null
+          cpf: string
+          created_at: string
+          created_by: string
+          email: string
+          enrolled_at: string | null
+          enrolled_user_id: string | null
+          full_name: string
+          id: string
+          invite_token: string | null
+          phone: string
+          shift: string | null
+          status: string
+          token_expires_at: string | null
+          token_used_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          confirmed_at?: string | null
+          confirmed_shift?: string | null
+          cpf: string
+          created_at?: string
+          created_by: string
+          email: string
+          enrolled_at?: string | null
+          enrolled_user_id?: string | null
+          full_name: string
+          id?: string
+          invite_token?: string | null
+          phone: string
+          shift?: string | null
+          status?: string
+          token_expires_at?: string | null
+          token_used_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confirmed_at?: string | null
+          confirmed_shift?: string | null
+          cpf?: string
+          created_at?: string
+          created_by?: string
+          email?: string
+          enrolled_at?: string | null
+          enrolled_user_id?: string | null
+          full_name?: string
+          id?: string
+          invite_token?: string | null
+          phone?: string
+          shift?: string | null
+          status?: string
+          token_expires_at?: string | null
+          token_used_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       student_academic_info: {
         Row: {
           academic_status: string | null

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, MessageSquare, UserPlus, Trash2, Search } from 'lucide-react';
+import { Plus, Upload, MessageSquare, UserPlus, Trash2, Search, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { SelectedStudentForm } from '@/components/forms/SelectedStudentForm';
 import { BatchSelectedStudentsForm } from '@/components/forms/BatchSelectedStudentsForm';
 import { WhatsAppInviteDialog } from '@/components/ui/whatsapp-invite-dialog';

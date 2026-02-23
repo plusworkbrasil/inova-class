@@ -30,6 +30,8 @@ import ClassTimeline from "./pages/ClassTimeline";
 import StudentHistory from "./pages/StudentHistory";
 import StudentAbsences from "./pages/StudentAbsences";
 import StudentsAtRisk from "./pages/StudentsAtRisk";
+import SelectedStudents from "./pages/SelectedStudents";
+import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 
 const queryClient = new QueryClient();
 
@@ -65,6 +67,8 @@ const App = () => (
           <Route path="/student-history" element={<StudentHistory />} />
           <Route path="/student-absences" element={<StudentAbsences />} />
           <Route path="/students-at-risk" element={<StudentsAtRisk />} />
+          <Route path="/selected-students" element={<SelectedStudents />} />
+          <Route path="/confirm-enrollment/:token" element={<ConfirmEnrollment />} />
           <Route path="/settings" element={<Settings />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

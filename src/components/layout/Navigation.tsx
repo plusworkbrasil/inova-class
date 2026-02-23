@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck } from 'lucide-react';
 import { NotificationsPopover } from '@/components/ui/notifications-popover';
 import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -51,6 +51,7 @@ const adminMenuGroups: MenuEntry[] = [
     items: [
       { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
       { icon: Mail, label: 'Comunicação', path: '/communications' },
+      { icon: UserCheck, label: 'Selecionados', path: '/selected-students' },
     ],
   },
   { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },
@@ -168,6 +169,10 @@ const menuItems = {
     icon: FileText,
     label: 'Relatórios',
     path: '/reports'
+  }, {
+    icon: UserCheck,
+    label: 'Selecionados',
+    path: '/selected-students'
   }],
   teacher: [{
     icon: LayoutDashboard,

@@ -22,6 +22,7 @@ const schema = z.object({
     .or(z.literal('')),
   shift: z.string().optional(),
   course_name: z.string().trim().max(100).optional(),
+  birth_date: z.string().optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -35,7 +36,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
   const { createStudent } = useSelectedStudents();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '' },
+    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '', birth_date: '' },
   });
 
   const onSubmit = async (values: FormValues) => {
@@ -46,6 +47,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
       cpf: values.cpf,
       shift: values.shift,
       course_name: values.course_name,
+      birth_date: values.birth_date,
     });
     form.reset();
     onOpenChange(false);
@@ -113,6 +115,13 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
               <FormItem>
                 <FormLabel>Curso</FormLabel>
                 <FormControl><Input placeholder="Ex: JOVEM TECH" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="birth_date" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Nascimento</FormLabel>
+                <FormControl><Input type="date" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

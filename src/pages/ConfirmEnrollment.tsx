@@ -17,6 +17,7 @@ interface StudentData {
   phone: string;
   shift: string | null;
   course_name: string | null;
+  birth_date: string | null;
 }
 
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
@@ -37,6 +38,7 @@ const ConfirmEnrollment = () => {
   const [shift, setShift] = useState('');
   const [cpfValue, setCpfValue] = useState('');
   const [cpfError, setCpfError] = useState('');
+  const [birthDateValue, setBirthDateValue] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -63,6 +65,7 @@ const ConfirmEnrollment = () => {
         setStudent(result);
         if (result.shift) setShift(result.shift);
         if (result.cpf) setCpfValue(result.cpf);
+        if (result.birth_date) setBirthDateValue(result.birth_date);
       }
     } catch {
       setError('Erro de conexão');
@@ -77,6 +80,7 @@ const ConfirmEnrollment = () => {
       setCpfError('CPF obrigatório no formato 000.000.000-00');
       return;
     }
+    if (!birthDateValue) return;
     setCpfError('');
     setConfirming(true);
     try {
@@ -87,7 +91,7 @@ const ConfirmEnrollment = () => {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue }),
+        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue, birth_date: birthDateValue }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -221,6 +225,18 @@ const ConfirmEnrollment = () => {
             )}
           </div>
           <div>
+            <Label className="text-muted-foreground text-xs">Data de Nascimento *</Label>
+            {student?.birth_date ? (
+              <p className="font-medium">{student.birth_date.split('-').reverse().join('/')}</p>
+            ) : (
+              <Input
+                type="date"
+                value={birthDateValue}
+                onChange={e => setBirthDateValue(e.target.value)}
+              />
+            )}
+          </div>
+          <div>
             <Label className="text-muted-foreground text-xs">Telefone</Label>
             <p className="font-medium">{student?.phone}</p>
           </div>
@@ -238,7 +254,7 @@ const ConfirmEnrollment = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue)}>
+              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue) || !birthDateValue}>
                 {confirming ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Confirmando...</> : 'Confirmar Pré-Matrícula'}
               </Button>
               <div className="relative my-2">

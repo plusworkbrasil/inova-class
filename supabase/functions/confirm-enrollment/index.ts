@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('selected_students')
-        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at, course_name')
+        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at, course_name, birth_date')
         .eq('invite_token', token)
         .single()
 
@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
         phone: data.phone,
         shift: data.shift,
         course_name: data.course_name,
+        birth_date: data.birth_date,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -91,7 +92,7 @@ Deno.serve(async (req) => {
 
     if (req.method === 'POST') {
       const body = await req.json()
-      const { action, confirmed_shift, withdrawal_reason, cpf } = body
+      const { action, confirmed_shift, withdrawal_reason, cpf, birth_date } = body
 
       // Re-validate token
       const { data, error } = await supabase
@@ -167,12 +168,20 @@ Deno.serve(async (req) => {
         })
       }
 
+      if (!birth_date || !/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) {
+        return new Response(JSON.stringify({ error: 'Data de nascimento obrigatória' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const { error: updateError } = await supabase
         .from('selected_students')
         .update({
           status: 'confirmed',
           confirmed_shift,
           cpf,
+          birth_date,
           confirmed_at: new Date().toISOString(),
           token_used_at: new Date().toISOString(),
         })

@@ -1,0 +1,1 @@
+ALTER TABLE public.selected_students ADD COLUMN birth_date date;

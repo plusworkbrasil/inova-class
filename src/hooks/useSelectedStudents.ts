@@ -24,6 +24,7 @@ export interface SelectedStudent {
   whatsapp_message_id: string | null;
   whatsapp_status: string | null;
   course_name: string | null;
+  birth_date: string | null;
   withdrawal_reason: string | null;
   withdrawn_at: string | null;
 }
@@ -35,6 +36,7 @@ export interface CreateSelectedStudentInput {
   cpf?: string;
   shift?: string;
   course_name?: string;
+  birth_date?: string;
 }
 
 export const useSelectedStudents = () => {
@@ -77,6 +79,7 @@ export const useSelectedStudents = () => {
           cpf: input.cpf || null,
           shift: input.shift || null,
           course_name: input.course_name || null,
+          birth_date: input.birth_date || null,
           created_by: user.id,
           status: 'pending',
         } as any)
@@ -124,6 +127,7 @@ export const useSelectedStudents = () => {
         cpf: input.cpf || null,
         shift: input.shift || null,
         course_name: input.course_name || null,
+        birth_date: input.birth_date || null,
         created_by: user.id,
         status: 'pending',
       }));

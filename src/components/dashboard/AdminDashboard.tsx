@@ -7,14 +7,16 @@ import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight, UserX } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 import { useEquipmentStats } from '@/hooks/useEquipmentStats';
 import { useStudentsAtRisk } from '@/hooks/useStudentsAtRisk';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 const ITEMS_PER_PAGE = 5;
 

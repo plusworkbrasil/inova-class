@@ -15,7 +15,7 @@ interface Row extends CreateSelectedStudentInput {
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const emptyRow = (): Row => ({ full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '' });
+const emptyRow = (): Row => ({ full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '', birth_date: '' });
 
 const formatCpf = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 11);

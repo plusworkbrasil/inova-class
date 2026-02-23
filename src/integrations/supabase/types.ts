@@ -890,7 +890,7 @@ export type Database = {
           confirmed_at: string | null
           confirmed_shift: string | null
           course_name: string | null
-          cpf: string
+          cpf: string | null
           created_at: string
           created_by: string
           email: string
@@ -915,7 +915,7 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_shift?: string | null
           course_name?: string | null
-          cpf: string
+          cpf?: string | null
           created_at?: string
           created_by: string
           email: string
@@ -940,7 +940,7 @@ export type Database = {
           confirmed_at?: string | null
           confirmed_shift?: string | null
           course_name?: string | null
-          cpf?: string
+          cpf?: string | null
           created_at?: string
           created_by?: string
           email?: string

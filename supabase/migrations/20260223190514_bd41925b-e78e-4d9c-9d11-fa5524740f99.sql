@@ -1,0 +1,1 @@
+ALTER TABLE public.selected_students ALTER COLUMN cpf DROP NOT NULL;

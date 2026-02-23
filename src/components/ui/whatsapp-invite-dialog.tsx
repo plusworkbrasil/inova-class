@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { useSelectedStudents, SelectedStudent } from '@/hooks/useSelectedStudents';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -23,6 +24,18 @@ interface SendResult {
 
 const PUBLISHED_URL = 'https://inovaclass2000.lovable.app';
 
+const DEFAULT_TEMPLATE = `Olá {nome}! 🎓
+
+Parabéns! Você foi selecionado(a) para o nosso curso!
+
+Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:
+
+{link}
+
+⚠️ Este link é pessoal e intransferível. Válido por 48 horas.
+
+Equipe Inova Class`;
+
 export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) => {
   const { generateTokens } = useSelectedStudents();
   const queryClient = useQueryClient();
@@ -31,6 +44,7 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
   const [sending, setSending] = useState(false);
   const [sendResults, setSendResults] = useState<SendResult[] | null>(null);
   const [mode, setMode] = useState<'choose' | 'manual' | 'auto'>('choose');
+  const [messageTemplate, setMessageTemplate] = useState(DEFAULT_TEMPLATE);
 
   const handleGenerateTokens = async () => {
     setProcessing(true);
@@ -47,12 +61,18 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     }
   };
 
+  const templateValid = messageTemplate.includes('{link}');
+
   const handleAutoSend = async () => {
+    if (!templateValid) {
+      toast({ title: 'O template deve conter {link}', variant: 'destructive' });
+      return;
+    }
     setSending(true);
     setSendResults(null);
     try {
       const { data, error } = await supabase.functions.invoke('send-whatsapp-invites', {
-        body: { student_ids: students.map(s => s.id) },
+        body: { student_ids: students.map(s => s.id), custom_message: messageTemplate },
       });
 
       if (error) throw error;
@@ -78,14 +98,10 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     const phone = student.phone.replace(/\D/g, '');
     const phoneWithCountry = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${PUBLISHED_URL}/confirm-enrollment/${student.invite_token}`;
-    const message = encodeURIComponent(
-      `Olá ${student.full_name}! 🎓\n\n` +
-      `Parabéns! Você foi selecionado(a) para o nosso curso!\n\n` +
-      `Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:\n\n` +
-      `${link}\n\n` +
-      `⚠️ Este link é pessoal e intransferível. Válido por 48 horas.\n\n` +
-      `Equipe Inova Class`
-    );
+    const text = messageTemplate
+      .replace(/\{nome\}/g, student.full_name)
+      .replace(/\{link\}/g, link);
+    const message = encodeURIComponent(text);
     window.open(`https://wa.me/${phoneWithCountry}?text=${message}`, '_blank');
   };
 
@@ -95,6 +111,7 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     setSendResults(null);
     setMode('choose');
     setSending(false);
+    setMessageTemplate(DEFAULT_TEMPLATE);
   };
 
   const sentCount = sendResults?.filter(r => r.status === 'sent').length || 0;
@@ -116,11 +133,27 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
         {/* Mode selection */}
         {mode === 'choose' && !sending && !sendResults && (
           <div className="space-y-3">
-            <Button className="w-full justify-start gap-2" onClick={handleAutoSend}>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Mensagem (editável)</label>
+              <Textarea
+                value={messageTemplate}
+                onChange={(e) => setMessageTemplate(e.target.value.slice(0, 1000))}
+                rows={8}
+                className="text-sm"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Variáveis: <code className="bg-muted px-1 rounded">{'{nome}'}</code> = nome do aluno, <code className="bg-muted px-1 rounded">{'{link}'}</code> = link de confirmação</span>
+                <span>{messageTemplate.length}/1000</span>
+              </div>
+              {!templateValid && (
+                <p className="text-xs text-destructive">O template deve conter {'{link}'} para o convite funcionar.</p>
+              )}
+            </div>
+            <Button className="w-full justify-start gap-2" onClick={handleAutoSend} disabled={!templateValid}>
               <Send className="h-4 w-4" />
               Enviar para Todos Automaticamente
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleGenerateTokens} disabled={processing}>
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleGenerateTokens} disabled={processing || !templateValid}>
               <ExternalLink className="h-4 w-4" />
               {processing ? 'Gerando tokens...' : 'Enviar Manualmente (wa.me)'}
             </Button>

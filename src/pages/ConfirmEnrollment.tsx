@@ -91,7 +91,7 @@ const ConfirmEnrollment = () => {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue }),
+        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue, birth_date: birthDateValue }),
       });
       const result = await res.json();
       if (!res.ok) {

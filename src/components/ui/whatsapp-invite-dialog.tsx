@@ -61,12 +61,18 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     }
   };
 
+  const templateValid = messageTemplate.includes('{link}');
+
   const handleAutoSend = async () => {
+    if (!templateValid) {
+      toast({ title: 'O template deve conter {link}', variant: 'destructive' });
+      return;
+    }
     setSending(true);
     setSendResults(null);
     try {
       const { data, error } = await supabase.functions.invoke('send-whatsapp-invites', {
-        body: { student_ids: students.map(s => s.id) },
+        body: { student_ids: students.map(s => s.id), custom_message: messageTemplate },
       });
 
       if (error) throw error;

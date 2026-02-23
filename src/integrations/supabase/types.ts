@@ -904,6 +904,9 @@ export type Database = {
           token_expires_at: string | null
           token_used_at: string | null
           updated_at: string
+          whatsapp_message_id: string | null
+          whatsapp_sent_at: string | null
+          whatsapp_status: string | null
         }
         Insert: {
           confirmed_at?: string | null
@@ -923,6 +926,9 @@ export type Database = {
           token_expires_at?: string | null
           token_used_at?: string | null
           updated_at?: string
+          whatsapp_message_id?: string | null
+          whatsapp_sent_at?: string | null
+          whatsapp_status?: string | null
         }
         Update: {
           confirmed_at?: string | null
@@ -942,6 +948,9 @@ export type Database = {
           token_expires_at?: string | null
           token_used_at?: string | null
           updated_at?: string
+          whatsapp_message_id?: string | null
+          whatsapp_sent_at?: string | null
+          whatsapp_status?: string | null
         }
         Relationships: []
       }

@@ -20,6 +20,9 @@ export interface SelectedStudent {
   created_by: string;
   created_at: string;
   updated_at: string;
+  whatsapp_sent_at: string | null;
+  whatsapp_message_id: string | null;
+  whatsapp_status: string | null;
 }
 
 export interface CreateSelectedStudentInput {

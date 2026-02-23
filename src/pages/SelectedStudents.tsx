@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Upload, MessageSquare, UserPlus, Trash2, Search } from 'lucide-react';
+import { Plus, Upload, MessageSquare, UserPlus, Trash2, Search, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { SelectedStudentForm } from '@/components/forms/SelectedStudentForm';
 import { BatchSelectedStudentsForm } from '@/components/forms/BatchSelectedStudentsForm';
 import { WhatsAppInviteDialog } from '@/components/ui/whatsapp-invite-dialog';
@@ -80,12 +80,13 @@ const SelectedStudents = () => {
           <TableHead>CPF</TableHead>
           <TableHead>Turno</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="w-20">WhatsApp</TableHead>
           {showActions && <TableHead className="w-10"></TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {list.length === 0 ? (
-          <TableRow><TableCell colSpan={showCheckbox ? 8 : 7} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
+          <TableRow><TableCell colSpan={showCheckbox ? 9 : 8} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
         ) : list.map(s => (
           <TableRow key={s.id}>
             {showCheckbox && (
@@ -97,6 +98,12 @@ const SelectedStudents = () => {
             <TableCell>{s.cpf}</TableCell>
             <TableCell>{shiftLabel[s.confirmed_shift || s.shift || ''] || '-'}</TableCell>
             <TableCell><Badge variant={statusVariant[s.status]}>{statusLabel[s.status]}</Badge></TableCell>
+            <TableCell className="text-center">
+              {s.whatsapp_status === 'sent' && <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />}
+              {s.whatsapp_status === 'failed' && <XCircle className="h-4 w-4 text-destructive mx-auto" />}
+              {s.whatsapp_status === 'sending' && <Clock className="h-4 w-4 text-muted-foreground mx-auto animate-pulse" />}
+              {!s.whatsapp_status && <span className="text-muted-foreground text-xs">—</span>}
+            </TableCell>
             {showActions && (
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

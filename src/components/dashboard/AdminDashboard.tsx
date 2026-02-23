@@ -45,6 +45,21 @@ const AdminDashboard = () => {
   }, [reportsData.topAbsentStudents]);
   const { stats: equipmentStats } = useEquipmentStats();
   const { data: studentsAtRisk, loading: riskLoading } = useStudentsAtRisk();
+
+  // Fetch recent withdrawals
+  const { data: recentWithdrawals = [] } = useQuery({
+    queryKey: ['recent-withdrawals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('selected_students' as any)
+        .select('id, full_name, course_name, withdrawal_reason, withdrawn_at')
+        .eq('status', 'withdrawn')
+        .order('withdrawn_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
   
   // Filtrar alunos com faltas por turma selecionada
   const filteredTopAbsentStudents = useMemo(() => {

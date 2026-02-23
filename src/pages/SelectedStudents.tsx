@@ -14,15 +14,16 @@ import { WhatsAppInviteDialog } from '@/components/ui/whatsapp-invite-dialog';
 import { AssignClassDialog } from '@/components/ui/assign-class-dialog';
 import { useSelectedStudents, SelectedStudent } from '@/hooks/useSelectedStudents';
 import { DeleteConfirmation } from '@/components/ui/delete-confirmation';
+import { format } from 'date-fns';
 
 const shiftLabel: Record<string, string> = { manha: 'Manhã', tarde: 'Tarde', noite: 'Noite' };
-const statusLabel: Record<string, string> = { pending: 'Pendente', invited: 'Convidado', confirmed: 'Confirmado', enrolled: 'Matriculado' };
+const statusLabel: Record<string, string> = { pending: 'Pendente', invited: 'Convidado', confirmed: 'Confirmado', enrolled: 'Matriculado', withdrawn: 'Desistente' };
 const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  pending: 'secondary', invited: 'outline', confirmed: 'default', enrolled: 'default',
+  pending: 'secondary', invited: 'outline', confirmed: 'default', enrolled: 'default', withdrawn: 'destructive',
 };
 
 const SelectedStudents = () => {
-  const { students, isLoading, pending, confirmed, enrolled, deleteStudent } = useSelectedStudents();
+  const { students, isLoading, pending, confirmed, enrolled, withdrawn, deleteStudent } = useSelectedStudents();
   const [showForm, setShowForm] = useState(false);
   const [showBatch, setShowBatch] = useState(false);
   const [showWhatsApp, setShowWhatsApp] = useState(false);
@@ -65,7 +66,7 @@ const SelectedStudents = () => {
     return list;
   }, [confirmed, shiftFilter, search]);
 
-  const renderTable = (list: SelectedStudent[], showCheckbox = false, showActions = false) => (
+  const renderTable = (list: SelectedStudent[], showCheckbox = false, showActions = false, showWithdrawalInfo = false) => (
     <Table>
       <TableHeader>
         <TableRow>
@@ -78,15 +79,18 @@ const SelectedStudents = () => {
           <TableHead>E-mail</TableHead>
           <TableHead>Telefone</TableHead>
           <TableHead>CPF</TableHead>
+          <TableHead>Curso</TableHead>
           <TableHead>Turno</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="w-20">WhatsApp</TableHead>
+          {!showWithdrawalInfo && <TableHead className="w-20">WhatsApp</TableHead>}
+          {showWithdrawalInfo && <TableHead>Motivo</TableHead>}
+          {showWithdrawalInfo && <TableHead>Data</TableHead>}
           {showActions && <TableHead className="w-10"></TableHead>}
         </TableRow>
       </TableHeader>
       <TableBody>
         {list.length === 0 ? (
-          <TableRow><TableCell colSpan={showCheckbox ? 9 : 8} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
+          <TableRow><TableCell colSpan={showCheckbox ? 11 : 10} className="text-center text-muted-foreground py-8">Nenhum registro encontrado</TableCell></TableRow>
         ) : list.map(s => (
           <TableRow key={s.id}>
             {showCheckbox && (
@@ -96,14 +100,23 @@ const SelectedStudents = () => {
             <TableCell>{s.email}</TableCell>
             <TableCell>{s.phone}</TableCell>
             <TableCell>{s.cpf}</TableCell>
+            <TableCell>{s.course_name || <span className="text-muted-foreground text-xs">—</span>}</TableCell>
             <TableCell>{shiftLabel[s.confirmed_shift || s.shift || ''] || '-'}</TableCell>
-            <TableCell><Badge variant={statusVariant[s.status]}>{statusLabel[s.status]}</Badge></TableCell>
-            <TableCell className="text-center">
-              {s.whatsapp_status === 'sent' && <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />}
-              {s.whatsapp_status === 'failed' && <XCircle className="h-4 w-4 text-destructive mx-auto" />}
-              {s.whatsapp_status === 'sending' && <Clock className="h-4 w-4 text-muted-foreground mx-auto animate-pulse" />}
-              {!s.whatsapp_status && <span className="text-muted-foreground text-xs">—</span>}
-            </TableCell>
+            <TableCell><Badge variant={statusVariant[s.status]}>{statusLabel[s.status] || s.status}</Badge></TableCell>
+            {!showWithdrawalInfo && (
+              <TableCell className="text-center">
+                {s.whatsapp_status === 'sent' && <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />}
+                {s.whatsapp_status === 'failed' && <XCircle className="h-4 w-4 text-destructive mx-auto" />}
+                {s.whatsapp_status === 'sending' && <Clock className="h-4 w-4 text-muted-foreground mx-auto animate-pulse" />}
+                {!s.whatsapp_status && <span className="text-muted-foreground text-xs">—</span>}
+              </TableCell>
+            )}
+            {showWithdrawalInfo && (
+              <>
+                <TableCell className="max-w-[200px] truncate text-sm" title={s.withdrawal_reason || ''}>{s.withdrawal_reason || '—'}</TableCell>
+                <TableCell className="text-sm">{s.withdrawn_at ? format(new Date(s.withdrawn_at), 'dd/MM/yyyy') : '—'}</TableCell>
+              </>
+            )}
             {showActions && (
               <TableCell>
                 <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -128,6 +141,7 @@ const SelectedStudents = () => {
             <TabsTrigger value="selected">Selecionados ({pending.length})</TabsTrigger>
             <TabsTrigger value="confirmed">Confirmados ({confirmed.length})</TabsTrigger>
             <TabsTrigger value="enrolled">Matriculados ({enrolled.length})</TabsTrigger>
+            <TabsTrigger value="withdrawn">Desistentes ({withdrawn.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="selected" className="space-y-4">
@@ -172,6 +186,10 @@ const SelectedStudents = () => {
 
           <TabsContent value="enrolled" className="space-y-4">
             {renderTable(enrolled, false, false)}
+          </TabsContent>
+
+          <TabsContent value="withdrawn" className="space-y-4">
+            {renderTable(withdrawn, false, true, true)}
           </TabsContent>
         </Tabs>
       </div>

@@ -26,7 +26,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!uuidRegex.test(token)) {
       return new Response(JSON.stringify({ error: 'Token inválido' }), {
@@ -36,10 +35,9 @@ Deno.serve(async (req) => {
     }
 
     if (req.method === 'GET') {
-      // Fetch student data by token
       const { data, error } = await supabase
         .from('selected_students')
-        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at')
+        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at, course_name')
         .eq('invite_token', token)
         .single()
 
@@ -71,6 +69,13 @@ Deno.serve(async (req) => {
         })
       }
 
+      if (data.status === 'withdrawn') {
+        return new Response(JSON.stringify({ error: 'Você já desistiu desta inscrição' }), {
+          status: 410,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       return new Response(JSON.stringify({
         id: data.id,
         full_name: data.full_name,
@@ -78,6 +83,7 @@ Deno.serve(async (req) => {
         cpf: data.cpf,
         phone: data.phone,
         shift: data.shift,
+        course_name: data.course_name,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -85,14 +91,7 @@ Deno.serve(async (req) => {
 
     if (req.method === 'POST') {
       const body = await req.json()
-      const { confirmed_shift } = body
-
-      if (!confirmed_shift || !['manha', 'tarde', 'noite'].includes(confirmed_shift)) {
-        return new Response(JSON.stringify({ error: 'Turno inválido. Escolha: manhã, tarde ou noite' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
+      const { action, confirmed_shift, withdrawal_reason } = body
 
       // Re-validate token
       const { data, error } = await supabase
@@ -122,7 +121,45 @@ Deno.serve(async (req) => {
         })
       }
 
-      // Update status to confirmed
+      // Handle withdrawal
+      if (action === 'withdraw') {
+        if (!withdrawal_reason || withdrawal_reason.trim().length < 5) {
+          return new Response(JSON.stringify({ error: 'Informe o motivo da desistência (mínimo 5 caracteres)' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        const { error: updateError } = await supabase
+          .from('selected_students')
+          .update({
+            status: 'withdrawn',
+            withdrawal_reason: withdrawal_reason.trim(),
+            withdrawn_at: new Date().toISOString(),
+            token_used_at: new Date().toISOString(),
+          })
+          .eq('id', data.id)
+
+        if (updateError) {
+          return new Response(JSON.stringify({ error: 'Erro ao registrar desistência' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        return new Response(JSON.stringify({ success: true, message: 'Desistência registrada com sucesso.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      // Handle confirmation (default)
+      if (!confirmed_shift || !['manha', 'tarde', 'noite'].includes(confirmed_shift)) {
+        return new Response(JSON.stringify({ error: 'Turno inválido. Escolha: manhã, tarde ou noite' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const { error: updateError } = await supabase
         .from('selected_students')
         .update({

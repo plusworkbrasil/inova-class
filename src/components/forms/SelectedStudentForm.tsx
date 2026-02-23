@@ -106,6 +106,13 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
                 <FormMessage />
               </FormItem>
             )} />
+            <FormField control={form.control} name="course_name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Curso</FormLabel>
+                <FormControl><Input placeholder="Ex: JOVEM TECH" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={createStudent.isPending}>

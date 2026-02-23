@@ -1,58 +1,72 @@
 
 
-# Adicionar Filtros em Todas as Abas da Pagina de Selecionados
+# Tornar CPF Opcional no Cadastro e Obrigatorio na Confirmacao
 
-## Situacao Atual
+## Resumo
 
-Atualmente, apenas a aba "Confirmados" possui filtros (busca por texto e filtro por turno). As demais abas (Selecionados, Matriculados, Desistentes) nao possuem nenhum filtro.
+O CPF passara a ser opcional no cadastro administrativo (individual e em lote), mas sera obrigatorio quando o aluno acessar o link de confirmacao. Se o CPF nao estiver preenchido, o aluno precisara informa-lo antes de confirmar.
 
 ## Alteracoes
 
-### Arquivo: `src/pages/SelectedStudents.tsx`
+### 1. Formulario Individual (`src/components/forms/SelectedStudentForm.tsx`)
+- Remover a validacao regex obrigatoria do campo `cpf` no schema Zod
+- Tornar o campo opcional: `cpf: z.string().trim().regex(cpfRegex).optional().or(z.literal(''))`
+- Manter a mascara de formatacao funcionando normalmente
 
-**1. Unificar filtros para todas as abas**
+### 2. Formulario em Lote (`src/components/forms/BatchSelectedStudentsForm.tsx`)
+- Remover a validacao obrigatoria de CPF na funcao `validate()`
+- Se CPF estiver preenchido, validar o formato; se vazio, aceitar normalmente
 
-Adicionar uma barra de filtros global (acima ou dentro de cada aba) com os seguintes campos:
+### 3. Hook (`src/hooks/useSelectedStudents.ts`)
+- Alterar a interface `CreateSelectedStudentInput` para `cpf?: string` (opcional)
+- Ajustar o insert para enviar `cpf: input.cpf || null`
 
-- **Busca por texto** (Input com icone de lupa): filtra por nome, e-mail, telefone ou CPF
-- **Filtro por Curso** (Select): lista dinamica dos cursos existentes nos dados + opcao "Todos os cursos"
-- **Filtro por Turno** (Select): Manha / Tarde / Noite / Todos os turnos
-- **Filtro por Status WhatsApp** (Select, apenas nas abas Selecionados/Confirmados): Todos / Enviado / Falhou / Pendente
-
-**2. Logica de filtragem**
-
-- Criar um unico `useMemo` por aba (ou reutilizar a funcao de filtro) que aplica os filtros de texto, curso e turno sobre a lista da aba correspondente
-- Os filtros de texto e curso serao compartilhados entre as abas; ao trocar de aba, os filtros permanecem ativos
-- Resetar pagina ao alterar qualquer filtro (preparacao para paginacao futura)
-
-**3. Obtencao dinamica da lista de cursos**
-
-- Extrair a lista unica de cursos a partir de `students` com `useMemo`:
-  ```
-  const courses = useMemo(() =>
-    [...new Set(students.map(s => s.course_name).filter(Boolean))],
-    [students]
-  );
+### 4. Banco de Dados
+- Migrar a coluna `cpf` da tabela `selected_students` para aceitar NULL:
+  ```sql
+  ALTER TABLE public.selected_students ALTER COLUMN cpf DROP NOT NULL;
   ```
 
-**4. Novos estados**
+### 5. Pagina de Confirmacao (`src/pages/ConfirmEnrollment.tsx`)
+- Adicionar estado para `cpfValue` (pre-preenchido com o CPF existente ou vazio)
+- Se o CPF estiver vazio (nao foi informado no cadastro), exibir um campo Input para o aluno digitar com mascara de formatacao
+- Se o CPF ja existir, exibir como texto (somente leitura), como ja funciona hoje
+- Validar que o CPF esta no formato correto (000.000.000-00) antes de permitir a confirmacao
+- Enviar o `cpf` no body do POST de confirmacao
 
-- `courseFilter` (string, default `'all'`)
-- `whatsappFilter` (string, default `'all'`) -- apenas para abas com coluna WhatsApp
+### 6. Edge Function (`supabase/functions/confirm-enrollment/index.ts`)
+- No handler POST de confirmacao, aceitar o campo `cpf` no body
+- Validar o formato do CPF recebido (regex)
+- Ao atualizar o status para `confirmed`, tambem salvar o CPF informado pelo aluno na coluna `cpf`
 
-**5. Barra de filtros em cada aba**
+## Secao Tecnica
 
-Cada aba tera uma barra de filtros consistente acima da tabela contendo:
-- Input de busca (nome/email/telefone/CPF)
-- Select de Curso
-- Select de Turno
-- Select de WhatsApp (apenas nas abas Selecionados e Confirmados)
-- Os botoes de acao existentes (Cadastrar, Enviar WhatsApp, etc.) permanecem na mesma linha
+### Schema Zod atualizado (SelectedStudentForm)
+```typescript
+cpf: z.string().trim()
+  .refine(val => !val || cpfRegex.test(val), { message: 'CPF deve estar no formato 000.000.000-00' })
+  .optional()
+  .or(z.literal(''))
+```
 
-**6. Funcao de filtragem reutilizavel**
+### Logica na pagina de confirmacao
+```typescript
+const [cpfValue, setCpfValue] = useState('');
+// Ao carregar dados:
+if (result.cpf) setCpfValue(result.cpf);
 
-Criar uma funcao `filterStudents(list, { search, courseFilter, shiftFilter, whatsappFilter })` que aplica todos os filtros e e reutilizada em cada aba via `useMemo`.
+// No formulario: se cpf vazio, mostrar Input editavel
+// No submit: incluir cpf no body
+body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue })
+```
 
-## Resultado Esperado
+### Validacao na Edge Function
+```typescript
+const cpf = body.cpf;
+if (!cpf || !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) {
+  return new Response(JSON.stringify({ error: 'CPF obrigatorio no formato 000.000.000-00' }), { status: 400 });
+}
+// Incluir no update:
+.update({ status: 'confirmed', confirmed_shift, cpf, confirmed_at: ..., token_used_at: ... })
+```
 
-Todas as 4 abas (Selecionados, Confirmados, Matriculados, Desistentes) terao filtros por texto, curso e turno. As abas com coluna WhatsApp tambem terao filtro por status do WhatsApp.

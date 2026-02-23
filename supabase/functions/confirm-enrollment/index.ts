@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
         phone: data.phone,
         shift: data.shift,
         course_name: data.course_name,
+        birth_date: data.birth_date,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })

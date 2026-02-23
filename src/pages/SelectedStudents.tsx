@@ -80,6 +80,7 @@ const SelectedStudents = () => {
           <TableHead>CPF</TableHead>
           <TableHead>Turno</TableHead>
           <TableHead>Status</TableHead>
+          <TableHead className="w-20">WhatsApp</TableHead>
           {showActions && <TableHead className="w-10"></TableHead>}
         </TableRow>
       </TableHeader>

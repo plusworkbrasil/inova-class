@@ -65,6 +65,7 @@ const ConfirmEnrollment = () => {
         setStudent(result);
         if (result.shift) setShift(result.shift);
         if (result.cpf) setCpfValue(result.cpf);
+        if (result.birth_date) setBirthDateValue(result.birth_date);
       }
     } catch {
       setError('Erro de conexão');

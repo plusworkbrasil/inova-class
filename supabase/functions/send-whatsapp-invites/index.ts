@@ -119,13 +119,20 @@ Deno.serve(async (req) => {
         const phoneWithCountry = phone.startsWith("55") ? phone : `55${phone}`;
 
         const link = `${PUBLISHED_URL}/confirm-enrollment/${inviteToken}`;
-        const message =
-          `Olá ${student.full_name}! 🎓\n\n` +
-          `Parabéns! Você foi selecionado(a) para o nosso curso!\n\n` +
-          `Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:\n\n` +
-          `${link}\n\n` +
-          `⚠️ Este link é pessoal e intransferível. Válido por 48 horas.\n\n` +
-          `Equipe Inova Class`;
+        let message: string;
+        if (custom_message && typeof custom_message === "string") {
+          message = custom_message
+            .replace(/\{nome\}/g, student.full_name)
+            .replace(/\{link\}/g, link);
+        } else {
+          message =
+            `Olá ${student.full_name}! 🎓\n\n` +
+            `Parabéns! Você foi selecionado(a) para o nosso curso!\n\n` +
+            `Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:\n\n` +
+            `${link}\n\n` +
+            `⚠️ Este link é pessoal e intransferível. Válido por 48 horas.\n\n` +
+            `Equipe Inova Class`;
+        }
 
         // Mark as sending
         await adminClient

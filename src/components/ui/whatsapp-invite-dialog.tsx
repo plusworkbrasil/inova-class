@@ -133,11 +133,27 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
         {/* Mode selection */}
         {mode === 'choose' && !sending && !sendResults && (
           <div className="space-y-3">
-            <Button className="w-full justify-start gap-2" onClick={handleAutoSend}>
+            <div className="space-y-1">
+              <label className="text-sm font-medium">Mensagem (editável)</label>
+              <Textarea
+                value={messageTemplate}
+                onChange={(e) => setMessageTemplate(e.target.value.slice(0, 1000))}
+                rows={8}
+                className="text-sm"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Variáveis: <code className="bg-muted px-1 rounded">{'{nome}'}</code> = nome do aluno, <code className="bg-muted px-1 rounded">{'{link}'}</code> = link de confirmação</span>
+                <span>{messageTemplate.length}/1000</span>
+              </div>
+              {!templateValid && (
+                <p className="text-xs text-destructive">O template deve conter {'{link}'} para o convite funcionar.</p>
+              )}
+            </div>
+            <Button className="w-full justify-start gap-2" onClick={handleAutoSend} disabled={!templateValid}>
               <Send className="h-4 w-4" />
               Enviar para Todos Automaticamente
             </Button>
-            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleGenerateTokens} disabled={processing}>
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={handleGenerateTokens} disabled={processing || !templateValid}>
               <ExternalLink className="h-4 w-4" />
               {processing ? 'Gerando tokens...' : 'Enviar Manualmente (wa.me)'}
             </Button>

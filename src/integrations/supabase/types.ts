@@ -889,6 +889,7 @@ export type Database = {
         Row: {
           confirmed_at: string | null
           confirmed_shift: string | null
+          course_name: string | null
           cpf: string
           created_at: string
           created_by: string
@@ -907,10 +908,13 @@ export type Database = {
           whatsapp_message_id: string | null
           whatsapp_sent_at: string | null
           whatsapp_status: string | null
+          withdrawal_reason: string | null
+          withdrawn_at: string | null
         }
         Insert: {
           confirmed_at?: string | null
           confirmed_shift?: string | null
+          course_name?: string | null
           cpf: string
           created_at?: string
           created_by: string
@@ -929,10 +933,13 @@ export type Database = {
           whatsapp_message_id?: string | null
           whatsapp_sent_at?: string | null
           whatsapp_status?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
         }
         Update: {
           confirmed_at?: string | null
           confirmed_shift?: string | null
+          course_name?: string | null
           cpf?: string
           created_at?: string
           created_by?: string
@@ -951,6 +958,8 @@ export type Database = {
           whatsapp_message_id?: string | null
           whatsapp_sent_at?: string | null
           whatsapp_status?: string | null
+          withdrawal_reason?: string | null
+          withdrawn_at?: string | null
         }
         Relationships: []
       }

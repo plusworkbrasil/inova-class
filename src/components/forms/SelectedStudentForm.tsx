@@ -18,6 +18,7 @@ const schema = z.object({
   phone: z.string().trim().regex(phoneRegex, 'Telefone deve ter 10-15 dígitos (apenas números)'),
   cpf: z.string().trim().regex(cpfRegex, 'CPF deve estar no formato 000.000.000-00'),
   shift: z.string().optional(),
+  course_name: z.string().trim().max(100).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;

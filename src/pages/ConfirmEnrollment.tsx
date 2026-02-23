@@ -38,6 +38,7 @@ const ConfirmEnrollment = () => {
   const [shift, setShift] = useState('');
   const [cpfValue, setCpfValue] = useState('');
   const [cpfError, setCpfError] = useState('');
+  const [birthDateValue, setBirthDateValue] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);

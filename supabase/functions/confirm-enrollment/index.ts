@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
     if (req.method === 'POST') {
       const body = await req.json()
-      const { action, confirmed_shift, withdrawal_reason } = body
+      const { action, confirmed_shift, withdrawal_reason, cpf } = body
 
       // Re-validate token
       const { data, error } = await supabase

@@ -76,7 +76,7 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
             {readyStudents.map(s => (
               <div key={s.id} className="flex justify-between items-center p-2 rounded bg-muted">
                 <span className="text-sm font-medium">{s.full_name}</span>
-                <Button size="sm" variant="outline" onClick={() => openWhatsApp(s)} className="text-green-600">
+                <Button size="sm" variant="outline" onClick={() => openWhatsApp(s)}>
                   <ExternalLink className="h-4 w-4 mr-1" /> WhatsApp
                 </Button>
               </div>

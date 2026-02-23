@@ -97,7 +97,7 @@ const ConfirmEnrollment = () => {
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="max-w-md w-full text-center">
           <CardHeader>
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
             <CardTitle className="text-2xl">Inscrição Confirmada!</CardTitle>
             <CardDescription>
               Sua pré-matrícula foi confirmada com sucesso. Você receberá mais informações em breve.

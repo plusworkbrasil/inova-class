@@ -131,7 +131,6 @@ const SelectedStudents = () => {
                 variant="outline"
                 disabled={selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length === 0}
                 onClick={() => setShowWhatsApp(true)}
-                className="text-green-600"
               >
                 <MessageSquare className="h-4 w-4 mr-1" /> Enviar WhatsApp ({selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length})
               </Button>

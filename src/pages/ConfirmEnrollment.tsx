@@ -205,8 +205,20 @@ const ConfirmEnrollment = () => {
             <p className="font-medium">{student?.email}</p>
           </div>
           <div>
-            <Label className="text-muted-foreground text-xs">CPF</Label>
-            <p className="font-medium">{student?.cpf}</p>
+            <Label className="text-muted-foreground text-xs">CPF *</Label>
+            {student?.cpf ? (
+              <p className="font-medium">{student.cpf}</p>
+            ) : (
+              <>
+                <Input
+                  placeholder="000.000.000-00"
+                  value={cpfValue}
+                  onChange={e => { setCpfValue(formatCpf(e.target.value)); setCpfError(''); }}
+                  maxLength={14}
+                />
+                {cpfError && <p className="text-sm text-destructive mt-1">{cpfError}</p>}
+              </>
+            )}
           </div>
           <div>
             <Label className="text-muted-foreground text-xs">Telefone</Label>
@@ -226,7 +238,7 @@ const ConfirmEnrollment = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming}>
+              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue)}>
                 {confirming ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Confirmando...</> : 'Confirmar Pré-Matrícula'}
               </Button>
               <div className="relative my-2">

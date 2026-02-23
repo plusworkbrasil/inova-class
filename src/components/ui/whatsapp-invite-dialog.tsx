@@ -98,14 +98,10 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     const phone = student.phone.replace(/\D/g, '');
     const phoneWithCountry = phone.startsWith('55') ? phone : `55${phone}`;
     const link = `${PUBLISHED_URL}/confirm-enrollment/${student.invite_token}`;
-    const message = encodeURIComponent(
-      `Olá ${student.full_name}! 🎓\n\n` +
-      `Parabéns! Você foi selecionado(a) para o nosso curso!\n\n` +
-      `Para confirmar sua pré-matrícula, acesse o link abaixo e preencha seus dados:\n\n` +
-      `${link}\n\n` +
-      `⚠️ Este link é pessoal e intransferível. Válido por 48 horas.\n\n` +
-      `Equipe Inova Class`
-    );
+    const text = messageTemplate
+      .replace(/\{nome\}/g, student.full_name)
+      .replace(/\{link\}/g, link);
+    const message = encodeURIComponent(text);
     window.open(`https://wa.me/${phoneWithCountry}?text=${message}`, '_blank');
   };
 

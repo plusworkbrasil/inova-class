@@ -111,6 +111,7 @@ export const WhatsAppInviteDialog = ({ open, onOpenChange, students }: Props) =>
     setSendResults(null);
     setMode('choose');
     setSending(false);
+    setMessageTemplate(DEFAULT_TEMPLATE);
   };
 
   const sentCount = sendResults?.filter(r => r.status === 'sent').length || 0;

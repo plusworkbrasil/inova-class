@@ -83,6 +83,7 @@ export const BatchSelectedStudentsForm = ({ open, onOpenChange }: Props) => {
                 <TableHead>Telefone</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>Turno</TableHead>
+                <TableHead>Curso</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>

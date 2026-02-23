@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     if (req.method === 'GET') {
       const { data, error } = await supabase
         .from('selected_students')
-        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at, course_name')
+        .select('id, full_name, email, cpf, phone, shift, status, token_expires_at, token_used_at, course_name, birth_date')
         .eq('invite_token', token)
         .single()
 

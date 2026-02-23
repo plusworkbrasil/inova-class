@@ -23,6 +23,9 @@ export interface SelectedStudent {
   whatsapp_sent_at: string | null;
   whatsapp_message_id: string | null;
   whatsapp_status: string | null;
+  course_name: string | null;
+  withdrawal_reason: string | null;
+  withdrawn_at: string | null;
 }
 
 export interface CreateSelectedStudentInput {
@@ -31,6 +34,7 @@ export interface CreateSelectedStudentInput {
   phone: string;
   cpf: string;
   shift?: string;
+  course_name?: string;
 }
 
 export const useSelectedStudents = () => {
@@ -72,6 +76,7 @@ export const useSelectedStudents = () => {
           phone: input.phone,
           cpf: input.cpf,
           shift: input.shift || null,
+          course_name: input.course_name || null,
           created_by: user.id,
           status: 'pending',
         } as any)
@@ -118,6 +123,7 @@ export const useSelectedStudents = () => {
         phone: input.phone,
         cpf: input.cpf,
         shift: input.shift || null,
+        course_name: input.course_name || null,
         created_by: user.id,
         status: 'pending',
       }));
@@ -218,5 +224,6 @@ export const useSelectedStudents = () => {
     pending: students.filter(s => s.status === 'pending' || s.status === 'invited'),
     confirmed: students.filter(s => s.status === 'confirmed'),
     enrolled: students.filter(s => s.status === 'enrolled'),
+    withdrawn: students.filter(s => s.status === 'withdrawn'),
   };
 };

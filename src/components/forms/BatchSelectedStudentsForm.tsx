@@ -15,7 +15,7 @@ interface Row extends CreateSelectedStudentInput {
 const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const emptyRow = (): Row => ({ full_name: '', email: '', phone: '', cpf: '', shift: '' });
+const emptyRow = (): Row => ({ full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '' });
 
 const formatCpf = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -83,6 +83,7 @@ export const BatchSelectedStudentsForm = ({ open, onOpenChange }: Props) => {
                 <TableHead>Telefone</TableHead>
                 <TableHead>CPF</TableHead>
                 <TableHead>Turno</TableHead>
+                <TableHead>Curso</TableHead>
                 <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
@@ -110,6 +111,9 @@ export const BatchSelectedStudentsForm = ({ open, onOpenChange }: Props) => {
                         <SelectItem value="noite">Noite</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell>
+                    <Input value={row.course_name || ''} onChange={e => updateRow(i, 'course_name', e.target.value)} placeholder="Ex: JOVEM TECH" className="min-w-[130px]" />
                   </TableCell>
                   <TableCell>
                     {rows.length > 1 && (

@@ -18,6 +18,7 @@ const schema = z.object({
   phone: z.string().trim().regex(phoneRegex, 'Telefone deve ter 10-15 dígitos (apenas números)'),
   cpf: z.string().trim().regex(cpfRegex, 'CPF deve estar no formato 000.000.000-00'),
   shift: z.string().optional(),
+  course_name: z.string().trim().max(100).optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -31,7 +32,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
   const { createStudent } = useSelectedStudents();
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '' },
+    defaultValues: { full_name: '', email: '', phone: '', cpf: '', shift: '', course_name: '' },
   });
 
   const onSubmit = async (values: FormValues) => {
@@ -41,6 +42,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
       phone: values.phone,
       cpf: values.cpf,
       shift: values.shift,
+      course_name: values.course_name,
     });
     form.reset();
     onOpenChange(false);
@@ -101,6 +103,13 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
                     <SelectItem value="noite">Noite</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="course_name" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Curso</FormLabel>
+                <FormControl><Input placeholder="Ex: JOVEM TECH" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />

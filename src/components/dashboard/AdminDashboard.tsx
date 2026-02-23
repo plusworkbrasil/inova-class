@@ -7,14 +7,16 @@ import StatsCard from './StatsCard';
 import { BirthdayCard } from './BirthdayCard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useReportsData } from '@/hooks/useReportsData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight, UserX } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
 import { useEquipmentStats } from '@/hooks/useEquipmentStats';
 import { useStudentsAtRisk } from '@/hooks/useStudentsAtRisk';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 const ITEMS_PER_PAGE = 5;
 
@@ -43,6 +45,21 @@ const AdminDashboard = () => {
   }, [reportsData.topAbsentStudents]);
   const { stats: equipmentStats } = useEquipmentStats();
   const { data: studentsAtRisk, loading: riskLoading } = useStudentsAtRisk();
+
+  // Fetch recent withdrawals
+  const { data: recentWithdrawals = [] } = useQuery({
+    queryKey: ['recent-withdrawals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('selected_students' as any)
+        .select('id, full_name, course_name, withdrawal_reason, withdrawn_at')
+        .eq('status', 'withdrawn')
+        .order('withdrawn_at', { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return (data || []) as any[];
+    },
+  });
   
   // Filtrar alunos com faltas por turma selecionada
   const filteredTopAbsentStudents = useMemo(() => {
@@ -515,6 +532,50 @@ const AdminDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Desistências Recentes */}
+      {recentWithdrawals.length > 0 && (
+        <Card className="border-destructive/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserX className="h-5 w-5 text-destructive" />
+                <span>Desistências Recentes</span>
+                <Badge variant="destructive">{recentWithdrawals.length}</Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/selected-students')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Ver Todos
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentWithdrawals.map((w: any) => (
+                <div key={w.id} className="p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium">{w.full_name}</p>
+                      {w.course_name && <Badge variant="outline" className="text-xs mt-1">{w.course_name}</Badge>}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {w.withdrawn_at ? format(new Date(w.withdrawn_at), 'dd/MM/yyyy') : '—'}
+                    </span>
+                  </div>
+                  {w.withdrawal_reason && (
+                    <p className="text-sm text-muted-foreground mt-2 italic">"{w.withdrawal_reason}"</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <ChangeOwnPasswordDialog
         open={isChangePasswordOpen}

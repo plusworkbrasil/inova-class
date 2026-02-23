@@ -123,6 +123,7 @@ export const useSelectedStudents = () => {
         phone: input.phone,
         cpf: input.cpf,
         shift: input.shift || null,
+        course_name: input.course_name || null,
         created_by: user.id,
         status: 'pending',
       }));

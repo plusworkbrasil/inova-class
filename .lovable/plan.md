@@ -1,72 +1,73 @@
 
 
-# Tornar CPF Opcional no Cadastro e Obrigatorio na Confirmacao
+# Adicionar Campo "Data de Nascimento" ao Fluxo de Selecionados
 
 ## Resumo
 
-O CPF passara a ser opcional no cadastro administrativo (individual e em lote), mas sera obrigatorio quando o aluno acessar o link de confirmacao. Se o CPF nao estiver preenchido, o aluno precisara informa-lo antes de confirmar.
+Seguindo o mesmo padrao do CPF: o campo "Data de Nascimento" sera opcional no cadastro administrativo, mas obrigatorio quando o aluno confirmar sua inscricao pelo link.
 
 ## Alteracoes
 
-### 1. Formulario Individual (`src/components/forms/SelectedStudentForm.tsx`)
-- Remover a validacao regex obrigatoria do campo `cpf` no schema Zod
-- Tornar o campo opcional: `cpf: z.string().trim().regex(cpfRegex).optional().or(z.literal(''))`
-- Manter a mascara de formatacao funcionando normalmente
-
-### 2. Formulario em Lote (`src/components/forms/BatchSelectedStudentsForm.tsx`)
-- Remover a validacao obrigatoria de CPF na funcao `validate()`
-- Se CPF estiver preenchido, validar o formato; se vazio, aceitar normalmente
-
-### 3. Hook (`src/hooks/useSelectedStudents.ts`)
-- Alterar a interface `CreateSelectedStudentInput` para `cpf?: string` (opcional)
-- Ajustar o insert para enviar `cpf: input.cpf || null`
-
-### 4. Banco de Dados
-- Migrar a coluna `cpf` da tabela `selected_students` para aceitar NULL:
+### 1. Banco de Dados
+- Adicionar coluna `birth_date` (tipo `date`, nullable) na tabela `selected_students`:
   ```sql
-  ALTER TABLE public.selected_students ALTER COLUMN cpf DROP NOT NULL;
+  ALTER TABLE public.selected_students ADD COLUMN birth_date date;
   ```
 
+### 2. Hook (`src/hooks/useSelectedStudents.ts`)
+- Adicionar `birth_date: string | null` na interface `SelectedStudent`
+- Adicionar `birth_date?: string` na interface `CreateSelectedStudentInput`
+- Incluir `birth_date: input.birth_date || null` nos inserts (individual e lote)
+
+### 3. Formulario Individual (`src/components/forms/SelectedStudentForm.tsx`)
+- Adicionar campo `birth_date` ao schema Zod como opcional: `birth_date: z.string().optional().or(z.literal(''))`
+- Adicionar Input do tipo `date` no formulario (campo HTML nativo, como ja usado em outros formularios do projeto)
+
+### 4. Formulario em Lote (`src/components/forms/BatchSelectedStudentsForm.tsx`)
+- Adicionar coluna "Nasc." na tabela com Input tipo `date`
+- Incluir `birth_date` na interface Row e na funcao `emptyRow()`
+- Sem validacao obrigatoria; se preenchido, sera salvo
+
 ### 5. Pagina de Confirmacao (`src/pages/ConfirmEnrollment.tsx`)
-- Adicionar estado para `cpfValue` (pre-preenchido com o CPF existente ou vazio)
-- Se o CPF estiver vazio (nao foi informado no cadastro), exibir um campo Input para o aluno digitar com mascara de formatacao
-- Se o CPF ja existir, exibir como texto (somente leitura), como ja funciona hoje
-- Validar que o CPF esta no formato correto (000.000.000-00) antes de permitir a confirmacao
-- Enviar o `cpf` no body do POST de confirmacao
+- Adicionar `birth_date` na interface `StudentData`
+- Adicionar estado `birthDateValue` (pre-preenchido se existir)
+- Se vazio: exibir Input tipo `date` editavel para o aluno preencher
+- Se ja preenchido: exibir como texto somente leitura (formatado DD/MM/AAAA)
+- Validar que a data de nascimento foi informada antes de permitir confirmacao
+- Enviar `birth_date` no body do POST
 
 ### 6. Edge Function (`supabase/functions/confirm-enrollment/index.ts`)
-- No handler POST de confirmacao, aceitar o campo `cpf` no body
-- Validar o formato do CPF recebido (regex)
-- Ao atualizar o status para `confirmed`, tambem salvar o CPF informado pelo aluno na coluna `cpf`
+- No GET: incluir `birth_date` no select e na resposta
+- No POST de confirmacao: aceitar `birth_date` no body, validar formato (YYYY-MM-DD), salvar no update
+- No POST de desistencia: nao precisa de alteracao
 
 ## Secao Tecnica
 
-### Schema Zod atualizado (SelectedStudentForm)
-```typescript
-cpf: z.string().trim()
-  .refine(val => !val || cpfRegex.test(val), { message: 'CPF deve estar no formato 000.000.000-00' })
-  .optional()
-  .or(z.literal(''))
+### Migracao SQL
+```sql
+ALTER TABLE public.selected_students ADD COLUMN birth_date date;
 ```
 
 ### Logica na pagina de confirmacao
 ```typescript
-const [cpfValue, setCpfValue] = useState('');
-// Ao carregar dados:
-if (result.cpf) setCpfValue(result.cpf);
+const [birthDateValue, setBirthDateValue] = useState('');
+// Ao carregar: if (result.birth_date) setBirthDateValue(result.birth_date);
 
-// No formulario: se cpf vazio, mostrar Input editavel
-// No submit: incluir cpf no body
-body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue })
+// No formulario: se vazio, Input type="date" editavel
+// No submit: body inclui birth_date: birthDateValue
 ```
 
-### Validacao na Edge Function
+### Validacao na Edge Function (POST confirmacao)
 ```typescript
-const cpf = body.cpf;
-if (!cpf || !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) {
-  return new Response(JSON.stringify({ error: 'CPF obrigatorio no formato 000.000.000-00' }), { status: 400 });
+const birth_date = body.birth_date;
+if (!birth_date || !/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) {
+  return error 400 'Data de nascimento obrigatoria';
 }
-// Incluir no update:
-.update({ status: 'confirmed', confirmed_shift, cpf, confirmed_at: ..., token_used_at: ... })
+// Incluir no update: birth_date
+```
+
+### Botao de confirmar - desabilitado se CPF ou data de nascimento invalidos
+```typescript
+disabled={!shift || confirming || !cpfRegex.test(cpfValue) || !birthDateValue}
 ```
 

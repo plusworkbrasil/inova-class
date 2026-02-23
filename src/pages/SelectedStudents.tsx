@@ -22,6 +22,35 @@ const statusVariant: Record<string, 'default' | 'secondary' | 'outline' | 'destr
   pending: 'secondary', invited: 'outline', confirmed: 'default', enrolled: 'default', withdrawn: 'destructive',
 };
 
+function filterStudents(
+  list: SelectedStudent[],
+  { search, courseFilter, shiftFilter, whatsappFilter }: { search: string; courseFilter: string; shiftFilter: string; whatsappFilter?: string }
+) {
+  let result = list;
+  if (search) {
+    const q = search.toLowerCase();
+    result = result.filter(s =>
+      s.full_name.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q) ||
+      s.phone.includes(q) ||
+      (s.cpf && s.cpf.includes(q))
+    );
+  }
+  if (courseFilter !== 'all') {
+    result = result.filter(s => s.course_name === courseFilter);
+  }
+  if (shiftFilter !== 'all') {
+    result = result.filter(s => (s.confirmed_shift || s.shift || '') === shiftFilter);
+  }
+  if (whatsappFilter && whatsappFilter !== 'all') {
+    result = result.filter(s => {
+      if (whatsappFilter === 'pending') return !s.whatsapp_status;
+      return s.whatsapp_status === (whatsappFilter === 'sent' ? 'sent' : whatsappFilter === 'failed' ? 'failed' : s.whatsapp_status);
+    });
+  }
+  return result;
+}
+
 const SelectedStudents = () => {
   const { students, isLoading, pending, confirmed, enrolled, withdrawn, deleteStudent } = useSelectedStudents();
   const [showForm, setShowForm] = useState(false);
@@ -31,7 +60,14 @@ const SelectedStudents = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [shiftFilter, setShiftFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
+  const [whatsappFilter, setWhatsappFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const courses = useMemo(() =>
+    [...new Set(students.map(s => s.course_name).filter(Boolean))] as string[],
+    [students]
+  );
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -52,19 +88,50 @@ const SelectedStudents = () => {
 
   const selectedStudents = students.filter(s => selectedIds.has(s.id));
 
-  const filteredConfirmed = useMemo(() => {
-    let list = confirmed;
-    if (shiftFilter !== 'all') list = list.filter(s => s.confirmed_shift === shiftFilter);
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(s =>
-        s.full_name.toLowerCase().includes(q) ||
-        s.email.toLowerCase().includes(q) ||
-        s.phone.includes(q)
-      );
-    }
-    return list;
-  }, [confirmed, shiftFilter, search]);
+  const filters = { search, courseFilter, shiftFilter };
+  const filteredPending = useMemo(() => filterStudents(pending, { ...filters, whatsappFilter }), [pending, search, courseFilter, shiftFilter, whatsappFilter]);
+  const filteredConfirmed = useMemo(() => filterStudents(confirmed, { ...filters, whatsappFilter }), [confirmed, search, courseFilter, shiftFilter, whatsappFilter]);
+  const filteredEnrolled = useMemo(() => filterStudents(enrolled, filters), [enrolled, search, courseFilter, shiftFilter]);
+  const filteredWithdrawn = useMemo(() => filterStudents(withdrawn, filters), [withdrawn, search, courseFilter, shiftFilter]);
+
+  const renderFilters = (showWhatsapp: boolean, extraButtons?: React.ReactNode) => (
+    <div className="flex flex-wrap gap-2 items-center">
+      <div className="relative flex-1 min-w-[200px] max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar nome, email, telefone, CPF..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+      </div>
+      {courses.length > 0 && (
+        <Select value={courseFilter} onValueChange={setCourseFilter}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os cursos</SelectItem>
+            {courses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      <Select value={shiftFilter} onValueChange={setShiftFilter}>
+        <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos os turnos</SelectItem>
+          <SelectItem value="manha">Manhã</SelectItem>
+          <SelectItem value="tarde">Tarde</SelectItem>
+          <SelectItem value="noite">Noite</SelectItem>
+        </SelectContent>
+      </Select>
+      {showWhatsapp && (
+        <Select value={whatsappFilter} onValueChange={setWhatsappFilter}>
+          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">WhatsApp: Todos</SelectItem>
+            <SelectItem value="sent">Enviado</SelectItem>
+            <SelectItem value="failed">Falhou</SelectItem>
+            <SelectItem value="pending">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      {extraButtons}
+    </div>
+  );
 
   const renderTable = (list: SelectedStudent[], showCheckbox = false, showActions = false, showWithdrawalInfo = false) => (
     <Table>
@@ -145,51 +212,42 @@ const SelectedStudents = () => {
           </TabsList>
 
           <TabsContent value="selected" className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar</Button>
-              <Button variant="outline" onClick={() => setShowBatch(true)}><Upload className="h-4 w-4 mr-1" /> Cadastro em Lote</Button>
-              <Button
-                variant="outline"
-                disabled={selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length === 0}
-                onClick={() => setShowWhatsApp(true)}
-              >
-                <MessageSquare className="h-4 w-4 mr-1" /> Enviar WhatsApp ({selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length})
-              </Button>
-            </div>
-            {renderTable(pending, true, true)}
+            {renderFilters(true, (
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-1" /> Cadastrar</Button>
+                <Button variant="outline" onClick={() => setShowBatch(true)}><Upload className="h-4 w-4 mr-1" /> Lote</Button>
+                <Button
+                  variant="outline"
+                  disabled={selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length === 0}
+                  onClick={() => setShowWhatsApp(true)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-1" /> WhatsApp ({selectedStudents.filter(s => s.status === 'pending' || s.status === 'invited').length})
+                </Button>
+              </div>
+            ))}
+            {renderTable(filteredPending, true, true)}
           </TabsContent>
 
           <TabsContent value="confirmed" className="space-y-4">
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome, email ou telefone..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
-              </div>
-              <Select value={shiftFilter} onValueChange={setShiftFilter}>
-                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os turnos</SelectItem>
-                  <SelectItem value="manha">Manhã</SelectItem>
-                  <SelectItem value="tarde">Tarde</SelectItem>
-                  <SelectItem value="noite">Noite</SelectItem>
-                </SelectContent>
-              </Select>
+            {renderFilters(true, (
               <Button
                 disabled={selectedStudents.filter(s => s.status === 'confirmed').length === 0}
                 onClick={() => setShowAssign(true)}
               >
                 <UserPlus className="h-4 w-4 mr-1" /> Atribuir a Turma ({selectedStudents.filter(s => s.status === 'confirmed').length})
               </Button>
-            </div>
+            ))}
             {renderTable(filteredConfirmed, true, false)}
           </TabsContent>
 
           <TabsContent value="enrolled" className="space-y-4">
-            {renderTable(enrolled, false, false)}
+            {renderFilters(false)}
+            {renderTable(filteredEnrolled, false, false)}
           </TabsContent>
 
           <TabsContent value="withdrawn" className="space-y-4">
-            {renderTable(withdrawn, false, true, true)}
+            {renderFilters(false)}
+            {renderTable(filteredWithdrawn, false, true, true)}
           </TabsContent>
         </Tabs>
       </div>

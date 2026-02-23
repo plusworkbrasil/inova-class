@@ -224,5 +224,6 @@ export const useSelectedStudents = () => {
     pending: students.filter(s => s.status === 'pending' || s.status === 'invited'),
     confirmed: students.filter(s => s.status === 'confirmed'),
     enrolled: students.filter(s => s.status === 'enrolled'),
+    withdrawn: students.filter(s => s.status === 'withdrawn'),
   };
 };

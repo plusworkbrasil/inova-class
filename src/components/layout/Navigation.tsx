@@ -51,6 +51,7 @@ const adminMenuGroups: MenuEntry[] = [
     items: [
       { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
       { icon: Mail, label: 'Comunicação', path: '/communications' },
+      { icon: UserCheck, label: 'Selecionados', path: '/selected-students' },
     ],
   },
   { type: 'item', icon: Settings, label: 'Configurações', path: '/settings' },

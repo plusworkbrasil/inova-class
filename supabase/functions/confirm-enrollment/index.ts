@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
 
     if (req.method === 'POST') {
       const body = await req.json()
-      const { action, confirmed_shift, withdrawal_reason } = body
+      const { action, confirmed_shift, withdrawal_reason, cpf } = body
 
       // Re-validate token
       const { data, error } = await supabase
@@ -160,11 +160,19 @@ Deno.serve(async (req) => {
         })
       }
 
+      if (!cpf || !/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) {
+        return new Response(JSON.stringify({ error: 'CPF obrigatório no formato 000.000.000-00' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const { error: updateError } = await supabase
         .from('selected_students')
         .update({
           status: 'confirmed',
           confirmed_shift,
+          cpf,
           confirmed_at: new Date().toISOString(),
           token_used_at: new Date().toISOString(),
         })

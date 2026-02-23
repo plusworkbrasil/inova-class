@@ -32,7 +32,7 @@ export interface CreateSelectedStudentInput {
   full_name: string;
   email: string;
   phone: string;
-  cpf: string;
+  cpf?: string;
   shift?: string;
   course_name?: string;
 }
@@ -74,7 +74,7 @@ export const useSelectedStudents = () => {
           full_name: input.full_name,
           email: input.email,
           phone: input.phone,
-          cpf: input.cpf,
+          cpf: input.cpf || null,
           shift: input.shift || null,
           course_name: input.course_name || null,
           created_by: user.id,
@@ -121,7 +121,7 @@ export const useSelectedStudents = () => {
         full_name: input.full_name,
         email: input.email,
         phone: input.phone,
-        cpf: input.cpf,
+        cpf: input.cpf || null,
         shift: input.shift || null,
         course_name: input.course_name || null,
         created_by: user.id,

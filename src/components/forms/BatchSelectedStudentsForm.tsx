@@ -48,7 +48,7 @@ export const BatchSelectedStudentsForm = ({ open, onOpenChange }: Props) => {
       if (!row.full_name || row.full_name.length < 2) { valid = false; return { ...row, error: 'Nome inválido' }; }
       if (!emailRegex.test(row.email)) { valid = false; return { ...row, error: 'E-mail inválido' }; }
       if (!/^\d{10,15}$/.test(row.phone)) { valid = false; return { ...row, error: 'Telefone inválido' }; }
-      if (!cpfRegex.test(row.cpf)) { valid = false; return { ...row, error: 'CPF inválido' }; }
+      if (row.cpf && !cpfRegex.test(row.cpf)) { valid = false; return { ...row, error: 'CPF inválido' }; }
       return { ...row, error: undefined };
     });
     setRows(updated);

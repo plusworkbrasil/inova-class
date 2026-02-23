@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, Loader2, GraduationCap, XCircle } from 'lucide-react';
@@ -12,11 +13,21 @@ interface StudentData {
   id: string;
   full_name: string;
   email: string;
-  cpf: string;
+  cpf: string | null;
   phone: string;
   shift: string | null;
   course_name: string | null;
 }
+
+const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
 
 const ConfirmEnrollment = () => {
   const { token } = useParams<{ token: string }>();
@@ -24,6 +35,8 @@ const ConfirmEnrollment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [shift, setShift] = useState('');
+  const [cpfValue, setCpfValue] = useState('');
+  const [cpfError, setCpfError] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -49,6 +62,7 @@ const ConfirmEnrollment = () => {
       } else {
         setStudent(result);
         if (result.shift) setShift(result.shift);
+        if (result.cpf) setCpfValue(result.cpf);
       }
     } catch {
       setError('Erro de conexão');
@@ -59,6 +73,11 @@ const ConfirmEnrollment = () => {
 
   const handleConfirm = async () => {
     if (!shift) return;
+    if (!cpfRegex.test(cpfValue)) {
+      setCpfError('CPF obrigatório no formato 000.000.000-00');
+      return;
+    }
+    setCpfError('');
     setConfirming(true);
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-enrollment?token=${token}`;
@@ -68,7 +87,7 @@ const ConfirmEnrollment = () => {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ confirmed_shift: shift }),
+        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue }),
       });
       const result = await res.json();
       if (!res.ok) {
@@ -186,8 +205,20 @@ const ConfirmEnrollment = () => {
             <p className="font-medium">{student?.email}</p>
           </div>
           <div>
-            <Label className="text-muted-foreground text-xs">CPF</Label>
-            <p className="font-medium">{student?.cpf}</p>
+            <Label className="text-muted-foreground text-xs">CPF *</Label>
+            {student?.cpf ? (
+              <p className="font-medium">{student.cpf}</p>
+            ) : (
+              <>
+                <Input
+                  placeholder="000.000.000-00"
+                  value={cpfValue}
+                  onChange={e => { setCpfValue(formatCpf(e.target.value)); setCpfError(''); }}
+                  maxLength={14}
+                />
+                {cpfError && <p className="text-sm text-destructive mt-1">{cpfError}</p>}
+              </>
+            )}
           </div>
           <div>
             <Label className="text-muted-foreground text-xs">Telefone</Label>
@@ -207,7 +238,7 @@ const ConfirmEnrollment = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming}>
+              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue)}>
                 {confirming ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Confirmando...</> : 'Confirmar Pré-Matrícula'}
               </Button>
               <div className="relative my-2">

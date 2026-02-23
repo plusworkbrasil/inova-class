@@ -127,6 +127,7 @@ export const useSelectedStudents = () => {
         cpf: input.cpf || null,
         shift: input.shift || null,
         course_name: input.course_name || null,
+        birth_date: input.birth_date || null,
         created_by: user.id,
         status: 'pending',
       }));

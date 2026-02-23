@@ -254,7 +254,7 @@ const ConfirmEnrollment = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue)}>
+              <Button className="w-full" onClick={handleConfirm} disabled={!shift || confirming || !cpfRegex.test(cpfValue) || !birthDateValue}>
                 {confirming ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Confirmando...</> : 'Confirmar Pré-Matrícula'}
               </Button>
               <div className="relative my-2">

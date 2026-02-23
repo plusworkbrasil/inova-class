@@ -117,6 +117,9 @@ export const BatchSelectedStudentsForm = ({ open, onOpenChange }: Props) => {
                     <Input value={row.course_name || ''} onChange={e => updateRow(i, 'course_name', e.target.value)} placeholder="Ex: JOVEM TECH" className="min-w-[130px]" />
                   </TableCell>
                   <TableCell>
+                    <Input type="date" value={row.birth_date || ''} onChange={e => updateRow(i, 'birth_date', e.target.value)} className="min-w-[130px]" />
+                  </TableCell>
+                  <TableCell>
                     {rows.length > 1 && (
                       <Button variant="ghost" size="icon" onClick={() => removeRow(i)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     )}

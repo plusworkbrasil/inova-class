@@ -168,12 +168,20 @@ Deno.serve(async (req) => {
         })
       }
 
+      if (!birth_date || !/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) {
+        return new Response(JSON.stringify({ error: 'Data de nascimento obrigatória' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const { error: updateError } = await supabase
         .from('selected_students')
         .update({
           status: 'confirmed',
           confirmed_shift,
           cpf,
+          birth_date,
           confirmed_at: new Date().toISOString(),
           token_used_at: new Date().toISOString(),
         })

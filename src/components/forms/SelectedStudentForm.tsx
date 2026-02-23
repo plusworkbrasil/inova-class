@@ -118,6 +118,13 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
                 <FormMessage />
               </FormItem>
             )} />
+            <FormField control={form.control} name="birth_date" render={({ field }) => (
+              <FormItem>
+                <FormLabel>Data de Nascimento</FormLabel>
+                <FormControl><Input type="date" {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit" disabled={createStudent.isPending}>

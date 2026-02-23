@@ -24,6 +24,7 @@ export interface SelectedStudent {
   whatsapp_message_id: string | null;
   whatsapp_status: string | null;
   course_name: string | null;
+  birth_date: string | null;
   withdrawal_reason: string | null;
   withdrawn_at: string | null;
 }

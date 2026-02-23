@@ -36,6 +36,7 @@ export interface CreateSelectedStudentInput {
   cpf?: string;
   shift?: string;
   course_name?: string;
+  birth_date?: string;
 }
 
 export const useSelectedStudents = () => {

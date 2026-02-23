@@ -35,6 +35,8 @@ const ConfirmEnrollment = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [shift, setShift] = useState('');
+  const [cpfValue, setCpfValue] = useState('');
+  const [cpfError, setCpfError] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -60,6 +62,7 @@ const ConfirmEnrollment = () => {
       } else {
         setStudent(result);
         if (result.shift) setShift(result.shift);
+        if (result.cpf) setCpfValue(result.cpf);
       }
     } catch {
       setError('Erro de conexão');

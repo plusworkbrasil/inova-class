@@ -22,7 +22,7 @@ interface SendResult {
   error?: string;
 }
 
-const PUBLISHED_URL = 'https://inovaclass2000.lovable.app';
+const PUBLISHED_URL = 'https://inovaclass.online';
 
 const DEFAULT_TEMPLATE = `Olá {nome}! 🎓
 

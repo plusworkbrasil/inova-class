@@ -533,6 +533,50 @@ const AdminDashboard = () => {
         </Card>
       </div>
 
+      {/* Desistências Recentes */}
+      {recentWithdrawals.length > 0 && (
+        <Card className="border-destructive/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserX className="h-5 w-5 text-destructive" />
+                <span>Desistências Recentes</span>
+                <Badge variant="destructive">{recentWithdrawals.length}</Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/selected-students')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Ver Todos
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentWithdrawals.map((w: any) => (
+                <div key={w.id} className="p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-medium">{w.full_name}</p>
+                      {w.course_name && <Badge variant="outline" className="text-xs mt-1">{w.course_name}</Badge>}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {w.withdrawn_at ? format(new Date(w.withdrawn_at), 'dd/MM/yyyy') : '—'}
+                    </span>
+                  </div>
+                  {w.withdrawal_reason && (
+                    <p className="text-sm text-muted-foreground mt-2 italic">"{w.withdrawal_reason}"</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <ChangeOwnPasswordDialog
         open={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}

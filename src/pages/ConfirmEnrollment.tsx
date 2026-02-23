@@ -225,6 +225,18 @@ const ConfirmEnrollment = () => {
             )}
           </div>
           <div>
+            <Label className="text-muted-foreground text-xs">Data de Nascimento *</Label>
+            {student?.birth_date ? (
+              <p className="font-medium">{student.birth_date.split('-').reverse().join('/')}</p>
+            ) : (
+              <Input
+                type="date"
+                value={birthDateValue}
+                onChange={e => setBirthDateValue(e.target.value)}
+              />
+            )}
+          </div>
+          <div>
             <Label className="text-muted-foreground text-xs">Telefone</Label>
             <p className="font-medium">{student?.phone}</p>
           </div>

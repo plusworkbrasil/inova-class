@@ -887,6 +887,7 @@ export type Database = {
       }
       selected_students: {
         Row: {
+          birth_date: string | null
           confirmed_at: string | null
           confirmed_shift: string | null
           course_name: string | null
@@ -912,6 +913,7 @@ export type Database = {
           withdrawn_at: string | null
         }
         Insert: {
+          birth_date?: string | null
           confirmed_at?: string | null
           confirmed_shift?: string | null
           course_name?: string | null
@@ -937,6 +939,7 @@ export type Database = {
           withdrawn_at?: string | null
         }
         Update: {
+          birth_date?: string | null
           confirmed_at?: string | null
           confirmed_shift?: string | null
           course_name?: string | null

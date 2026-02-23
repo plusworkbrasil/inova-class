@@ -22,6 +22,7 @@ const schema = z.object({
     .or(z.literal('')),
   shift: z.string().optional(),
   course_name: z.string().trim().max(100).optional(),
+  birth_date: z.string().optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof schema>;

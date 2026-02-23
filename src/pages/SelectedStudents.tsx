@@ -183,8 +183,8 @@ const SelectedStudents = () => {
         students={selectedStudents.filter(s => s.status === 'confirmed')}
       />
       <DeleteConfirmation
-        isOpen={!!deleteId}
-        onClose={() => setDeleteId(null)}
+        open={!!deleteId}
+        onOpenChange={(open) => { if (!open) setDeleteId(null); }}
         onConfirm={() => { if (deleteId) { deleteStudent.mutate(deleteId); setDeleteId(null); } }}
         title="Remover Selecionado"
         description="Tem certeza que deseja remover este aluno da lista de selecionados?"

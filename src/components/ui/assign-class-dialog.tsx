@@ -21,7 +21,7 @@ export const AssignClassDialog = ({ open, onOpenChange, students }: Props) => {
   const [enrolling, setEnrolling] = useState(false);
   const [results, setResults] = useState<{ name: string; password: string; error?: string }[]>([]);
   const { enrollStudent } = useSelectedStudents();
-  const { classes } = useClasses();
+  const { data: classes } = useClasses();
 
   const handleEnroll = async () => {
     if (!classId) {

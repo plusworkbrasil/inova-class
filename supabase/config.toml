@@ -35,3 +35,9 @@ verify_jwt = false
 
 [functions.notify-justification]
 verify_jwt = false
+
+[functions.confirm-enrollment]
+verify_jwt = false
+
+[functions.enroll-selected-student]
+verify_jwt = false

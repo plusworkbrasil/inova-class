@@ -169,6 +169,10 @@ const menuItems = {
     icon: FileText,
     label: 'Relatórios',
     path: '/reports'
+  }, {
+    icon: UserCheck,
+    label: 'Selecionados',
+    path: '/selected-students'
   }],
   teacher: [{
     icon: LayoutDashboard,

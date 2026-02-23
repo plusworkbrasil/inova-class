@@ -35,7 +35,13 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
   });
 
   const onSubmit = async (values: FormValues) => {
-    await createStudent.mutateAsync(values);
+    await createStudent.mutateAsync({
+      full_name: values.full_name,
+      email: values.email,
+      phone: values.phone,
+      cpf: values.cpf,
+      shift: values.shift,
+    });
     form.reset();
     onOpenChange(false);
   };

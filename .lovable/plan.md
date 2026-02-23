@@ -1,50 +1,58 @@
 
 
-# Editar Template da Mensagem WhatsApp Antes de Enviar
+# Adicionar Filtros em Todas as Abas da Pagina de Selecionados
 
-## Resumo
+## Situacao Atual
 
-Adicionar um campo de texto editavel no dialog de envio de WhatsApp, permitindo que o admin personalize a mensagem antes de disparar. O template vem pre-preenchido com a mensagem padrao e suporta variaveis dinamicas (`{nome}` e `{link}`) que serao substituidas por aluno.
+Atualmente, apenas a aba "Confirmados" possui filtros (busca por texto e filtro por turno). As demais abas (Selecionados, Matriculados, Desistentes) nao possuem nenhum filtro.
 
 ## Alteracoes
 
-### 1. Frontend: `src/components/ui/whatsapp-invite-dialog.tsx`
+### Arquivo: `src/pages/SelectedStudents.tsx`
 
-- Adicionar estado `messageTemplate` inicializado com o template padrao
-- Inserir um `Textarea` editavel entre a selecao de modo e os botoes, visivel no modo `choose`
-- Mostrar legenda explicando as variaveis disponiveis: `{nome}` = nome do aluno, `{link}` = link de confirmacao
-- Passar o template customizado para a edge function no body da requisicao (`custom_message`)
-- Usar o mesmo template no envio manual (wa.me), substituindo as variaveis no frontend
+**1. Unificar filtros para todas as abas**
 
-### 2. Edge Function: `supabase/functions/send-whatsapp-invites/index.ts`
+Adicionar uma barra de filtros global (acima ou dentro de cada aba) com os seguintes campos:
 
-- Aceitar campo opcional `custom_message` no body da requisicao
-- Se `custom_message` estiver presente, usar como template substituindo `{nome}` pelo nome do aluno e `{link}` pelo link de confirmacao
-- Se nao estiver presente, manter a mensagem padrao atual
-- Validar que o template contem `{link}` (obrigatorio para o convite funcionar)
+- **Busca por texto** (Input com icone de lupa): filtra por nome, e-mail, telefone ou CPF
+- **Filtro por Curso** (Select): lista dinamica dos cursos existentes nos dados + opcao "Todos os cursos"
+- **Filtro por Turno** (Select): Manha / Tarde / Noite / Todos os turnos
+- **Filtro por Status WhatsApp** (Select, apenas nas abas Selecionados/Confirmados): Todos / Enviado / Falhou / Pendente
 
-### Detalhes Tecnicos
+**2. Logica de filtragem**
 
-**Template padrao (pre-preenchido no Textarea):**
-```
-Ola {nome}!
+- Criar um unico `useMemo` por aba (ou reutilizar a funcao de filtro) que aplica os filtros de texto, curso e turno sobre a lista da aba correspondente
+- Os filtros de texto e curso serao compartilhados entre as abas; ao trocar de aba, os filtros permanecem ativos
+- Resetar pagina ao alterar qualquer filtro (preparacao para paginacao futura)
 
-Parabens! Voce foi selecionado(a) para o nosso curso!
+**3. Obtencao dinamica da lista de cursos**
 
-Para confirmar sua pre-matricula, acesse o link abaixo e preencha seus dados:
+- Extrair a lista unica de cursos a partir de `students` com `useMemo`:
+  ```
+  const courses = useMemo(() =>
+    [...new Set(students.map(s => s.course_name).filter(Boolean))],
+    [students]
+  );
+  ```
 
-{link}
+**4. Novos estados**
 
-Este link e pessoal e intransferivel. Valido por 48 horas.
+- `courseFilter` (string, default `'all'`)
+- `whatsappFilter` (string, default `'all'`) -- apenas para abas com coluna WhatsApp
 
-Equipe Inova Class
-```
+**5. Barra de filtros em cada aba**
 
-**Variaveis suportadas:**
-- `{nome}` - substituido pelo `full_name` do aluno
-- `{link}` - substituido pelo link de confirmacao de matricula
+Cada aba tera uma barra de filtros consistente acima da tabela contendo:
+- Input de busca (nome/email/telefone/CPF)
+- Select de Curso
+- Select de Turno
+- Select de WhatsApp (apenas nas abas Selecionados e Confirmados)
+- Os botoes de acao existentes (Cadastrar, Enviar WhatsApp, etc.) permanecem na mesma linha
 
-**Validacao:**
-- O template deve conter `{link}` obrigatoriamente; caso contrario, exibir alerta e bloquear envio
-- Limite maximo de 1000 caracteres no template
+**6. Funcao de filtragem reutilizavel**
 
+Criar uma funcao `filterStudents(list, { search, courseFilter, shiftFilter, whatsappFilter })` que aplica todos os filtros e e reutilizada em cada aba via `useMemo`.
+
+## Resultado Esperado
+
+Todas as 4 abas (Selecionados, Confirmados, Matriculados, Desistentes) terao filtros por texto, curso e turno. As abas com coluna WhatsApp tambem terao filtro por status do WhatsApp.

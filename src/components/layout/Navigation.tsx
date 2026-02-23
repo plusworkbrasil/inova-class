@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck } from 'lucide-react';
 import { NotificationsPopover } from '@/components/ui/notifications-popover';
 import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';

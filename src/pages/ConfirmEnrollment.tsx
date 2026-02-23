@@ -70,6 +70,11 @@ const ConfirmEnrollment = () => {
 
   const handleConfirm = async () => {
     if (!shift) return;
+    if (!cpfRegex.test(cpfValue)) {
+      setCpfError('CPF obrigatório no formato 000.000.000-00');
+      return;
+    }
+    setCpfError('');
     setConfirming(true);
     try {
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/confirm-enrollment?token=${token}`;
@@ -79,7 +84,7 @@ const ConfirmEnrollment = () => {
           'Content-Type': 'application/json',
           'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
-        body: JSON.stringify({ confirmed_shift: shift }),
+        body: JSON.stringify({ confirmed_shift: shift, cpf: cpfValue }),
       });
       const result = await res.json();
       if (!res.ok) {

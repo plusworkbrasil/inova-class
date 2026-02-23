@@ -42,6 +42,7 @@ export const SelectedStudentForm = ({ open, onOpenChange }: Props) => {
       phone: values.phone,
       cpf: values.cpf,
       shift: values.shift,
+      course_name: values.course_name,
     });
     form.reset();
     onOpenChange(false);

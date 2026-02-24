@@ -271,7 +271,7 @@ const Evasions = () => {
           <h1 className="text-3xl font-bold text-foreground">
             {userRole === 'coordinator' ? 'Acompanhamento de Evasões' : 'Gerenciamento de Evasões'}
           </h1>
-          {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor') && (
+          {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor') && (
             <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90" onClick={openCreateForm}>
               <Plus size={16} />
               Registrar Evasão
@@ -520,7 +520,7 @@ const Evasions = () => {
                   <TableHead>Data da Evasão</TableHead>
                   <TableHead>Registrado por</TableHead>
                   <TableHead>Status</TableHead>
-                  {(userRole === 'admin' || userRole === 'secretary') && <TableHead>Ações</TableHead>}
+                  {(userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor') && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -539,7 +539,7 @@ const Evasions = () => {
                         {evasion.status === 'active' ? 'Ativa' : 'Cancelada'}
                       </Badge>
                     </TableCell>
-                    {(userRole === 'admin' || userRole === 'secretary') && (
+                    {(userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor') && (
                       <TableCell>
                         <div className="flex gap-2">
                           <Button 

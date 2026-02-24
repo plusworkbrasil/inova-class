@@ -1,73 +1,37 @@
 
-
-# Adicionar Campo "Data de Nascimento" ao Fluxo de Selecionados
+# Adicionar Botoes de Evasao para o Tutor
 
 ## Resumo
 
-Seguindo o mesmo padrao do CPF: o campo "Data de Nascimento" sera opcional no cadastro administrativo, mas obrigatorio quando o aluno confirmar sua inscricao pelo link.
+O tutor ja tem acesso a pagina de evasoes e as politicas RLS do banco ja permitem que tutores criem e visualizem evasoes. Porem, os botoes de acao (Registrar Evasao, Editar e Cancelar) estao ocultos para o role "tutor" na interface. A alteracao e simples: incluir `'tutor'` nas verificacoes de role que controlam a exibicao desses botoes.
 
 ## Alteracoes
 
-### 1. Banco de Dados
-- Adicionar coluna `birth_date` (tipo `date`, nullable) na tabela `selected_students`:
-  ```sql
-  ALTER TABLE public.selected_students ADD COLUMN birth_date date;
-  ```
+### 1. Botao "Registrar Evasao" (linha 274)
+- Adicionar `userRole === 'tutor'` na condicao que exibe o botao de criar evasao
+- De: `admin || secretary || instructor`
+- Para: `admin || secretary || instructor || tutor`
 
-### 2. Hook (`src/hooks/useSelectedStudents.ts`)
-- Adicionar `birth_date: string | null` na interface `SelectedStudent`
-- Adicionar `birth_date?: string` na interface `CreateSelectedStudentInput`
-- Incluir `birth_date: input.birth_date || null` nos inserts (individual e lote)
+### 2. Coluna "Acoes" no cabecalho da tabela (linha 523)
+- Adicionar `userRole === 'tutor'` na condicao
+- De: `admin || secretary`
+- Para: `admin || secretary || tutor`
 
-### 3. Formulario Individual (`src/components/forms/SelectedStudentForm.tsx`)
-- Adicionar campo `birth_date` ao schema Zod como opcional: `birth_date: z.string().optional().or(z.literal(''))`
-- Adicionar Input do tipo `date` no formulario (campo HTML nativo, como ja usado em outros formularios do projeto)
-
-### 4. Formulario em Lote (`src/components/forms/BatchSelectedStudentsForm.tsx`)
-- Adicionar coluna "Nasc." na tabela com Input tipo `date`
-- Incluir `birth_date` na interface Row e na funcao `emptyRow()`
-- Sem validacao obrigatoria; se preenchido, sera salvo
-
-### 5. Pagina de Confirmacao (`src/pages/ConfirmEnrollment.tsx`)
-- Adicionar `birth_date` na interface `StudentData`
-- Adicionar estado `birthDateValue` (pre-preenchido se existir)
-- Se vazio: exibir Input tipo `date` editavel para o aluno preencher
-- Se ja preenchido: exibir como texto somente leitura (formatado DD/MM/AAAA)
-- Validar que a data de nascimento foi informada antes de permitir confirmacao
-- Enviar `birth_date` no body do POST
-
-### 6. Edge Function (`supabase/functions/confirm-enrollment/index.ts`)
-- No GET: incluir `birth_date` no select e na resposta
-- No POST de confirmacao: aceitar `birth_date` no body, validar formato (YYYY-MM-DD), salvar no update
-- No POST de desistencia: nao precisa de alteracao
+### 3. Botoes de acao por linha (Editar e Cancelar) (linha 542)
+- Adicionar `userRole === 'tutor'` na condicao que exibe os botoes Editar e Cancelar Evasao
+- De: `admin || secretary`
+- Para: `admin || secretary || tutor`
 
 ## Secao Tecnica
 
-### Migracao SQL
-```sql
-ALTER TABLE public.selected_students ADD COLUMN birth_date date;
+Todas as alteracoes sao no arquivo `src/pages/Evasions.tsx`:
+
+```text
+Linha 274: (userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor')
+Linha 523: (userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor')
+Linha 542: (userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor')
 ```
 
-### Logica na pagina de confirmacao
-```typescript
-const [birthDateValue, setBirthDateValue] = useState('');
-// Ao carregar: if (result.birth_date) setBirthDateValue(result.birth_date);
+Nao e necessaria nenhuma alteracao no banco de dados, pois as politicas RLS ja permitem que tutores facam INSERT e UPDATE em evasoes que eles mesmos criaram (`reported_by = auth.uid()`), e SELECT em todas as evasoes.
 
-// No formulario: se vazio, Input type="date" editavel
-// No submit: body inclui birth_date: birthDateValue
-```
-
-### Validacao na Edge Function (POST confirmacao)
-```typescript
-const birth_date = body.birth_date;
-if (!birth_date || !/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) {
-  return error 400 'Data de nascimento obrigatoria';
-}
-// Incluir no update: birth_date
-```
-
-### Botao de confirmar - desabilitado se CPF ou data de nascimento invalidos
-```typescript
-disabled={!shift || confirming || !cpfRegex.test(cpfValue) || !birthDateValue}
-```
-
+**Observacao sobre cancelamento:** O cancelamento de evasao atualiza tanto a tabela `evasions` quanto `profiles`. A RLS de `evasions` permite que tutores atualizem evasoes que eles mesmos criaram. Ja a RLS de `profiles` permite update apenas para admins/secretarias ou o proprio usuario. Portanto, o tutor so conseguira cancelar evasoes que **ele proprio registrou**, e o update do perfil do aluno pode falhar se o tutor nao for admin/secretary. Se necessario, posso ajustar para restringir o botao de cancelar apenas para admin/secretary, mantendo o botao de editar para o tutor.

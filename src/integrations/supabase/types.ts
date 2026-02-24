@@ -1447,6 +1447,10 @@ export type Database = {
         Args: { _class_id: string; _user_id: string }
         Returns: boolean
       }
+      update_student_status_for_evasion: {
+        Args: { p_new_status: string; p_student_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       allocation_status: "ativo" | "finalizado" | "cancelado"

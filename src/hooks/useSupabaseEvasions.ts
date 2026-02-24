@@ -89,14 +89,12 @@ export const useSupabaseEvasions = () => {
 
       if (evasionError) throw evasionError;
 
-      // 4. Atualizar status do aluno para "inactive"
+      // 4. Atualizar status do aluno para "inactive" via RPC segura
       const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ 
-          status: 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', evasionData.student_id);
+        .rpc('update_student_status_for_evasion', {
+          p_student_id: evasionData.student_id,
+          p_new_status: 'inactive'
+        });
 
       if (updateError) throw updateError;
 
@@ -198,14 +196,12 @@ export const useSupabaseEvasions = () => {
 
       if (evasionError) throw evasionError;
 
-      // 3. Reativar o perfil do aluno
+      // 3. Reativar o perfil do aluno via RPC segura
       const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ 
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', studentId);
+        .rpc('update_student_status_for_evasion', {
+          p_student_id: studentId,
+          p_new_status: 'active'
+        });
 
       if (profileError) throw profileError;
 

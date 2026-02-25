@@ -6,6 +6,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const randomDelay = () => delay(Math.floor(Math.random() * 3001) + 5000);
+
 const PUBLISHED_URL = "https://inovaclass.online";
 
 Deno.serve(async (req) => {
@@ -98,8 +101,10 @@ Deno.serve(async (req) => {
 
     const results: { id: string; name: string; status: string; error?: string }[] = [];
 
-    for (const student of students) {
+    for (let i = 0; i < students.length; i++) {
+      const student = students[i];
       try {
+        if (i > 0) await randomDelay();
         // Generate token if not exists
         let inviteToken = student.invite_token;
         if (!inviteToken) {

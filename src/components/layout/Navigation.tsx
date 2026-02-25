@@ -32,6 +32,7 @@ const adminMenuGroups: MenuEntry[] = [
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
       { icon: UserX, label: 'Evasões', path: '/evasions' },
       { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
+      { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
     ],
   },
   {
@@ -69,6 +70,7 @@ const tutorMenuGroups: MenuEntry[] = [
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
       { icon: UserX, label: 'Evasões', path: '/evasions' },
+      { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
     ],
   },
   {
@@ -105,6 +107,7 @@ const coordinatorMenuGroups: MenuEntry[] = [
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
+      { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
     ],
   },
   {

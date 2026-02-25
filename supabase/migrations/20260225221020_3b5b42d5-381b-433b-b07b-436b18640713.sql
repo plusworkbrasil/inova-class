@@ -1,0 +1,5 @@
+DELETE FROM selected_students WHERE id IN (
+  '704e2747-1b17-4ea9-9913-b418e103e336',
+  'ba1944c6-2f64-4608-976e-a9a02e02e9a6',
+  '86533117-54f1-46be-9c7c-175a3dee9b66'
+);

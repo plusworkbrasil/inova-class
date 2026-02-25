@@ -610,7 +610,7 @@ const Evasions = () => {
           </CardContent>
         </Card>
         
-        {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor') && (
+        {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor') && (
           <EvasionForm
             open={isEvasionFormOpen}
             onOpenChange={setIsEvasionFormOpen}

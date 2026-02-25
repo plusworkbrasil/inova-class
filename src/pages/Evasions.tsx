@@ -11,6 +11,7 @@ import { EvasionForm } from '@/components/forms/EvasionForm';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { useSupabaseEvasions } from '@/hooks/useSupabaseEvasions';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
 import { useEvasionAlerts } from '@/hooks/useEvasionAlerts';
@@ -32,9 +33,10 @@ import {
 const ITEMS_PER_PAGE = 10;
 
 const Evasions = () => {
-  const { profile } = useAuth();
-  const userRole = (profile?.role || 'secretary') as UserRole;
-  const userName = profile?.name || 'Secretaria';
+  const { user, profile } = useAuth();
+  const { role, loading: roleLoading } = useUserRole(user?.id);
+  const userRole = (role || profile?.role) as UserRole | undefined;
+  const userName = profile?.name || user?.email || 'Usuário';
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
@@ -54,6 +56,9 @@ const Evasions = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [evasionToCancel, setEvasionToCancel] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
+
+  const canManageEvasions = userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor';
+  const canEditEvasions = userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor';
 
   useEffect(() => { setCurrentPage(1); }, [searchTerm, selectedClass, selectedReason, startDate, endDate]);
 
@@ -106,11 +111,13 @@ const Evasions = () => {
   };
 
   const openEditForm = (evasion: any) => {
+    if (!canEditEvasions) return;
     setEditingEvasion(evasion);
     setIsEvasionFormOpen(true);
   };
 
   const openCreateForm = () => {
+    if (!canManageEvasions) return;
     setEditingEvasion(null);
     setIsEvasionFormOpen(true);
   };
@@ -254,7 +261,7 @@ const Evasions = () => {
     }
   };
 
-  if (loading) {
+  if (loading || roleLoading || !userRole) {
     return (
       <Layout userRole={userRole} userName={userName} userAvatar="">
         <div className="flex justify-center items-center h-64">
@@ -271,7 +278,7 @@ const Evasions = () => {
           <h1 className="text-3xl font-bold text-foreground">
             {userRole === 'coordinator' ? 'Acompanhamento de Evasões' : 'Gerenciamento de Evasões'}
           </h1>
-          {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor') && (
+          {canManageEvasions && (
             <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90" onClick={openCreateForm}>
               <Plus size={16} />
               Registrar Evasão
@@ -520,7 +527,7 @@ const Evasions = () => {
                   <TableHead>Data da Evasão</TableHead>
                   <TableHead>Registrado por</TableHead>
                   <TableHead>Status</TableHead>
-                  {(userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor') && <TableHead>Ações</TableHead>}
+                  {canEditEvasions && <TableHead>Ações</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -539,7 +546,7 @@ const Evasions = () => {
                         {evasion.status === 'active' ? 'Ativa' : 'Cancelada'}
                       </Badge>
                     </TableCell>
-                    {(userRole === 'admin' || userRole === 'secretary' || userRole === 'tutor') && (
+                    {canEditEvasions && (
                       <TableCell>
                         <div className="flex gap-2">
                           <Button 
@@ -610,15 +617,13 @@ const Evasions = () => {
           </CardContent>
         </Card>
         
-        {(userRole === 'admin' || userRole === 'secretary' || userRole === 'instructor' || userRole === 'tutor') && (
-          <EvasionForm
-            open={isEvasionFormOpen}
-            onOpenChange={setIsEvasionFormOpen}
-            onSubmit={editingEvasion ? handleEditEvasion : handleCreateEvasion}
-            initialData={editingEvasion}
-            mode={editingEvasion ? 'edit' : 'create'}
-          />
-        )}
+        <EvasionForm
+          open={canManageEvasions && isEvasionFormOpen}
+          onOpenChange={setIsEvasionFormOpen}
+          onSubmit={editingEvasion ? handleEditEvasion : handleCreateEvasion}
+          initialData={editingEvasion}
+          mode={editingEvasion ? 'edit' : 'create'}
+        />
 
         <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
           <AlertDialogContent>

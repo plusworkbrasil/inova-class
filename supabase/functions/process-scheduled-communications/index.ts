@@ -119,10 +119,11 @@ Deno.serve(async (req) => {
         }
       }
 
+      const finalStatus = failedCount === studentsWithPhone.length && studentsWithPhone.length > 0 ? "failed" : "sent";
       await adminClient
         .from("class_communications")
         .update({
-          status: failedCount === studentsWithPhone.length && studentsWithPhone.length > 0 ? "failed" : "sent",
+          status: finalStatus,
           sent_at: new Date().toISOString(),
           sent_count: sentCount,
           failed_count: failedCount,
@@ -130,6 +131,21 @@ Deno.serve(async (req) => {
           send_results: results,
         })
         .eq("id", comm.id);
+
+      // Notify sender
+      const studentsWithoutPhone = activeStudents.filter(s => !s.phone || s.phone.trim().length < 8);
+      const notifMessage = finalStatus === "sent"
+        ? `Comunicado agendado "${comm.title}" enviado: ${sentCount}/${studentsWithPhone.length} entregues.${failedCount > 0 ? ` ${failedCount} falha(s).` : ''}${studentsWithoutPhone.length > 0 ? ` ${studentsWithoutPhone.length} sem telefone.` : ''}`
+        : `Comunicado agendado "${comm.title}" falhou para todos os destinatários.`;
+
+      await adminClient.from("notifications").insert({
+        user_id: comm.sent_by,
+        title: finalStatus === "sent" ? "Comunicado agendado enviado" : "Falha no comunicado agendado",
+        message: notifMessage,
+        type: finalStatus === "sent" ? "success" : "error",
+        reference_id: comm.id,
+        reference_type: "class_communication",
+      });
 
       processedCount++;
     }

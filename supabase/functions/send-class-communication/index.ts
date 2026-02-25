@@ -209,16 +209,31 @@ Deno.serve(async (req) => {
     }
 
     // Update communication record
+    const finalStatus = failedCount === studentsWithPhone.length ? "failed" : "sent";
     await adminClient
       .from("class_communications")
       .update({
-        status: failedCount === studentsWithPhone.length ? "failed" : "sent",
+        status: finalStatus,
         sent_at: new Date().toISOString(),
         sent_count: sentCount,
         failed_count: failedCount,
         send_results: results,
       })
       .eq("id", commData.id);
+
+    // Notify sender about completion
+    const notifMessage = finalStatus === "sent"
+      ? `Comunicado "${title}" enviado com sucesso: ${sentCount}/${studentsWithPhone.length} entregues.${failedCount > 0 ? ` ${failedCount} falha(s).` : ''}${studentsWithoutPhone.length > 0 ? ` ${studentsWithoutPhone.length} sem telefone.` : ''}`
+      : `Comunicado "${title}" falhou para todos os ${studentsWithPhone.length} destinatários.`;
+
+    await adminClient.from("notifications").insert({
+      user_id: userId,
+      title: finalStatus === "sent" ? "Comunicado enviado" : "Falha no comunicado",
+      message: notifMessage,
+      type: finalStatus === "sent" ? "success" : "error",
+      reference_id: commData.id,
+      reference_type: "class_communication",
+    });
 
     return new Response(
       JSON.stringify({

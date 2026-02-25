@@ -1,5 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const randomDelay = () => delay(Math.floor(Math.random() * 3001) + 5000);
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -83,8 +86,10 @@ Deno.serve(async (req) => {
       let sentCount = 0;
       let failedCount = 0;
 
-      for (const student of studentsWithPhone) {
+      for (let i = 0; i < studentsWithPhone.length; i++) {
+        const student = studentsWithPhone[i];
         try {
+          if (i > 0) await randomDelay();
           const phone = student.phone!.replace(/\D/g, "");
           const phoneWithCountry = phone.startsWith("55") ? phone : `55${phone}`;
 

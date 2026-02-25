@@ -111,6 +111,75 @@ export type Database = {
         }
         Relationships: []
       }
+      class_communications: {
+        Row: {
+          class_id: string
+          created_at: string
+          failed_count: number | null
+          id: string
+          message: string
+          scheduled_at: string | null
+          send_results: Json | null
+          sent_at: string | null
+          sent_by: string
+          sent_count: number | null
+          status: string
+          subject_id: string | null
+          title: string
+          total_recipients: number | null
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          message: string
+          scheduled_at?: string | null
+          send_results?: Json | null
+          sent_at?: string | null
+          sent_by: string
+          sent_count?: number | null
+          status?: string
+          subject_id?: string | null
+          title: string
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          failed_count?: number | null
+          id?: string
+          message?: string
+          scheduled_at?: string | null
+          send_results?: Json | null
+          sent_at?: string | null
+          sent_by?: string
+          sent_count?: number | null
+          status?: string
+          subject_id?: string | null
+          title?: string
+          total_recipients?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_communications_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_communications_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           created_at: string

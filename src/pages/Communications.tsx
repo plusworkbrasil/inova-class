@@ -25,6 +25,7 @@ import { UserRole } from '@/types/user';
 import { useCommunications } from '@/hooks/useCommunications';
 import { useCommunicationsStats } from '@/hooks/useCommunicationsStats';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
+import ClassCommunicationTab from '@/components/communications/ClassCommunicationTab';
 
 
 
@@ -244,6 +245,7 @@ const Communications = () => {
         <Tabs defaultValue="send" className="w-full">
           <TabsList>
             <TabsTrigger value="send">Enviar Informativo</TabsTrigger>
+            <TabsTrigger value="class-comm">Comunicado por Turma</TabsTrigger>
             <TabsTrigger value="history">Histórico</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
           </TabsList>
@@ -379,6 +381,10 @@ const Communications = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="class-comm">
+            <ClassCommunicationTab />
           </TabsContent>
 
           <TabsContent value="history">

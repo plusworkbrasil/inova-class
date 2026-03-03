@@ -29,6 +29,44 @@ const SystemDocumentation = () => {
     html2pdf().set(opt).from(element).save();
   };
 
+  const handleUnlock = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === 'inova2026') {
+      setIsUnlocked(true);
+    } else {
+      toast.error('Senha incorreta');
+      setPassword('');
+    }
+  };
+
+  if (!isUnlocked) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <Lock className="h-12 w-12 text-primary mx-auto mb-2" />
+              <CardTitle>Acesso Restrito</CardTitle>
+              <p className="text-sm text-muted-foreground">Digite a senha para acessar a documentação do sistema</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleUnlock} className="space-y-4">
+                <Input
+                  type="password"
+                  placeholder="Senha de acesso"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoFocus
+                />
+                <Button type="submit" className="w-full">Acessar</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">

@@ -1,10 +1,15 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { FileDown, FileText, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 import Layout from '@/components/layout/Layout';
 
 const SystemDocumentation = () => {
   const contentRef = useRef<HTMLDivElement>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [password, setPassword] = useState('');
 
   const handleDownloadPDF = async () => {
     const element = contentRef.current;

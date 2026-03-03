@@ -32,6 +32,7 @@ import StudentAbsences from "./pages/StudentAbsences";
 import StudentsAtRisk from "./pages/StudentsAtRisk";
 import SelectedStudents from "./pages/SelectedStudents";
 import ConfirmEnrollment from "./pages/ConfirmEnrollment";
+import SystemDocumentation from "./pages/SystemDocumentation";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/selected-students" element={<SelectedStudents />} />
           <Route path="/confirm-enrollment/:token" element={<ConfirmEnrollment />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/documentacao" element={<SystemDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

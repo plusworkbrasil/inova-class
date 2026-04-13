@@ -1,22 +1,28 @@
 
 
-# Plano: Adicionar botão de excluir na aba "Confirmados"
+# Plano: Filtrar apenas alunos ativos no lançamento de notas por disciplina
 
 ## Problema
-Na aba "Confirmados" de `/selected-students`, o `renderTable` é chamado com `showActions = false`, o que esconde o botão de exclusão.
+No formulário "Lançar Notas por Disciplina", a RPC `get_instructor_students()` retorna alunos de todos os status (ativos, inativos, evadidos). O filtro client-side na linha 103-104 filtra apenas por `class_id`, sem verificar o status.
 
 ## Solução
-Alterar a chamada na linha 240 de:
+Adicionar `.filter(student => student.status === 'active')` ao filtro existente em `src/components/forms/InstructorGradesBySubjectForm.tsx`.
+
+### Alteração em `src/components/forms/InstructorGradesBySubjectForm.tsx` (linha 103-105)
+
+De:
 ```typescript
-{renderTable(filteredConfirmed, true, false)}
-```
-para:
-```typescript
-{renderTable(filteredConfirmed, true, true)}
+const filteredStudents = (data || [])
+  .filter(student => student.class_id === subject.class_id)
+  .sort((a, b) => a.name.localeCompare(b.name));
 ```
 
-Isso ativa a coluna de ações com o botão de lixeira, reutilizando o mesmo `DeleteConfirmation` dialog já existente.
+Para:
+```typescript
+const filteredStudents = (data || [])
+  .filter(student => student.class_id === subject.class_id && student.status === 'active')
+  .sort((a, b) => a.name.localeCompare(b.name));
+```
 
-## Arquivo alterado
-- `src/pages/SelectedStudents.tsx` — uma única alteração de `false` para `true` na linha 240.
+Uma única linha alterada, sem impacto em outras funcionalidades.
 

@@ -1,9 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -63,6 +76,17 @@ const SelectedStudents = () => {
   const [courseFilter, setCourseFilter] = useState('all');
   const [whatsappFilter, setWhatsappFilter] = useState('all');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteConfirmedId, setDeleteConfirmedId] = useState<string | null>(null);
+  const [deleteJustification, setDeleteJustification] = useState('');
+
+  const handleDeleteClick = useCallback((student: SelectedStudent) => {
+    if (student.status === 'confirmed') {
+      setDeleteConfirmedId(student.id);
+      setDeleteJustification('');
+    } else {
+      setDeleteId(student.id);
+    }
+  }, []);
 
   const courses = useMemo(() =>
     [...new Set(students.map(s => s.course_name).filter(Boolean))] as string[],
@@ -186,7 +210,7 @@ const SelectedStudents = () => {
             )}
             {showActions && (
               <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => setDeleteId(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(s)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
               </TableCell>
             )}
           </TableRow>
@@ -271,6 +295,51 @@ const SelectedStudents = () => {
         title="Remover Selecionado"
         description="Tem certeza que deseja remover este aluno da lista de selecionados?"
       />
+
+      <AlertDialog open={!!deleteConfirmedId} onOpenChange={(open) => { if (!open) { setDeleteConfirmedId(null); setDeleteJustification(''); } }}>
+        <AlertDialogContent className="sm:max-w-[480px]">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
+                <AlertTriangle className="h-6 w-6 text-destructive" />
+              </div>
+              <AlertDialogTitle>Remover Aluno Confirmado</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="text-left">
+              Este aluno já confirmou interesse. Informe a justificativa para a remoção.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="deleteJustification">Justificativa <span className="text-destructive">*</span></Label>
+            <Textarea
+              id="deleteJustification"
+              value={deleteJustification}
+              onChange={(e) => setDeleteJustification(e.target.value)}
+              placeholder="Informe o motivo da remoção (mín. 10 caracteres)"
+              rows={3}
+            />
+            {deleteJustification.length > 0 && deleteJustification.trim().length < 10 && (
+              <p className="text-sm text-destructive">A justificativa deve ter pelo menos 10 caracteres.</p>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setDeleteConfirmedId(null); setDeleteJustification(''); }}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteJustification.trim().length < 10}
+              onClick={() => {
+                if (deleteConfirmedId) {
+                  deleteStudent.mutate(deleteConfirmedId);
+                  setDeleteConfirmedId(null);
+                  setDeleteJustification('');
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar Remoção
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   );
 };

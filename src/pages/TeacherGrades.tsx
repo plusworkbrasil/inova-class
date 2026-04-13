@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { differenceInDays } from 'date-fns';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ const TeacherGrades = () => {
   const [editingGrade, setEditingGrade] = useState<any>(null);
   const [subjectsDetails, setSubjectsDetails] = useState<Record<string, { end_date: string | null; status: string | null }>>({});
   const [isInstructorGradeFormOpen, setIsInstructorGradeFormOpen] = useState(false);
+  const [lastAttendanceDates, setLastAttendanceDates] = useState<Record<string, string | null>>({});
   const { toast } = useToast();
   
   // Hooks para dados reais
@@ -51,6 +53,29 @@ const TeacherGrades = () => {
       }
     }
     fetchSubjectDetails();
+  }, [instructorSubjects]);
+
+  // Buscar última data de frequência por disciplina
+  useEffect(() => {
+    async function fetchLastAttendance() {
+      if (!instructorSubjects?.length) return;
+      const ids = instructorSubjects.map(s => s.id);
+      const { data } = await supabase
+        .from('attendance')
+        .select('subject_id, date')
+        .in('subject_id', ids)
+        .order('date', { ascending: false });
+      
+      const latest: Record<string, string | null> = {};
+      ids.forEach(id => { latest[id] = null; });
+      (data || []).forEach(record => {
+        if (!latest[record.subject_id]) {
+          latest[record.subject_id] = record.date;
+        }
+      });
+      setLastAttendanceDates(latest);
+    }
+    fetchLastAttendance();
   }, [instructorSubjects]);
 
   // Ordenar disciplinas: por end_date desc, sem end_date no topo
@@ -301,12 +326,26 @@ const TeacherGrades = () => {
                               Ano: {subjectClass.year} • {subject.student_count || 0} alunos
                             </p>
                           </div>
-                          <Button 
-                            size="sm"
-                            onClick={openBatchGradeForm}
-                          >
-                            Lançar Notas
-                          </Button>
+                          {(() => {
+                            const lastDate = lastAttendanceDates[subject.id];
+                            const noRecentAttendance = !lastDate || differenceInDays(new Date(), new Date(lastDate)) > 30;
+                            return (
+                              <div className="flex flex-col items-end gap-1">
+                                <Button 
+                                  size="sm"
+                                  variant={noRecentAttendance ? "secondary" : "default"}
+                                  onClick={openBatchGradeForm}
+                                >
+                                  Lançar Notas
+                                </Button>
+                                {noRecentAttendance && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Sem frequência há 30+ dias
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
                     </div>

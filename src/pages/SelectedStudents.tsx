@@ -237,7 +237,7 @@ const SelectedStudents = () => {
                 <UserPlus className="h-4 w-4 mr-1" /> Atribuir a Turma ({selectedStudents.filter(s => s.status === 'confirmed').length})
               </Button>
             ))}
-            {renderTable(filteredConfirmed, true, false)}
+            {renderTable(filteredConfirmed, true, true)}
           </TabsContent>
 
           <TabsContent value="enrolled" className="space-y-4">

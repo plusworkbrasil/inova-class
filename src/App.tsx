@@ -33,6 +33,7 @@ import StudentsAtRisk from "./pages/StudentsAtRisk";
 import SelectedStudents from "./pages/SelectedStudents";
 import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 import SystemDocumentation from "./pages/SystemDocumentation";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => (
           <Route path="/students-at-risk" element={<StudentsAtRisk />} />
           <Route path="/selected-students" element={<SelectedStudents />} />
           <Route path="/confirm-enrollment/:token" element={<ConfirmEnrollment />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/documentacao" element={<SystemDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

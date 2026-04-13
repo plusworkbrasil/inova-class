@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -45,26 +46,36 @@ const Auth = () => {
     }
   };
 
-  const resendConfirmation = async () => {
-    if (!email) {
-      toast.error('Informe o email para reenviar a confirmação.');
+  const [showForgotDialog, setShowForgotDialog] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail) {
+      toast.error('Informe o email.');
       return;
     }
-    setLoading(true);
+    setForgotLoading(true);
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email,
-        options: { emailRedirectTo: redirectUrl }
+      const { data, error } = await supabase.functions.invoke('request-password-reset', {
+        body: { email: forgotEmail },
       });
+
       if (error) {
-        toast.error('Erro ao reenviar e-mail: ' + (error.message || ''));
-      } else {
-        toast.success('E-mail de confirmação reenviado! Verifique sua caixa de entrada. Pode levar alguns minutos para chegar.');
+        toast.error('Erro ao solicitar redefinição de senha.');
+        return;
       }
+
+      if (data?.noPhone) {
+        toast.warning('Procure o administrador para cadastrar seu número de whatsapp');
+      } else {
+        toast.success('Se o email estiver cadastrado, você receberá um link via WhatsApp!');
+      }
+      setShowForgotDialog(false);
+    } catch {
+      toast.error('Erro ao solicitar redefinição de senha.');
     } finally {
-      setLoading(false);
+      setForgotLoading(false);
     }
   };
 
@@ -147,15 +158,48 @@ const Auth = () => {
                 type="button"
                 variant="link"
                 className="text-xs"
-                onClick={resendConfirmation}
-                disabled={loading || !email}
+                onClick={() => {
+                  setForgotEmail(email);
+                  setShowForgotDialog(true);
+                }}
               >
-                Reenviar e-mail de confirmação
+                Esqueci a minha senha
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      <Dialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Esqueci a minha senha</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Informe seu email cadastrado. Se houver um número de WhatsApp associado, enviaremos um link para redefinir sua senha.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                placeholder="seu@email.com"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowForgotDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleForgotPassword} disabled={forgotLoading || !forgotEmail}>
+              {forgotLoading ? 'Enviando...' : 'Enviar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

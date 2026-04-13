@@ -78,10 +78,20 @@ const TeacherGrades = () => {
     fetchLastAttendance();
   }, [instructorSubjects]);
 
-  // Ordenar disciplinas: por end_date desc, sem end_date no topo
+  // Ordenar disciplinas: com frequência recente primeiro, depois por end_date desc
   const sortedInstructorSubjects = useMemo(() => {
     if (!instructorSubjects) return [];
     return [...instructorSubjects].sort((a, b) => {
+      const aLastAtt = lastAttendanceDates[a.id];
+      const bLastAtt = lastAttendanceDates[b.id];
+      const aRecent = aLastAtt && differenceInDays(new Date(), new Date(aLastAtt)) <= 30;
+      const bRecent = bLastAtt && differenceInDays(new Date(), new Date(bLastAtt)) <= 30;
+      
+      // Disciplinas com frequência recente vêm primeiro
+      if (aRecent && !bRecent) return -1;
+      if (!aRecent && bRecent) return 1;
+      
+      // Dentro do mesmo grupo, ordenar por end_date desc
       const aDate = subjectsDetails[a.id]?.end_date;
       const bDate = subjectsDetails[b.id]?.end_date;
       if (!aDate && !bDate) return 0;
@@ -89,7 +99,7 @@ const TeacherGrades = () => {
       if (!bDate) return 1;
       return new Date(bDate).getTime() - new Date(aDate).getTime();
     });
-  }, [instructorSubjects, subjectsDetails]);
+  }, [instructorSubjects, subjectsDetails, lastAttendanceDates]);
 
   // Filtrar notas das disciplinas do instrutor
   const instructorGrades = grades?.filter(grade => 

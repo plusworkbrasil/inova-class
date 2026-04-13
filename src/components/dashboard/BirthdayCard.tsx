@@ -61,12 +61,12 @@ export const BirthdayCard: React.FC = () => {
 
       profilesWithRoles?.forEach(person => {
         if (person.birth_date) {
-          const birthDate = new Date(person.birth_date);
-          const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+          const [y, m, d] = person.birth_date.split('-').map(Number);
+          const birthDate = new Date(currentYear, m - 1, d);
           
           // Check if birthday falls in current week
-          if (thisYearBirthday >= startOfWeek && thisYearBirthday <= endOfWeek) {
-            const isToday = thisYearBirthday.toDateString() === today.toDateString();
+          if (birthDate >= startOfWeek && birthDate <= endOfWeek) {
+            const isToday = birthDate.toDateString() === today.toDateString();
             
             weekBirthdays.push({
               ...person,
@@ -103,14 +103,14 @@ export const BirthdayCard: React.FC = () => {
   };
 
   const formatBirthday = (dateString: string, isToday: boolean) => {
-    const date = new Date(dateString);
     if (isToday) return 'Hoje!';
     
+    const [y, m, d] = dateString.split('-').map(Number);
     const today = new Date();
     const currentYear = today.getFullYear();
-    const thisYearBirthday = new Date(currentYear, date.getMonth(), date.getDate());
+    const thisYearBirthday = new Date(currentYear, m - 1, d);
     
-    return thisYearBirthday.toLocaleDateString('pt-BR', { 
+    return thisYearBirthday.toLocaleDateString('pt-BR', {
       weekday: 'short', 
       day: 'numeric', 
       month: 'short' 

@@ -1,35 +1,22 @@
 
 
-# Plano: Corrigir data dos aniversariantes exibida um dia antes
+# Plano: Adicionar botão de excluir na aba "Confirmados"
 
 ## Problema
-`new Date("YYYY-MM-DD")` interpreta a data como UTC meia-noite. No fuso de Brasília (UTC-3), isso resulta no dia anterior (ex: `2026-04-17` vira `16 de abr`).
+Na aba "Confirmados" de `/selected-students`, o `renderTable` é chamado com `showActions = false`, o que esconde o botão de exclusão.
 
 ## Solução
-Usar parsing manual com `split('-')` para criar a data no fuso local, conforme já aplicado em outros pontos do sistema.
-
-## Alterações em `src/components/dashboard/BirthdayCard.tsx`
-
-Trocar todas as ocorrências de `new Date(person.birth_date)` e `new Date(dateString)` pelo parsing manual:
-
-**Linha 64** — no `fetchBirthdayPeople`:
+Alterar a chamada na linha 240 de:
 ```typescript
-// De:
-const birthDate = new Date(person.birth_date);
-// Para:
-const [y, m, d] = person.birth_date.split('-').map(Number);
-const birthDate = new Date(currentYear, m - 1, d);
+{renderTable(filteredConfirmed, true, false)}
 ```
-E remover a linha 65 (`thisYearBirthday`) pois `birthDate` já estará no ano correto.
-
-**Linha 106** — no `formatBirthday`:
+para:
 ```typescript
-// De:
-const date = new Date(dateString);
-// Para:
-const [y, m, d] = dateString.split('-').map(Number);
-const date = new Date(y, m - 1, d);
+{renderTable(filteredConfirmed, true, true)}
 ```
 
-Mesma correção padrão já utilizada no restante do sistema (Matriz de Frequência, exportações PDF/Excel).
+Isso ativa a coluna de ações com o botão de lixeira, reutilizando o mesmo `DeleteConfirmation` dialog já existente.
+
+## Arquivo alterado
+- `src/pages/SelectedStudents.tsx` — uma única alteração de `false` para `true` na linha 240.
 

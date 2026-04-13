@@ -101,7 +101,7 @@ export const InstructorGradesBySubjectForm: React.FC<InstructorGradesBySubjectFo
       
       // Filtrar apenas alunos da turma da disciplina selecionada e ordenar alfabeticamente
       const filteredStudents = (data || [])
-        .filter(student => student.class_id === subject.class_id)
+        .filter(student => student.class_id === subject.class_id && student.status === 'active')
         .sort((a, b) => a.name.localeCompare(b.name));
 
       setStudents(filteredStudents);

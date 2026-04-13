@@ -309,8 +309,11 @@ const TeacherGrades = () => {
                 const subjectClass = instructorClasses?.find(c => c.id === subject.class_id);
                 const details = subjectsDetails[subject.id];
                 const isActive = !details?.status || details.status === 'ativo' || details.status === 'active';
+                const lastDate = lastAttendanceDates[subject.id];
+                const noRecentAttendance = !lastDate || differenceInDays(new Date(), new Date(lastDate)) > 30;
+                const isGrayed = !isActive || noRecentAttendance;
                 return (
-                  <div key={subject.id} className={`space-y-3 ${!isActive ? 'opacity-50' : ''}`}>
+                  <div key={subject.id} className={`space-y-3 ${isGrayed ? 'opacity-50 grayscale' : ''}`}>
                     <div className="flex items-center gap-2">
                       <h4 className="font-semibold text-lg text-primary">{subject.name}</h4>
                       {!isActive && (

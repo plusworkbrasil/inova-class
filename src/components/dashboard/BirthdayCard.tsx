@@ -61,8 +61,8 @@ export const BirthdayCard: React.FC = () => {
 
       profilesWithRoles?.forEach(person => {
         if (person.birth_date) {
-          const birthDate = new Date(person.birth_date);
-          const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+          const [y, m, d] = person.birth_date.split('-').map(Number);
+          const birthDate = new Date(currentYear, m - 1, d);
           
           // Check if birthday falls in current week
           if (thisYearBirthday >= startOfWeek && thisYearBirthday <= endOfWeek) {

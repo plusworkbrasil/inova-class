@@ -243,11 +243,11 @@ export const SubjectGradesExportDialog = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="default">Aprovado</Badge>
-                  <span className="text-xs text-muted-foreground">Média ≥ 7.0</span>
+                  <span className="text-xs text-muted-foreground">Média ≥ 5.0</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="destructive">Reprovado</Badge>
-                  <span className="text-xs text-muted-foreground">Média &lt; 7.0</span>
+                  <span className="text-xs text-muted-foreground">Média &lt; 5.0</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">Pendente</Badge>

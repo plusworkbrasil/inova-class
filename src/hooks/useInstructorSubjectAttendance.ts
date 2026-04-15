@@ -61,12 +61,29 @@ export const useInstructorSubjectAttendance = (
       setLoading(true);
       setError(null);
 
-      // 1. Buscar alunos ATIVOS da turma
+      // 1. Buscar todos os student_ids com registros de frequência nesta disciplina
+      const { data: attendanceStudents, error: attStudError } = await supabase
+        .from('attendance')
+        .select('student_id')
+        .eq('subject_id', subjectId)
+        .eq('class_id', classId);
+
+      if (attStudError) throw attStudError;
+
+      const allStudentIds = [...new Set((attendanceStudents || []).map(a => a.student_id))];
+
+      if (allStudentIds.length === 0) {
+        setStudents([]);
+        setDates([]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Buscar perfis sem filtrar por class_id ou status
       const { data: studentsData, error: studentsError } = await supabase
         .from('profiles')
         .select('id, name, student_id, enrollment_number')
-        .eq('class_id', classId)
-        .eq('status', 'active')
+        .in('id', allStudentIds)
         .order('name');
 
       if (studentsError) throw studentsError;

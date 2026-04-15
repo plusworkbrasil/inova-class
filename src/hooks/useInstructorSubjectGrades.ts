@@ -64,7 +64,7 @@ export const useInstructorSubjectGrades = (
       setLoading(true);
       setError(null);
 
-      // 1. Buscar alunos que tiveram ao menos uma presença na disciplina
+      // 1. Buscar alunos com presença na disciplina
       const { data: attendanceData, error: attendanceError } = await supabase
         .from('attendance')
         .select('student_id')
@@ -74,13 +74,22 @@ export const useInstructorSubjectGrades = (
 
       if (attendanceError) throw attendanceError;
 
-      // Extrair IDs únicos de alunos com presença
-      const studentIdsWithAttendance = [...new Set(
-        (attendanceData || []).map(a => a.student_id)
-      )];
+      // 1b. Buscar alunos com notas na disciplina
+      const { data: gradeStudents, error: gradeStudentsError } = await supabase
+        .from('grades')
+        .select('student_id')
+        .eq('subject_id', subjectId);
 
-      // Se não há alunos com presença, retornar vazio
-      if (studentIdsWithAttendance.length === 0) {
+      if (gradeStudentsError) throw gradeStudentsError;
+
+      // Unir IDs de alunos com presença OU notas
+      const allStudentIds = [...new Set([
+        ...(attendanceData || []).map(a => a.student_id),
+        ...(gradeStudents || []).map(g => g.student_id)
+      ])];
+
+      // Se não há alunos com presença nem notas, retornar vazio
+      if (allStudentIds.length === 0) {
         setStudents([]);
         setEvaluationTypes([]);
         setLoading(false);

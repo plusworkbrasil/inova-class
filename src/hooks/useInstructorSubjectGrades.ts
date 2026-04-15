@@ -197,7 +197,7 @@ const transformToMatrix = (
     const average = totalMaxPoints > 0 ? (totalPoints / totalMaxPoints) * 10 : 0;
     const status: 'approved' | 'failed' | 'pending' = totalGrades === 0 
       ? 'pending' 
-      : average >= 7.0 
+      : average >= 5.0 
         ? 'approved' 
         : 'failed';
 

@@ -102,7 +102,7 @@ export const useInstructorSubjectGrades = (
         .select('id, name, student_id, enrollment_number')
         .eq('class_id', classId)
         .eq('status', 'active')
-        .in('id', studentIdsWithAttendance)
+        .in('id', allStudentIds)
         .order('name');
 
       if (studentsError) throw studentsError;

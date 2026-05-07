@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 
 const StudentAbsences = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'name' | 'absences' | 'percentage'>('absences');

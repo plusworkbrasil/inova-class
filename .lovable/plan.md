@@ -1,18 +1,25 @@
 ## Problema
 
-A rota `/student-absences` está restrita apenas ao papel `student` em `src/App.tsx`, mas a página é o relatório "Alunos Faltosos" exibido nos menus de admin, tutor e coordenador. Por isso o admin é jogado de volta para o dashboard.
+`/student-absences` redireciona admin para `/dashboard` mesmo com permissão concedida no `RoleGuard`.
 
-Além disso, a própria página `StudentAbsences.tsx` faz uma checagem manual de papel que exclui `secretary` e `instructor` (que também aparecem em fluxos staff).
+**Causa raiz:** Em `src/pages/StudentAbsences.tsx` (linhas 30-34), há uma verificação interna que executa **durante a renderização** antes do `profile` ser carregado pelo `useAuth()`. Como `profile` começa `null`, a condição `!profile` é verdadeira e dispara `navigate('/')` imediatamente — mesmo para admin. O `RoleGuard` externo já valida a permissão corretamente, então essa checagem duplicada está causando o redirect indevido.
 
-## Mudanças
+Além disso, chamar `navigate()` dentro do corpo do componente (não em `useEffect`) é antipattern e gera warning do React.
 
-1. **`src/App.tsx`** — alterar o `RoleGuard` da rota `/student-absences` de `['student']` para os papéis que de fato usam o relatório:
-   - `admin`, `secretary`, `coordinator`, `tutor`, `instructor` (constante `INSTRUCTOR_STAFF` já existe e cobre admin/secretary/instructor/tutor; adicionar `coordinator`).
+## Correção
 
-2. **`src/pages/StudentAbsences.tsx`** — ajustar a checagem interna `if (!profile || !['admin','coordinator','tutor'].includes(...))` para liberar os mesmos papéis acima, mantendo coerência com o `RoleGuard` e com os menus já existentes.
+**`src/pages/StudentAbsences.tsx`** — Remover o bloco de verificação interno (linhas 30-34). O `RoleGuard` no `App.tsx` já garante que apenas `admin`, `secretary`, `instructor`, `tutor` e `coordinator` acessem a rota.
 
-Nenhuma alteração de RLS/banco é necessária — o hook `useStudentsWithExcessAbsences` já consulta tabelas (`attendance`, `subjects`, `profiles`, `classes`) cujas políticas permitem leitura para esses papéis.
+```tsx
+// REMOVER:
+if (!profile || !['admin', 'secretary', 'coordinator', 'tutor', 'instructor'].includes(profile.role || '')) {
+  navigate('/');
+  return null;
+}
+```
 
-## Resultado
+Também remover o import não utilizado `useAuth` se não for usado em outro lugar do arquivo (verificar).
 
-Admin (e demais papéis staff) passa a acessar "Alunos Faltosos" normalmente sem ser redirecionado para o Dashboard.
+## Resultado esperado
+
+Admin (e demais roles autorizados) acessam `/student-absences` normalmente sem redirect.

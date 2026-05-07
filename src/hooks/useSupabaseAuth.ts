@@ -244,6 +244,17 @@ export const useSupabaseAuth = () => {
 
   const logout = async () => {
     try {
+      // Registra LOGOUT antes de invalidar sessão
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await supabase.from('audit_logs').insert({
+          user_id: session.user.id,
+          action: 'LOGOUT',
+          table_name: 'auth',
+          record_id: session.user.id,
+          accessed_fields: ['session_end'],
+        });
+      }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 

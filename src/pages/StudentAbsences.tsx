@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAuth } from '@/hooks/useAuth';
+
 import { useStudentsWithExcessAbsences } from '@/hooks/useStudentsWithExcessAbsences';
 import { useActiveClasses } from '@/hooks/useActiveClasses';
 import { exportStudentAbsencesToPDF } from '@/lib/studentAbsencesExport';
@@ -16,7 +16,6 @@ import { toast } from 'sonner';
 
 const StudentAbsences = () => {
   const navigate = useNavigate();
-  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'name' | 'absences' | 'percentage'>('absences');
@@ -27,11 +26,6 @@ const StudentAbsences = () => {
 
   const itemsPerPage = 10;
 
-  // Verificar permissões
-  if (!profile || !['admin', 'secretary', 'coordinator', 'tutor', 'instructor'].includes(profile.role || '')) {
-    navigate('/');
-    return null;
-  }
 
   // Filtrar e ordenar dados
   const filteredData = data.filter(student =>

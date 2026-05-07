@@ -30,7 +30,7 @@ export default function Security() {
       toast.error('Acesso negado: Apenas administradores podem acessar esta página');
       return;
     }
-    fetchLogs(currentPage, pageSize, userFilter, actionFilter);
+    fetchLogs(currentPage - 1, pageSize, { userQuery: userFilter, action: actionFilter });
     fetchSecurityMetrics();
   }, [currentPage, userFilter, actionFilter, profile?.role]);
 

@@ -1,49 +1,32 @@
+## Diagnóstico
 
+No `RoleGuard.tsx` a decisão de "autorizado" depende de `profile.role`, mas o `profile` é carregado de forma assíncrona (via `setTimeout` dentro de `useSupabaseAuth`). O `loading` do hook fica `false` assim que `getSession()` termina — **antes** do profile ser efetivamente buscado.
 
-# Plano: Mostrar alunos com frequência mesmo após mudança de turma
+Resultado: existe uma janela em que `loading = false`, `user` existe, mas `profile` ainda é `null` → `role` é `undefined` → `isAuthorized = false` → o guard executa `<Navigate to="/dashboard" replace />`. Como o Dashboard não tem RoleGuard, ele renderiza, espera o profile e fica lá. Por isso "quase tudo cai no dashboard" mesmo com role admin.
 
-## Problema
-O hook `useInstructorSubjectAttendance.ts` (linhas 65-69) busca alunos apenas por `class_id` e `status = 'active'`. Alunos que foram movidos para outra turma ou desativados não aparecem na lista de frequência, mesmo tendo registros de presença na disciplina.
+A prova está nos logs: o `Profile loaded` só aparece **depois** que a navegação já aconteceu.
 
-É o mesmo problema que foi corrigido para notas.
+Risco adicional: o mesmo race pode disparar a RPC `record_unauthorized_access_attempt` indevidamente (3 navegações rápidas → conta auto‑bloqueada).
 
-## Solução
-Aplicar a mesma lógica usada no `useInstructorSubjectGrades.ts`: buscar os IDs dos alunos diretamente da tabela `attendance` e então buscar seus perfis sem filtrar por `class_id` nem `status`.
+## Correção proposta
 
-## Alteração
+Ajustar `src/components/auth/RoleGuard.tsx` para aguardar o profile antes de decidir:
 
-**Arquivo:** `src/hooks/useInstructorSubjectAttendance.ts`
+1. Tratar como "ainda carregando" enquanto `loading || (user && !profile)` — exibir o spinner já existente, sem redirecionar e sem registrar tentativa.
+2. Só avaliar `isAuthorized` / chamar `record_unauthorized_access_attempt` quando `profile` (e portanto `role`) estiver disponível.
+3. Manter o restante da lógica (bloqueio de conta, toast, logout, notificação a admins) inalterada.
 
-Substituir a lógica de busca de alunos (linhas 64-71) por:
+Nenhuma mudança de banco, RLS ou demais páginas é necessária — o problema é puramente de timing no guard.
 
-```typescript
-// 1. Buscar todos os student_ids com registros de frequência nesta disciplina
-const { data: attendanceStudents, error: attStudError } = await supabase
-  .from('attendance')
-  .select('student_id')
-  .eq('subject_id', subjectId)
-  .eq('class_id', classId);
+## Detalhes técnicos
 
-if (attStudError) throw attStudError;
-
-const allStudentIds = [...new Set((attendanceStudents || []).map(a => a.student_id))];
-
-if (allStudentIds.length === 0) {
-  setStudents([]);
-  setDates([]);
-  setLoading(false);
-  return;
-}
-
-// 2. Buscar perfis sem filtrar por class_id ou status
-const { data: studentsData, error: studentsError } = await supabase
-  .from('profiles')
-  .select('id, name, student_id, enrollment_number')
-  .in('id', allStudentIds)
-  .order('name');
+```text
+RoleGuard render:
+  if (loading || (user && !profile))  -> <Spinner/>
+  if (!user)                          -> Navigate /auth
+  if (profile.status === 'blocked')   -> logout + Navigate /auth
+  if (!allowedRoles.includes(role))   -> record attempt + Navigate /dashboard
+  else                                -> children
 ```
 
-O restante do hook (busca de attendance, transformação em matriz e filtro de `total_present > 0`) permanece igual.
-
-1 arquivo alterado.
-
+Opcional (não incluído por padrão, posso adicionar se quiser): também só registrar a tentativa após um pequeno debounce (ex.: 300 ms) para evitar falsos positivos quando o usuário navega rápido entre rotas.

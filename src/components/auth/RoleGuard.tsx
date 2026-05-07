@@ -27,10 +27,14 @@ export const RoleGuard = ({ allowedRoles, children, redirectTo = '/dashboard' }:
   const role = profile?.role;
   const isAuthorized = !!role && allowedRoles.includes(role);
   const isBlocked = profile?.status === 'blocked';
+  const profilePending = !!user && !profile;
 
   useEffect(() => {
+    // Aguarda profile carregar antes de qualquer decisão
+    if (loading || profilePending) return;
+
     // Se a conta está bloqueada, força logout imediato
-    if (!loading && user && isBlocked) {
+    if (user && isBlocked) {
       toast({
         variant: 'destructive',
         title: 'Conta bloqueada',

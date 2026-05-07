@@ -97,10 +97,7 @@ export const BatchResetStudentPasswordsForm = () => {
               </p>
               <div className="bg-muted p-3 rounded-md space-y-2">
                 <p className="text-sm">
-                  <strong>Nova senha padrão:</strong> <code className="bg-background px-2 py-1 rounded">J@V3mTech</code>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Os alunos poderão alterar suas senhas após o login usando a funcionalidade "Alterar Senha" disponível no menu do perfil.
+                  Cada aluno receberá uma <strong>senha temporária única e aleatória</strong>. A lista será retornada após a operação — copie e distribua de forma segura. Os alunos serão obrigados a trocar a senha no próximo login.
                 </p>
               </div>
               <p className="text-destructive text-sm font-medium">

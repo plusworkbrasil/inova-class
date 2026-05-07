@@ -45,7 +45,7 @@ export default function Security() {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchLogs(1, pageSize, userFilter, actionFilter);
+    fetchLogs(0, pageSize, { userQuery: userFilter, action: actionFilter });
   };
 
   const handleClearFilters = () => {

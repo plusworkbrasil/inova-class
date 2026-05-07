@@ -175,6 +175,17 @@ export const useSupabaseAuth = () => {
         }
       }
 
+      // Registra LOGIN no audit_logs
+      if (data.user) {
+        await supabase.from('audit_logs').insert({
+          user_id: data.user.id,
+          action: 'LOGIN',
+          table_name: 'auth',
+          record_id: data.user.id,
+          accessed_fields: ['email_password'],
+        });
+      }
+
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema."

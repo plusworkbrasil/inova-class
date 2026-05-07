@@ -29,8 +29,8 @@ import { ptBR } from 'date-fns/locale';
 
 
 const Attendance = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole | undefined>(undefined);
+  const [userName, setUserName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('');

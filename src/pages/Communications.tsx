@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UserRole } from '@/types/user';
+import { useAuth } from '@/hooks/useAuth';
 import { useCommunications } from '@/hooks/useCommunications';
 import { useCommunicationsStats } from '@/hooks/useCommunicationsStats';
 import { useRealRecipients } from '@/hooks/useRealRecipients';
@@ -55,8 +56,9 @@ const mockCommunications = [
 ];
 
 const Communications = () => {
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const { profile } = useAuth();
+  const userRole = profile?.role as UserRole | undefined;
+  const userName = profile?.name ?? '';
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<string[]>([]);
   const [messageTitle, setMessageTitle] = useState('');

@@ -24,8 +24,8 @@ const StudentDashboard = () => {
   const { studentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole | undefined>(undefined);
+  const [userName, setUserName] = useState('');
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 
@@ -37,16 +37,6 @@ const StudentDashboard = () => {
   const { data: declarations } = useSupabaseDeclarations();
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
-
-    // Se temos perfil do usuário logado, usar esses dados
     if (profile) {
       setUserRole(profile.role as UserRole);
       setUserName(profile.name);

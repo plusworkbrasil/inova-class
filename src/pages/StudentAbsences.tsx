@@ -26,11 +26,6 @@ const StudentAbsences = () => {
 
   const itemsPerPage = 10;
 
-  // Verificar permissões
-  if (!profile || !['admin', 'secretary', 'coordinator', 'tutor', 'instructor'].includes(profile.role || '')) {
-    navigate('/');
-    return null;
-  }
 
   // Filtrar e ordenar dados
   const filteredData = data.filter(student =>

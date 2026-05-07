@@ -52,32 +52,32 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/classes" element={<Classes />} />
-          <Route path="/subjects" element={<Subjects />} />
-          <Route path="/attendance" element={<Attendance />} />
-          <Route path="/grades" element={<Grades />} />
-          <Route path="/subject-grades" element={<SubjectGrades />} />
-          <Route path="/teacher-grades" element={<TeacherGrades />} />
+          <Route path="/users" element={<RoleGuard allowedRoles={ADMIN}><Users /></RoleGuard>} />
+          <Route path="/classes" element={<RoleGuard allowedRoles={ADMIN}><Classes /></RoleGuard>} />
+          <Route path="/subjects" element={<RoleGuard allowedRoles={[...ADMIN, 'instructor']}><Subjects /></RoleGuard>} />
+          <Route path="/attendance" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><Attendance /></RoleGuard>} />
+          <Route path="/grades" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><Grades /></RoleGuard>} />
+          <Route path="/subject-grades" element={<RoleGuard allowedRoles={[...ADMIN, 'instructor']}><SubjectGrades /></RoleGuard>} />
+          <Route path="/teacher-grades" element={<RoleGuard allowedRoles={['instructor']}><TeacherGrades /></RoleGuard>} />
           <Route path="/declarations" element={<Declarations />} />
-          <Route path="/evasions" element={<Evasions />} />
+          <Route path="/evasions" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><Evasions /></RoleGuard>} />
           <Route path="/communications" element={<Communications />} />
-          <Route path="/equipment" element={<Equipment />} />
-          <Route path="/security" element={<Security />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/student-dashboard/:studentId" element={<StudentDashboard />} />
-          <Route path="/student-grades" element={<StudentGrades />} />
+          <Route path="/equipment" element={<RoleGuard allowedRoles={[...ADMIN, 'instructor']}><Equipment /></RoleGuard>} />
+          <Route path="/security" element={<RoleGuard allowedRoles={['admin']}><Security /></RoleGuard>} />
+          <Route path="/reports" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><Reports /></RoleGuard>} />
+          <Route path="/student-dashboard/:studentId" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><StudentDashboard /></RoleGuard>} />
+          <Route path="/student-grades" element={<RoleGuard allowedRoles={['student']}><StudentGrades /></RoleGuard>} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/notices" element={<Notices />} />
-          <Route path="/instructor-subjects" element={<InstructorSubjects />} />
-          <Route path="/class-timeline" element={<ClassTimeline />} />
-          <Route path="/student-history" element={<StudentHistory />} />
-          <Route path="/student-absences" element={<StudentAbsences />} />
-          <Route path="/students-at-risk" element={<StudentsAtRisk />} />
-          <Route path="/selected-students" element={<SelectedStudents />} />
+          <Route path="/instructor-subjects" element={<RoleGuard allowedRoles={['instructor']}><InstructorSubjects /></RoleGuard>} />
+          <Route path="/class-timeline" element={<RoleGuard allowedRoles={STAFF}><ClassTimeline /></RoleGuard>} />
+          <Route path="/student-history" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><StudentHistory /></RoleGuard>} />
+          <Route path="/student-absences" element={<RoleGuard allowedRoles={['student']}><StudentAbsences /></RoleGuard>} />
+          <Route path="/students-at-risk" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><StudentsAtRisk /></RoleGuard>} />
+          <Route path="/selected-students" element={<RoleGuard allowedRoles={ADMIN}><SelectedStudents /></RoleGuard>} />
           <Route path="/confirm-enrollment/:token" element={<ConfirmEnrollment />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<RoleGuard allowedRoles={['admin']}><Settings /></RoleGuard>} />
           <Route path="/documentacao" element={<SystemDocumentation />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

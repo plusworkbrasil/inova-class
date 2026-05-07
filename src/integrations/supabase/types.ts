@@ -1269,6 +1269,30 @@ export type Database = {
         }
         Relationships: []
       }
+      unauthorized_access_attempts: {
+        Row: {
+          attempted_at: string
+          attempted_route: string
+          id: string
+          user_id: string
+          user_role: string | null
+        }
+        Insert: {
+          attempted_at?: string
+          attempted_route: string
+          id?: string
+          user_id: string
+          user_role?: string | null
+        }
+        Update: {
+          attempted_at?: string
+          attempted_route?: string
+          id?: string
+          user_id?: string
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           granted_at: string | null
@@ -1506,6 +1530,7 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      is_account_blocked: { Args: { p_user_id?: string }; Returns: boolean }
       is_instructor_of_subject:
         | { Args: { _subject_id: string; _user_id: string }; Returns: boolean }
         | { Args: { subject: string; user_id: string }; Returns: boolean }
@@ -1538,11 +1563,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_unauthorized_access_attempt: {
+        Args: { p_route: string }
+        Returns: Json
+      }
       setup_test_admin: { Args: never; Returns: undefined }
       student_in_class: {
         Args: { _class_id: string; _user_id: string }
         Returns: boolean
       }
+      unblock_user: { Args: { p_user_id: string }; Returns: undefined }
       update_student_status_for_evasion: {
         Args: { p_new_status: string; p_student_id: string }
         Returns: undefined

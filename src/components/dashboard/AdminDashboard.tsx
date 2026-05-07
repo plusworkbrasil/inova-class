@@ -10,7 +10,8 @@ import { useReportsData } from '@/hooks/useReportsData';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight, UserX } from 'lucide-react';
+import { Users, GraduationCap, AlertTriangle, TrendingUp, UserCheck, ClipboardX, BookOpen, Calendar, Key, Filter, AlertOctagon, ArrowRight, Clock, ChevronLeft, ChevronRight, UserX, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import { ChangeOwnPasswordDialog } from '@/components/ui/change-own-password-dialog';
@@ -182,94 +183,104 @@ const AdminDashboard = () => {
 
       {/* Widget de Alunos em Risco Crítico */}
       <Card className="border-destructive/50 bg-destructive/5">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertOctagon className="h-5 w-5 text-destructive" />
-              <span>Alunos em Risco Crítico</span>
-              {totalCriticalStudents > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {totalCriticalStudents}
-                </Badge>
-              )}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/students-at-risk')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Ver Todos
-              <ArrowRight className="h-4 w-4 ml-1" />
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {riskLoading ? (
-            <div className="flex items-center justify-center h-24">
-              <p className="text-muted-foreground">Carregando...</p>
-            </div>
-          ) : criticalStudents.length > 0 ? (
-            <div className="space-y-3">
-              {criticalStudents.map((student) => (
-                <div
-                  key={student.id}
-                  className="p-3 bg-background rounded-lg border border-destructive/20 hover:border-destructive/40 transition-colors"
+        <Collapsible defaultOpen={false}>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center justify-between gap-2">
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 flex-1 text-left hover:opacity-80 transition-opacity group"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <button
-                        onClick={() => handleViewStudentHistory(student.student_id)}
-                        className="font-medium text-foreground hover:text-primary hover:underline text-left"
-                      >
-                        {student.student?.name || 'Nome não disponível'}
-                      </button>
-                      <p className="text-sm text-muted-foreground">
-                        {student.student_class?.name || 'Sem turma'}
-                      </p>
-                    </div>
+                  <AlertOctagon className="h-5 w-5 text-destructive" />
+                  <span>Alunos em Risco Crítico</span>
+                  {totalCriticalStudents > 0 && (
                     <Badge variant="destructive" className="ml-2">
-                      Score: {student.risk_score || 0}
+                      {totalCriticalStudents}
                     </Badge>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span>
-                      Frequência: <span className="text-destructive font-medium">{student.attendance_percentage?.toFixed(0) || 0}%</span>
-                    </span>
-                    <span>
-                      Média: <span className="font-medium">{student.grade_average?.toFixed(1) || 'N/A'}</span>
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    {student.last_intervention ? (
-                      <span>
-                        Última intervenção: {formatDistanceToNow(new Date(student.last_intervention), { addSuffix: true, locale: ptBR })}
-                      </span>
-                    ) : (
-                      <span className="text-warning">Sem intervenções registradas</span>
-                    )}
-                    {(student.interventions_count ?? 0) > 0 && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {student.interventions_count} intervenção(ões)
-                      </Badge>
-                    )}
-                  </div>
+                  )}
+                  <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </button>
+              </CollapsibleTrigger>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => { e.stopPropagation(); navigate('/students-at-risk'); }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Ver Todos
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent>
+              {riskLoading ? (
+                <div className="flex items-center justify-center h-24">
+                  <p className="text-muted-foreground">Carregando...</p>
                 </div>
-              ))}
-              {totalCriticalStudents > 3 && (
-                <p className="text-center text-sm text-muted-foreground pt-2">
-                  + {totalCriticalStudents - 3} outros alunos em risco crítico
-                </p>
+              ) : criticalStudents.length > 0 ? (
+                <div className="space-y-3">
+                  {criticalStudents.map((student) => (
+                    <div
+                      key={student.id}
+                      className="p-3 bg-background rounded-lg border border-destructive/20 hover:border-destructive/40 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <button
+                            onClick={() => handleViewStudentHistory(student.student_id)}
+                            className="font-medium text-foreground hover:text-primary hover:underline text-left"
+                          >
+                            {student.student?.name || 'Nome não disponível'}
+                          </button>
+                          <p className="text-sm text-muted-foreground">
+                            {student.student_class?.name || 'Sem turma'}
+                          </p>
+                        </div>
+                        <Badge variant="destructive" className="ml-2">
+                          Score: {student.risk_score || 0}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                        <span>
+                          Frequência: <span className="text-destructive font-medium">{student.attendance_percentage?.toFixed(0) || 0}%</span>
+                        </span>
+                        <span>
+                          Média: <span className="font-medium">{student.grade_average?.toFixed(1) || 'N/A'}</span>
+                        </span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {student.last_intervention ? (
+                          <span>
+                            Última intervenção: {formatDistanceToNow(new Date(student.last_intervention), { addSuffix: true, locale: ptBR })}
+                          </span>
+                        ) : (
+                          <span className="text-warning">Sem intervenções registradas</span>
+                        )}
+                        {(student.interventions_count ?? 0) > 0 && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {student.interventions_count} intervenção(ões)
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {totalCriticalStudents > 3 && (
+                    <p className="text-center text-sm text-muted-foreground pt-2">
+                      + {totalCriticalStudents - 3} outros alunos em risco crítico
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-24 text-center">
+                  <p className="text-muted-foreground">Nenhum aluno em risco crítico</p>
+                  <p className="text-sm text-muted-foreground/70">Todos os alunos estão em situação regular</p>
+                </div>
               )}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-24 text-center">
-              <p className="text-muted-foreground">Nenhum aluno em risco crítico</p>
-              <p className="text-sm text-muted-foreground/70">Todos os alunos estão em situação regular</p>
-            </div>
-          )}
-        </CardContent>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       {/* Birthday Card and Charts */}

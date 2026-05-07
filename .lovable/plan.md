@@ -1,32 +1,15 @@
-## Problema
+## Objetivo
 
-Admin não consegue acessar `/subject-grades` ("Notas por Disciplina") — vê "Acesso Negado".
+No dashboard do Admin, exibir o widget **"Alunos em Risco Crítico"** retraído por padrão. O usuário clica no cabeçalho para expandir e ver a lista.
 
-**Causa raiz:** Em `src/pages/SubjectGrades.tsx` (linhas 37-53), há uma verificação interna `canManageGrades = ['admin', 'secretary'].includes(userRole)` que executa **durante a renderização inicial** antes do `profile` ser carregado pelo `useAuth()`. Como `profile` começa `null`, `userRole` recebe o fallback `'student'` (linha 37: `(profile?.role || 'student')`), e a tela "Acesso Negado" é renderizada imediatamente — mesmo para admin.
+## Mudanças
 
-O `RoleGuard` externo em `App.tsx` já valida corretamente (`[...ADMIN, 'instructor']`), tornando essa checagem duplicada redundante e bugada.
+**Arquivo:** `src/components/dashboard/AdminDashboard.tsx`
 
-Mesmo padrão da correção feita em `StudentAbsences.tsx`.
+- Envolver o `CardContent` (linhas 207–272) com `Collapsible` do shadcn (`@/components/ui/collapsible`).
+- Estado inicial: `open = false` (retraído).
+- Tornar o `CardHeader` clicável como `CollapsibleTrigger`, adicionando ícone Chevron (Down/Up) que rotaciona conforme o estado.
+- Manter o badge com a contagem total e o botão "Ver Todos" sempre visíveis no header (mesmo retraído), para que o admin veja rapidamente quantos alunos críticos existem sem precisar expandir.
+- Impedir que o clique no botão "Ver Todos" propague para o trigger do Collapsible (`e.stopPropagation()`).
 
-## Correção
-
-**`src/pages/SubjectGrades.tsx`** — Remover o bloco de verificação interno (linhas 49-61):
-
-```tsx
-// REMOVER:
-const canManageGrades = ['admin', 'secretary'].includes(userRole);
-
-if (!canManageGrades) {
-  return (
-    <Layout ...>
-      <div>Acesso Negado</div>
-    </Layout>
-  );
-}
-```
-
-O `RoleGuard` no `App.tsx` já garante que apenas `admin`, `secretary` e `instructor` acessem a rota.
-
-## Resultado esperado
-
-Admin (e demais roles autorizados) acessam `/subject-grades` normalmente sem ver "Acesso Negado".
+Nenhuma alteração de lógica, dados ou outros widgets.

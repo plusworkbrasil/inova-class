@@ -34,8 +34,13 @@ import SelectedStudents from "./pages/SelectedStudents";
 import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 import SystemDocumentation from "./pages/SystemDocumentation";
 import ResetPassword from "./pages/ResetPassword";
+import { RoleGuard } from "./components/auth/RoleGuard";
 
 const queryClient = new QueryClient();
+
+const ADMIN = ['admin', 'secretary'];
+const STAFF = ['admin', 'secretary', 'instructor', 'tutor', 'coordinator'];
+const INSTRUCTOR_STAFF = ['admin', 'secretary', 'instructor', 'tutor'];
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

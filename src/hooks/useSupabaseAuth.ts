@@ -166,6 +166,15 @@ export const useSupabaseAuth = () => {
 
       if (error) throw error;
 
+      // Bloqueia entrada se a conta estiver com status 'blocked'
+      if (data.user) {
+        const { data: blocked } = await supabase.rpc('is_account_blocked', { p_user_id: data.user.id });
+        if (blocked === true) {
+          await supabase.auth.signOut();
+          throw new Error('Conta bloqueada por tentativas de acesso não autorizado. Procure um administrador.');
+        }
+      }
+
       toast({
         title: "Login realizado com sucesso!",
         description: "Bem-vindo ao sistema."

@@ -27,10 +27,14 @@ export const RoleGuard = ({ allowedRoles, children, redirectTo = '/dashboard' }:
   const role = profile?.role;
   const isAuthorized = !!role && allowedRoles.includes(role);
   const isBlocked = profile?.status === 'blocked';
+  const profilePending = !!user && !profile;
 
   useEffect(() => {
+    // Aguarda profile carregar antes de qualquer decisão
+    if (loading || profilePending) return;
+
     // Se a conta está bloqueada, força logout imediato
-    if (!loading && user && isBlocked) {
+    if (user && isBlocked) {
       toast({
         variant: 'destructive',
         title: 'Conta bloqueada',
@@ -41,7 +45,7 @@ export const RoleGuard = ({ allowedRoles, children, redirectTo = '/dashboard' }:
     }
 
     // Registra tentativa de acesso não autorizado (uma vez por rota)
-    if (!loading && user && role && !isAuthorized && reportedRef.current !== location.pathname) {
+    if (user && role && !isAuthorized && reportedRef.current !== location.pathname) {
       reportedRef.current = location.pathname;
       supabase.rpc('record_unauthorized_access_attempt', { p_route: location.pathname })
         .then(({ data, error }) => {
@@ -67,9 +71,9 @@ export const RoleGuard = ({ allowedRoles, children, redirectTo = '/dashboard' }:
           }
         });
     }
-  }, [loading, user, role, isAuthorized, isBlocked, location.pathname, logout, toast]);
+  }, [loading, profilePending, user, role, isAuthorized, isBlocked, location.pathname, logout, toast]);
 
-  if (loading) {
+  if (loading || profilePending) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

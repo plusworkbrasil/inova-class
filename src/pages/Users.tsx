@@ -41,7 +41,7 @@ import {
 
 const Users = () => {
   const { profile } = useAuth();
-  const userRole = (profile?.role || 'admin') as UserRole;
+  const userRole = (profile?.role || 'student') as UserRole;
   const userName = profile?.name || 'Admin';
   
   const [searchTerm, setSearchTerm] = useState('');

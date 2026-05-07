@@ -14,6 +14,46 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authentication: require either CRON_SECRET header (for Supabase Cron) or a valid admin JWT
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const providedSecret = req.headers.get("x-cron-secret");
+  const authHeader = req.headers.get("Authorization");
+
+  let authorized = false;
+
+  if (cronSecret && providedSecret && providedSecret === cronSecret) {
+    authorized = true;
+  } else if (authHeader) {
+    try {
+      const tmpClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      const { data: { user } } = await tmpClient.auth.getUser();
+      if (user) {
+        const adminCheck = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        const { data: roleRow } = await adminCheck
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .in("role", ["admin", "secretary"])
+          .maybeSingle();
+        if (roleRow) authorized = true;
+      }
+    } catch (_) { /* ignore, will fail below */ }
+  }
+
+  if (!authorized) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   try {
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,

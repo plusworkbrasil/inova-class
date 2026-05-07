@@ -67,8 +67,21 @@ serve(async (req) => {
       );
     }
 
-    // JWT validation already proves user identity - no need to re-validate password
-    console.log('Password change confirmed by authenticated user:', user.email);
+    // Verify current password by attempting a sign-in with it
+    const verifyClient = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+    });
+    const { error: signInError } = await verifyClient.auth.signInWithPassword({
+      email: user.email!,
+      password: currentPassword,
+    });
+    if (signInError) {
+      console.warn('Current password verification failed for', user.email);
+      return new Response(
+        JSON.stringify({ error: 'Senha atual incorreta' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Validate new password strength
     const passwordValidation = validatePassword(newPassword);

@@ -32,20 +32,19 @@ Deno.serve(async (req) => {
       .eq("email", email.trim().toLowerCase())
       .maybeSingle();
 
+    const genericResponse = () => new Response(
+      JSON.stringify({ success: true, message: "Se o email estiver cadastrado e tiver telefone associado, você receberá um link via WhatsApp." }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
     if (profileError || !profile) {
-      // Generic message for security (don't reveal if email exists)
-      return new Response(
-        JSON.stringify({ success: true, message: "Se o email estiver cadastrado, você receberá um link via WhatsApp." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return genericResponse();
     }
 
-    // Check if user has phone
+    // Don't reveal whether the account exists but lacks a phone — return same generic response
     if (!profile.phone) {
-      return new Response(
-        JSON.stringify({ success: false, noPhone: true }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log(`Password reset requested for account without phone: ${profile.id}`);
+      return genericResponse();
     }
 
     // Rate limiting: max 3 requests per email in 1 hour

@@ -37,16 +37,6 @@ const StudentDashboard = () => {
   const { data: declarations } = useSupabaseDeclarations();
 
   useEffect(() => {
-    // Recuperar dados do usuário do localStorage
-    const savedRole = localStorage.getItem('userRole') as UserRole;
-    const savedName = localStorage.getItem('userName');
-    
-    if (savedRole && savedName) {
-      setUserRole(savedRole);
-      setUserName(savedName);
-    }
-
-    // Se temos perfil do usuário logado, usar esses dados
     if (profile) {
       setUserRole(profile.role as UserRole);
       setUserName(profile.name);

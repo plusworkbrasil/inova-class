@@ -72,7 +72,7 @@ const App = () => (
           <Route path="/instructor-subjects" element={<RoleGuard allowedRoles={['instructor']}><InstructorSubjects /></RoleGuard>} />
           <Route path="/class-timeline" element={<RoleGuard allowedRoles={STAFF}><ClassTimeline /></RoleGuard>} />
           <Route path="/student-history" element={<RoleGuard allowedRoles={INSTRUCTOR_STAFF}><StudentHistory /></RoleGuard>} />
-          <Route path="/student-absences" element={<RoleGuard allowedRoles={['student']}><StudentAbsences /></RoleGuard>} />
+          <Route path="/student-absences" element={<RoleGuard allowedRoles={[...INSTRUCTOR_STAFF, 'coordinator']}><StudentAbsences /></RoleGuard>} />
           <Route path="/students-at-risk" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><StudentsAtRisk /></RoleGuard>} />
           <Route path="/selected-students" element={<RoleGuard allowedRoles={ADMIN}><SelectedStudents /></RoleGuard>} />
           <Route path="/confirm-enrollment/:token" element={<ConfirmEnrollment />} />

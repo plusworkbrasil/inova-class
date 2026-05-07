@@ -28,7 +28,7 @@ const StudentAbsences = () => {
   const itemsPerPage = 10;
 
   // Verificar permissões
-  if (!profile || !['admin', 'coordinator', 'tutor'].includes(profile.role || '')) {
+  if (!profile || !['admin', 'secretary', 'coordinator', 'tutor', 'instructor'].includes(profile.role || '')) {
     navigate('/');
     return null;
   }

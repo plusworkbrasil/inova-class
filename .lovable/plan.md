@@ -1,25 +1,32 @@
 ## Problema
 
-`/student-absences` redireciona admin para `/dashboard` mesmo com permissão concedida no `RoleGuard`.
+Admin não consegue acessar `/subject-grades` ("Notas por Disciplina") — vê "Acesso Negado".
 
-**Causa raiz:** Em `src/pages/StudentAbsences.tsx` (linhas 30-34), há uma verificação interna que executa **durante a renderização** antes do `profile` ser carregado pelo `useAuth()`. Como `profile` começa `null`, a condição `!profile` é verdadeira e dispara `navigate('/')` imediatamente — mesmo para admin. O `RoleGuard` externo já valida a permissão corretamente, então essa checagem duplicada está causando o redirect indevido.
+**Causa raiz:** Em `src/pages/SubjectGrades.tsx` (linhas 37-53), há uma verificação interna `canManageGrades = ['admin', 'secretary'].includes(userRole)` que executa **durante a renderização inicial** antes do `profile` ser carregado pelo `useAuth()`. Como `profile` começa `null`, `userRole` recebe o fallback `'student'` (linha 37: `(profile?.role || 'student')`), e a tela "Acesso Negado" é renderizada imediatamente — mesmo para admin.
 
-Além disso, chamar `navigate()` dentro do corpo do componente (não em `useEffect`) é antipattern e gera warning do React.
+O `RoleGuard` externo em `App.tsx` já valida corretamente (`[...ADMIN, 'instructor']`), tornando essa checagem duplicada redundante e bugada.
+
+Mesmo padrão da correção feita em `StudentAbsences.tsx`.
 
 ## Correção
 
-**`src/pages/StudentAbsences.tsx`** — Remover o bloco de verificação interno (linhas 30-34). O `RoleGuard` no `App.tsx` já garante que apenas `admin`, `secretary`, `instructor`, `tutor` e `coordinator` acessem a rota.
+**`src/pages/SubjectGrades.tsx`** — Remover o bloco de verificação interno (linhas 49-61):
 
 ```tsx
 // REMOVER:
-if (!profile || !['admin', 'secretary', 'coordinator', 'tutor', 'instructor'].includes(profile.role || '')) {
-  navigate('/');
-  return null;
+const canManageGrades = ['admin', 'secretary'].includes(userRole);
+
+if (!canManageGrades) {
+  return (
+    <Layout ...>
+      <div>Acesso Negado</div>
+    </Layout>
+  );
 }
 ```
 
-Também remover o import não utilizado `useAuth` se não for usado em outro lugar do arquivo (verificar).
+O `RoleGuard` no `App.tsx` já garante que apenas `admin`, `secretary` e `instructor` acessem a rota.
 
 ## Resultado esperado
 
-Admin (e demais roles autorizados) acessam `/student-absences` normalmente sem redirect.
+Admin (e demais roles autorizados) acessam `/subject-grades` normalmente sem ver "Acesso Negado".

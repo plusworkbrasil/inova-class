@@ -500,68 +500,158 @@ const Settings = () => {
           <TabsContent value="logs" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Logs de Auditoria</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Histórico completo de ações realizadas no sistema
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex gap-4">
-                    <Input 
-                      placeholder="Filtrar por usuário..." 
-                      className="max-w-sm"
-                      value={userFilter}
-                      onChange={(e) => setUserFilter(e.target.value)}
-                    />
-                    <Select value={actionFilter} onValueChange={setActionFilter}>
-                      <SelectTrigger className="max-w-sm">
-                        <SelectValue placeholder="Filtrar por ação" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas as ações</SelectItem>
-                        <SelectItem value="VIEW">Visualizar</SelectItem>
-                        <SelectItem value="VIEW_MEDICAL">Visualizar Dados Médicos</SelectItem>
-                        <SelectItem value="VIEW_PERSONAL">Visualizar Dados Pessoais</SelectItem>
-                        <SelectItem value="UPDATE">Atualizar</SelectItem>
-                        <SelectItem value="CREATE">Criar</SelectItem>
-                        <SelectItem value="DELETE">Deletar</SelectItem>
-                        <SelectItem value="LOGIN">Login</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      Logs de Auditoria
+                      <span className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground">
+                        <span
+                          className={`inline-block h-2 w-2 rounded-full ${
+                            isLive ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground/40'
+                          }`}
+                        />
+                        {isLive ? 'Ao vivo' : 'Conectando...'}
+                      </span>
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Histórico em tempo real de todas as ações realizadas no sistema
+                    </p>
                   </div>
-                  
-                  {logsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                  ) : (
-                    <div className="border rounded-lg">
-                      <Table>
-                        <TableHeader>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => refreshLogs()}>
+                      Atualizar
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={exportCsv}>
+                      Exportar CSV
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Resumo */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Criados (página)</div>
+                    <div className="text-2xl font-bold text-green-600">{summary.created}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Atualizados (página)</div>
+                    <div className="text-2xl font-bold text-blue-600">{summary.updated}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Deletados (página)</div>
+                    <div className="text-2xl font-bold text-red-600">{summary.deleted}</div>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <div className="text-xs text-muted-foreground">Logins (página)</div>
+                    <div className="text-2xl font-bold">{summary.logins}</div>
+                  </div>
+                </div>
+
+                {/* Filtros */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
+                  <Input
+                    placeholder="Buscar usuário (nome/email)..."
+                    value={userFilter}
+                    onChange={(e) => setUserFilter(e.target.value)}
+                  />
+                  <Select value={actionFilter} onValueChange={setActionFilter}>
+                    <SelectTrigger><SelectValue placeholder="Ação" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Todas as ações</SelectItem>
+                      <SelectItem value="RECORD_CREATED">Registro criado</SelectItem>
+                      <SelectItem value="RECORD_UPDATED">Registro atualizado</SelectItem>
+                      <SelectItem value="RECORD_DELETED">Registro deletado</SelectItem>
+                      <SelectItem value="LOGIN">Login</SelectItem>
+                      <SelectItem value="LOGOUT">Logout</SelectItem>
+                      <SelectItem value="UNAUTHORIZED_ACCESS_ATTEMPT">Acesso não autorizado</SelectItem>
+                      <SelectItem value="ACCOUNT_AUTO_BLOCKED">Conta bloqueada</SelectItem>
+                      <SelectItem value="ACCOUNT_UNBLOCKED">Conta desbloqueada</SelectItem>
+                      <SelectItem value="UPDATE_PASSWORD">Atualização de senha</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={tableFilter} onValueChange={setTableFilter}>
+                    <SelectTrigger><SelectValue placeholder="Recurso" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Todos os recursos</SelectItem>
+                      <SelectItem value="profiles">Usuários</SelectItem>
+                      <SelectItem value="classes">Turmas</SelectItem>
+                      <SelectItem value="subjects">Disciplinas</SelectItem>
+                      <SelectItem value="attendance">Frequência</SelectItem>
+                      <SelectItem value="grades">Notas</SelectItem>
+                      <SelectItem value="declarations">Declarações</SelectItem>
+                      <SelectItem value="evasions">Evasões</SelectItem>
+                      <SelectItem value="equipment">Equipamentos</SelectItem>
+                      <SelectItem value="equipment_allocations">Alocações</SelectItem>
+                      <SelectItem value="communications">Comunicações</SelectItem>
+                      <SelectItem value="notifications">Notificações</SelectItem>
+                      <SelectItem value="user_roles">Papéis</SelectItem>
+                      <SelectItem value="auth">Autenticação</SelectItem>
+                      <SelectItem value="system_settings">Configurações</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                    <SelectTrigger><SelectValue placeholder="Período" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="24h">Últimas 24 horas</SelectItem>
+                      <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                      <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                      <SelectItem value="all">Todo o histórico</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                    <SelectTrigger><SelectValue placeholder="Por página" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="25">25 por página</SelectItem>
+                      <SelectItem value="50">50 por página</SelectItem>
+                      <SelectItem value="100">100 por página</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {logsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data/Hora</TableHead>
+                          <TableHead>Usuário</TableHead>
+                          <TableHead>Ação</TableHead>
+                          <TableHead>Recurso</TableHead>
+                          <TableHead>Campos afetados</TableHead>
+                          <TableHead>IP</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {auditLogs.length === 0 ? (
                           <TableRow>
-                            <TableHead>Usuário</TableHead>
-                            <TableHead>Ação</TableHead>
-                            <TableHead>Recurso</TableHead>
-                            <TableHead>Data/Hora</TableHead>
-                            <TableHead>IP</TableHead>
-                            <TableHead>Campos Acessados</TableHead>
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                              Nenhum log encontrado
+                            </TableCell>
                           </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {auditLogs.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                                Nenhum log encontrado
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            auditLogs.map((log) => (
-                              <TableRow key={log.id}>
+                        ) : (
+                          auditLogs.map((log) => (
+                            <React.Fragment key={log.id}>
+                              <TableRow
+                                className="cursor-pointer hover:bg-muted/50"
+                                onClick={() => setExpanded(expanded === log.id ? null : log.id)}
+                              >
+                                <TableCell className="font-mono text-xs whitespace-nowrap">
+                                  {formatDateTime(log.created_at)}
+                                </TableCell>
                                 <TableCell>
-                                  <div className="space-y-1">
-                                    <div className="font-medium">{log.user_name}</div>
-                                    <div className="text-sm text-muted-foreground">{log.user_email}</div>
+                                  <div className="space-y-0.5">
+                                    <div className="font-medium text-sm">{log.user_name}</div>
+                                    <div className="text-xs text-muted-foreground">{log.user_email}</div>
+                                    {log.user_role && (
+                                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                        {log.user_role}
+                                      </Badge>
+                                    )}
                                   </div>
                                 </TableCell>
                                 <TableCell>
@@ -570,48 +660,86 @@ const Settings = () => {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="space-y-1">
-                                    <div>{translateTable(log.table_name)}</div>
+                                  <div className="space-y-0.5">
+                                    <div className="text-sm">{translateTable(log.table_name)}</div>
                                     {log.record_id && (
-                                      <div className="text-xs text-muted-foreground font-mono">
-                                        ID: {log.record_id.slice(0, 8)}...
+                                      <div className="text-[10px] text-muted-foreground font-mono">
+                                        {log.record_id.slice(0, 8)}...
                                       </div>
                                     )}
                                   </div>
                                 </TableCell>
-                                <TableCell>{formatDateTime(log.created_at)}</TableCell>
-                                <TableCell>
-                                  {log.ip_address ? (
-                                    <span className="font-mono text-sm">{log.ip_address}</span>
-                                  ) : (
-                                    <span className="text-muted-foreground">-</span>
-                                  )}
-                                </TableCell>
                                 <TableCell>
                                   {log.accessed_fields && log.accessed_fields.length > 0 ? (
-                                    <div className="flex flex-wrap gap-1">
-                                      {log.accessed_fields.slice(0, 3).map((field, index) => (
-                                        <Badge key={index} variant="outline" className="text-xs">
-                                          {field}
-                                        </Badge>
+                                    <div className="flex flex-wrap gap-1 max-w-xs">
+                                      {log.accessed_fields.slice(0, 3).map((f, i) => (
+                                        <Badge key={i} variant="outline" className="text-[10px]">{f}</Badge>
                                       ))}
                                       {log.accessed_fields.length > 3 && (
-                                        <Badge variant="outline" className="text-xs">
+                                        <Badge variant="outline" className="text-[10px]">
                                           +{log.accessed_fields.length - 3}
                                         </Badge>
                                       )}
                                     </div>
                                   ) : (
-                                    <span className="text-muted-foreground">-</span>
+                                    <span className="text-muted-foreground text-xs">-</span>
                                   )}
                                 </TableCell>
+                                <TableCell className="font-mono text-xs">
+                                  {log.ip_address || <span className="text-muted-foreground">-</span>}
+                                </TableCell>
                               </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  )}
+                              {expanded === log.id && (
+                                <TableRow>
+                                  <TableCell colSpan={6} className="bg-muted/30">
+                                    <div className="p-3 space-y-2 text-sm">
+                                      <div><span className="font-semibold">ID do registro:</span> <span className="font-mono text-xs">{log.record_id || '—'}</span></div>
+                                      <div><span className="font-semibold">User Agent:</span> <span className="text-xs text-muted-foreground">{log.user_agent || '—'}</span></div>
+                                      <div>
+                                        <span className="font-semibold">Todos os campos:</span>{' '}
+                                        {log.accessed_fields && log.accessed_fields.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {log.accessed_fields.map((f, i) => (
+                                              <Badge key={i} variant="outline" className="text-[10px]">{f}</Badge>
+                                            ))}
+                                          </div>
+                                        ) : '—'}
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </React.Fragment>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* Paginação */}
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-muted-foreground">
+                    {totalCount} registro(s) · Página {currentPage + 1} de {Math.max(1, Math.ceil(totalCount / pageSize))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === 0}
+                      onClick={() => applyFilters(currentPage - 1)}
+                    >
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={(currentPage + 1) * pageSize >= totalCount}
+                      onClick={() => applyFilters(currentPage + 1)}
+                    >
+                      Próxima
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

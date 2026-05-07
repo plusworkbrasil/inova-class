@@ -66,11 +66,7 @@ const Auth = () => {
         return;
       }
 
-      if (data?.noPhone) {
-        toast.warning('Procure o administrador para cadastrar seu número de whatsapp');
-      } else {
-        toast.success('Se o email estiver cadastrado, você receberá um link via WhatsApp!');
-      }
+      toast.success('Se o email estiver cadastrado e tiver telefone associado, você receberá um link via WhatsApp!');
       setShowForgotDialog(false);
     } catch {
       toast.error('Erro ao solicitar redefinição de senha.');

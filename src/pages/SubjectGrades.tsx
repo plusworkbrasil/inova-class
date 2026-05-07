@@ -42,22 +42,6 @@ const SubjectGrades = () => {
   const [grades, setGrades] = useState<GradeEntry[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Verificar permissões de acesso
-  const canManageGrades = ['admin', 'secretary'].includes(userRole);
-
-  if (!canManageGrades) {
-    return (
-      <Layout userRole={userRole} userName={userName} userAvatar="">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <h2 className="text-2xl font-semibold mb-2">Acesso Negado</h2>
-            <p className="text-muted-foreground">Você não tem permissão para acessar esta página.</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
   // Filtrar alunos da turma selecionada
   const studentsInClass = selectedClass 
     ? users.filter(user => user.role === 'student' && user.class_id === selectedClass)

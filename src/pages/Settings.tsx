@@ -29,25 +29,77 @@ const formatDateTime = (dateString: string) => {
 const Settings = () => {
   const { settings, loading, saving, updateSettings, saveSettings } = useSettings();
   const { profile } = useAuth();
-  const { logs: auditLogs, loading: logsLoading, fetchLogs } = useAuditLogs();
-  
+  const { logs: auditLogs, loading: logsLoading, totalCount, isLive, fetchLogs, refreshLogs } = useAuditLogs();
+
   const [userFilter, setUserFilter] = useState('');
-  const [actionFilter, setActionFilter] = useState('');
+  const [actionFilter, setActionFilter] = useState('__all__');
+  const [tableFilter, setTableFilter] = useState('__all__');
+  const [periodFilter, setPeriodFilter] = useState('7d');
+  const [pageSize, setPageSize] = useState(50);
   const [currentPage, setCurrentPage] = useState(0);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   const handleSaveSettings = async () => {
     await saveSettings(settings);
   };
 
-  const handleFilterChange = () => {
-    setCurrentPage(0);
-    fetchLogs(0, 50, userFilter, actionFilter);
+  const computeStartDate = (period: string): string | undefined => {
+    if (period === 'all') return undefined;
+    const d = new Date();
+    if (period === '24h') d.setHours(d.getHours() - 24);
+    else if (period === '7d') d.setDate(d.getDate() - 7);
+    else if (period === '30d') d.setDate(d.getDate() - 30);
+    return d.toISOString();
+  };
+
+  const applyFilters = (page = 0) => {
+    setCurrentPage(page);
+    fetchLogs(page, pageSize, {
+      userQuery: userFilter,
+      action: actionFilter,
+      tableName: tableFilter,
+      startDate: computeStartDate(periodFilter),
+    });
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(handleFilterChange, 500);
-    return () => clearTimeout(timeoutId);
-  }, [userFilter, actionFilter]);
+    const t = setTimeout(() => applyFilters(0), 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userFilter, actionFilter, tableFilter, periodFilter, pageSize]);
+
+  const summary = {
+    created: auditLogs.filter((l) => l.action === 'RECORD_CREATED').length,
+    updated: auditLogs.filter((l) => l.action === 'RECORD_UPDATED').length,
+    deleted: auditLogs.filter((l) => l.action === 'RECORD_DELETED').length,
+    logins: auditLogs.filter((l) => l.action === 'LOGIN').length,
+  };
+
+  const exportCsv = () => {
+    const header = ['Data', 'Usuário', 'Email', 'Papel', 'Ação', 'Tabela', 'ID', 'Campos', 'IP'];
+    const rows = auditLogs.map((l) => [
+      new Date(l.created_at).toLocaleString('pt-BR'),
+      l.user_name,
+      l.user_email,
+      l.user_role,
+      translateAction(l.action),
+      translateTable(l.table_name),
+      l.record_id || '',
+      (l.accessed_fields || []).join('; '),
+      l.ip_address || '',
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
 
   if (loading) {
     return (

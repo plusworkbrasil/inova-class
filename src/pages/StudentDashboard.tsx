@@ -24,8 +24,8 @@ const StudentDashboard = () => {
   const { studentId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole>('admin');
-  const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState<UserRole | undefined>(undefined);
+  const [userName, setUserName] = useState('');
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
 

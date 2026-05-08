@@ -41,7 +41,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit
 }) => {
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
-  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string}>>([]);
+  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string, auto_student_id?: number}>>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const { profile, user } = useAuth();
@@ -112,7 +112,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
           })
         : await supabase
             .from('profiles')
-            .select('id, name, student_id, enrollment_number')
+            .select('id, name, student_id, enrollment_number, auto_student_id')
             .eq('class_id', classId)
             .eq('status', 'active')
             .order('name', { ascending: true });
@@ -435,7 +435,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                           <div>
                             <div className="font-medium">{student.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Matrícula: {student.enrollment_number || student.student_id || 'N/A'}
+                              Nº Aluno: {student.auto_student_id ?? student.enrollment_number ?? student.student_id ?? 'N/A'}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

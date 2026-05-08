@@ -14,7 +14,7 @@ import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
 import { supabase } from '@/integrations/supabase/client';
-import { justificationStatusEmail, sendEmailViaResend } from '@/lib/email-templates';
+import { justificationStatusEmail, declarationDeliveryEmail, sendEmailViaResend } from '@/lib/email-templates';
 
 const Declarations = () => {
   const { profile } = useAuth();

@@ -402,6 +402,23 @@ const Declarations = () => {
     );
   }
 
+  // Student view: histórico de declarações embutido
+  if (userRole === 'student') {
+    return (
+      <StudentDeclarationsView
+        userRole={userRole}
+        userName={userName}
+        declarations={declarations}
+        loading={loading}
+        onOpenCreate={() => openCreateForm('request')}
+        formOpen={isDeclarationFormOpen}
+        setFormOpen={setIsDeclarationFormOpen}
+        onSubmit={handleCreateDeclaration}
+        profile={profile}
+      />
+    );
+  }
+
   return (
     <Layout userRole={userRole} userName={userName} userAvatar="">
       <div className="space-y-6">

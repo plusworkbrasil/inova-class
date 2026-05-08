@@ -77,21 +77,35 @@ function infoBox(rows: Array<{ label: string; value: string }>): string {
 
 export interface JustificationStatusEmailParams {
   studentName: string;
-  status: 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected';
   declarationTitle: string;
   absenceDate?: string | null; // YYYY-MM-DD
   observations?: string | null;
 }
 
 export function justificationStatusEmail(p: JustificationStatusEmailParams) {
-  const isApproved = p.status === 'approved';
-  const subject = isApproved
-    ? 'Sua justificativa de falta foi aprovada'
-    : 'Sua justificativa de falta foi rejeitada';
+  const subjectMap = {
+    pending: 'Recebemos sua justificativa de falta',
+    approved: 'Sua justificativa de falta foi aprovada',
+    rejected: 'Sua justificativa de falta foi rejeitada',
+  } as const;
+  const subject = subjectMap[p.status];
 
-  const statusBadge = isApproved
-    ? badge('Aprovada', '#16a34a')
-    : badge('Rejeitada', '#dc2626');
+  const badgeMap = {
+    pending: badge('Pendente', '#f59e0b'),
+    approved: badge('Aprovada', '#16a34a'),
+    rejected: badge('Rejeitada', '#dc2626'),
+  } as const;
+  const statusBadge = badgeMap[p.status];
+
+  const messageMap = {
+    pending:
+      'Recebemos sua solicitação de justificativa de falta e ela está aguardando análise da secretaria. Você será avisado(a) por e-mail e pelo sistema assim que houver uma decisão.',
+    approved:
+      'Sua solicitação de justificativa de falta foi analisada e aprovada pela secretaria. O registro de frequência já foi atualizado.',
+    rejected:
+      'Sua solicitação de justificativa de falta foi analisada, mas não pôde ser aprovada. Procure a secretaria para mais informações.',
+  } as const;
 
   const dateBR = p.absenceDate
     ? p.absenceDate.split('-').reverse().join('/')
@@ -99,11 +113,7 @@ export function justificationStatusEmail(p: JustificationStatusEmailParams) {
 
   const body = `
     <h2 style="margin:0 0 14px;font-size:20px;color:${PRIMARY_DARK};">Olá, ${escapeHtml(p.studentName)}</h2>
-    ${paragraph(
-      isApproved
-        ? 'Sua solicitação de justificativa de falta foi analisada e aprovada pela secretaria. O registro de frequência já foi atualizado.'
-        : 'Sua solicitação de justificativa de falta foi analisada, mas não pôde ser aprovada. Procure a secretaria para mais informações.',
-    )}
+    ${paragraph(messageMap[p.status])}
     <div style="margin:16px 0;">${statusBadge}</div>
     ${infoBox([
       { label: 'Documento', value: p.declarationTitle },

@@ -18,6 +18,42 @@ import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
 import { supabase } from '@/integrations/supabase/client';
 import { justificationStatusEmail, declarationDeliveryEmail, sendEmailViaResend } from '@/lib/email-templates';
 
+const PAGE_SIZE_STUDENT = 10;
+
+const formatDateBR = (iso?: string | null) => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+const formatDateTimeBR = (iso?: string | null) => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+const declarationTypeLabel = (t?: string | null) => {
+  switch (t) {
+    case 'atestado_medico': return 'Atestado médico';
+    case 'atestado_trabalho': return 'Atestado de trabalho';
+    case 'outros': return 'Outros';
+    case 'medical_certificate': return 'Atestado médico';
+    case 'enrollment_certificate': return 'Declaração de matrícula';
+    default: return t || '—';
+  }
+};
+const studentStatusBadge = (status?: string) => {
+  switch (status) {
+    case 'approved':
+      return <Badge className="bg-green-500 hover:bg-green-500"><CheckCircle size={12} className="mr-1" />Aprovada</Badge>;
+    case 'rejected':
+      return <Badge variant="destructive"><XCircle size={12} className="mr-1" />Rejeitada</Badge>;
+    case 'processing':
+      return <Badge variant="secondary"><Clock size={12} className="mr-1" />Processando</Badge>;
+    case 'completed':
+      return <Badge className="bg-blue-500 hover:bg-blue-500"><CheckCircle size={12} className="mr-1" />Concluída</Badge>;
+    case 'pending':
+    default:
+      return <Badge variant="outline"><Clock size={12} className="mr-1" />Pendente</Badge>;
+  }
+};
+
 const Declarations = () => {
   const { profile } = useAuth();
   const userRole = (profile?.role || 'student') as UserRole;
@@ -29,6 +65,8 @@ const Declarations = () => {
   const [isDeclarationFormOpen, setIsDeclarationFormOpen] = useState(false);
   const [editingDeclaration, setEditingDeclaration] = useState<any>(null);
   const [declarationType, setDeclarationType] = useState<'request' | 'submit'>('request');
+  const [studentPage, setStudentPage] = useState(1);
+  const [studentDetail, setStudentDetail] = useState<any>(null);
   const { toast } = useToast();
 
   // Use Supabase hook

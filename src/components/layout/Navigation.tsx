@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck, FileDown, FileCheck } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck, FileDown, FileCheck, ShieldAlert } from 'lucide-react';
 import { NotificationsPopover } from '@/components/ui/notifications-popover';
 import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -55,6 +55,7 @@ const adminMenuGroups: MenuEntry[] = [
       { icon: Monitor, label: 'Equipamentos', path: '/equipment' },
       { icon: Mail, label: 'Comunicação', path: '/communications' },
       { icon: UserCheck, label: 'Selecionados', path: '/selected-students' },
+      { icon: ShieldAlert, label: 'Usuários Bloqueados', path: '/usuarios-bloqueados' },
       { icon: FileDown, label: 'Documentação', path: '/documentacao' },
     ],
   },

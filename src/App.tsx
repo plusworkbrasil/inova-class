@@ -37,6 +37,7 @@ import ResetPassword from "./pages/ResetPassword";
 
 import MyAttendance from "./pages/MyAttendance";
 import AbsenceJustifications from "./pages/AbsenceJustifications";
+import BlockedUsers from "./pages/BlockedUsers";
 import { RoleGuard } from "./components/auth/RoleGuard";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/teacher-grades" element={<RoleGuard allowedRoles={['instructor']}><TeacherGrades /></RoleGuard>} />
           <Route path="/declarations" element={<Declarations />} />
           <Route path="/validar-justificativas" element={<RoleGuard allowedRoles={[...ADMIN, 'coordinator']}><AbsenceJustifications /></RoleGuard>} />
+          <Route path="/usuarios-bloqueados" element={<RoleGuard allowedRoles={['admin']}><BlockedUsers /></RoleGuard>} />
           <Route path="/minhas-declaracoes" element={<Navigate to="/declarations" replace />} />
           <Route path="/minhas-frequencias" element={<RoleGuard allowedRoles={['student']}><MyAttendance /></RoleGuard>} />
           <Route path="/evasions" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><Evasions /></RoleGuard>} />

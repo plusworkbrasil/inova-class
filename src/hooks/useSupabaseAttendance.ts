@@ -219,6 +219,30 @@ export const useSupabaseAttendance = (filters?: AttendanceFilters) => {
     dailyActivity?: string
   ) => {
     try {
+      // Detectar role atual do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      let role: string | null = null;
+      if (user) {
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        role = roleData?.role ?? null;
+      }
+
+      // Para instrutor, usar RPC SECURITY DEFINER para evitar edge cases de RLS em lote
+      if (role === 'instructor') {
+        const { data, error } = await supabase.rpc('instructor_insert_attendance_batch', {
+          p_records: attendanceRecords as any,
+          p_daily_activity: dailyActivity || null,
+        });
+        if (error) throw error;
+        await fetchAttendance();
+        return { success: true, ...(data as any) };
+      }
+
+      // Admin/secretária seguem com insert direto
       const recordsWithActivity = attendanceRecords.map(record => ({
         ...record,
         daily_activity: dailyActivity || null
@@ -233,6 +257,7 @@ export const useSupabaseAttendance = (filters?: AttendanceFilters) => {
       await fetchAttendance();
       return { success: true };
     } catch (err: any) {
+      console.error('❌ createBatchAttendance error:', err);
       throw err;
     }
   };

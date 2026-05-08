@@ -1530,6 +1530,10 @@ export type Database = {
         Args: { target_student_id: string }
         Returns: boolean
       }
+      instructor_insert_attendance_batch: {
+        Args: { p_daily_activity?: string; p_records: Json }
+        Returns: Json
+      }
       is_account_blocked: { Args: { p_user_id?: string }; Returns: boolean }
       is_instructor_of_subject:
         | { Args: { _subject_id: string; _user_id: string }; Returns: boolean }

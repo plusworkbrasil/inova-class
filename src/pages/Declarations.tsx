@@ -207,7 +207,60 @@ const Declarations = () => {
     setIsDeclarationFormOpen(true);
   };
 
-  const getStatusBadge = (status: string) => {
+  const handleEmailDeclaration = async (declaration: any) => {
+    if (!declaration?.file_path) {
+      toast({ title: 'Sem anexo', description: 'Esta declaração não possui arquivo para enviar.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data: studentRow } = await supabase
+        .from('profiles')
+        .select('email, name')
+        .eq('id', declaration.student_id)
+        .maybeSingle();
+      if (!studentRow?.email) {
+        toast({ title: 'Aluno sem e-mail cadastrado', variant: 'destructive' });
+        return;
+      }
+
+      // Baixa arquivo do storage e converte para base64
+      const { data: fileBlob, error: dlErr } = await supabase
+        .storage
+        .from('declarations')
+        .download(declaration.file_path);
+      if (dlErr || !fileBlob) throw dlErr || new Error('Falha ao baixar arquivo');
+
+      const buf = await fileBlob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const base64 = btoa(binary);
+
+      const filename = declaration.file_path.split('/').pop() || 'declaracao.pdf';
+
+      const { subject, html } = declarationDeliveryEmail({
+        studentName: studentRow.name || 'Aluno(a)',
+        declarationTitle: declaration.title || declaration.type || 'Declaração',
+      });
+
+      const { error: sendErr } = await sendEmailViaResend({
+        to: studentRow.email,
+        subject,
+        html,
+        template_type: 'declaration',
+        reference_id: declaration.id,
+        attachments: [{ filename, content: base64 }],
+      });
+      if (sendErr) throw sendErr;
+      toast({ title: 'Declaração enviada por e-mail', description: studentRow.email });
+    } catch (e: any) {
+      toast({ title: 'Falha ao enviar', description: e?.message || 'Erro desconhecido', variant: 'destructive' });
+    }
+  };
+
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-500"><CheckCircle size={12} className="mr-1" />Aprovada</Badge>;

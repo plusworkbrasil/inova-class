@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { toast } from 'sonner';
 
 export interface Notification {
   id: string;
@@ -19,7 +20,11 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
 
-  const isTargetRole = profile?.role === 'admin' || profile?.role === 'coordinator' || profile?.role === 'tutor';
+  const isTargetRole =
+    profile?.role === 'admin' ||
+    profile?.role === 'coordinator' ||
+    profile?.role === 'tutor' ||
+    profile?.role === 'student';
 
   const fetchNotifications = useCallback(async () => {
     if (!user || !isTargetRole) {
@@ -88,7 +93,7 @@ export const useNotifications = () => {
     if (!user || !isTargetRole) return;
 
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-changes-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -98,7 +103,30 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          setNotifications(prev => [payload.new as Notification, ...prev]);
+          const newNotif = payload.new as Notification;
+          setNotifications(prev => {
+            if (prev.some(n => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev];
+          });
+          // Toast discreto
+          toast(newNotif.title, {
+            description: newNotif.message,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as Notification;
+          setNotifications(prev =>
+            prev.map(n => (n.id === updated.id ? updated : n))
+          );
         }
       )
       .subscribe();

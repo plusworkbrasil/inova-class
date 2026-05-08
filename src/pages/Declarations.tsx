@@ -32,6 +32,72 @@ const Declarations = () => {
   // Use Supabase hook
   const { data: declarations, loading, createDeclaration, updateDeclaration } = useSupabaseDeclarations();
 
+  const notifyStudent = async (params: {
+    studentId: string;
+    studentEmail?: string | null;
+    studentName?: string | null;
+    declarationId?: string | null;
+    declarationTitle: string;
+    status: 'pending' | 'approved' | 'rejected' | 'processing';
+    absenceDate?: string | null;
+    observations?: string | null;
+  }) => {
+    const titleMap = {
+      pending: 'Declaração enviada',
+      processing: 'Declaração em análise',
+      approved: 'Declaração aprovada',
+      rejected: 'Declaração rejeitada',
+    } as const;
+    const messageMap = {
+      pending: `Sua solicitação "${params.declarationTitle}" foi recebida e está aguardando análise.`,
+      processing: `Sua solicitação "${params.declarationTitle}" está em processamento pela secretaria.`,
+      approved: `Sua solicitação "${params.declarationTitle}" foi aprovada.`,
+      rejected: `Sua solicitação "${params.declarationTitle}" foi rejeitada. Procure a secretaria para mais informações.`,
+    } as const;
+    const typeMap = {
+      pending: 'info',
+      processing: 'info',
+      approved: 'success',
+      rejected: 'warning',
+    } as const;
+
+    // In-app notification (best effort)
+    try {
+      await supabase.from('notifications').insert({
+        user_id: params.studentId,
+        title: titleMap[params.status],
+        message: messageMap[params.status],
+        type: typeMap[params.status],
+        reference_id: params.declarationId || null,
+        reference_type: 'declaration',
+      });
+    } catch (e) {
+      console.error('Falha ao criar notificação in-app:', e);
+    }
+
+    // Email (only for pending/approved/rejected)
+    if (params.status !== 'processing' && params.studentEmail) {
+      try {
+        const { subject, html } = justificationStatusEmail({
+          studentName: params.studentName || 'Aluno(a)',
+          status: params.status,
+          declarationTitle: params.declarationTitle,
+          absenceDate: params.absenceDate || null,
+          observations: params.observations || null,
+        });
+        await sendEmailViaResend({
+          to: params.studentEmail,
+          subject,
+          html,
+          template_type: 'justification',
+          reference_id: params.declarationId || undefined,
+        });
+      } catch (mailErr) {
+        console.error('Falha ao enviar e-mail de justificativa:', mailErr);
+      }
+    }
+  };
+
   const handleCreateDeclaration = async (data: any) => {
     if (!profile) return;
     
@@ -49,20 +115,52 @@ const Declarations = () => {
         delivery_date: data.absence_date || null,
       };
 
-      await createDeclaration(declarationData);
+      const created: any = await createDeclaration(declarationData);
 
       // Notify admin/coordinator/tutor about new justification
       if (userRole === 'student') {
         try {
-          const { data: sessionData } = await supabase.auth.getSession();
           await supabase.functions.invoke('notify-justification', {
             body: {
-              declaration_id: declarationData.student_id, // will be replaced by actual id from insert
+              declaration_id: created?.id || declarationData.student_id,
               student_name: profile?.name || 'Aluno',
             },
           });
         } catch (notifyErr) {
           console.error('Error sending notification:', notifyErr);
+        }
+
+        // Confirmação para o próprio aluno (in-app + e-mail)
+        await notifyStudent({
+          studentId: profile.id,
+          studentEmail: profile.email,
+          studentName: profile.name,
+          declarationId: created?.id || null,
+          declarationTitle: declarationData.title,
+          status: 'pending',
+          absenceDate: declarationData.delivery_date,
+          observations: declarationData.description,
+        });
+      } else if (declarationData.student_id) {
+        // Admin/secretary criando em nome do aluno: avisa o aluno também
+        try {
+          const { data: studentRow } = await supabase
+            .from('profiles')
+            .select('email, name')
+            .eq('id', declarationData.student_id)
+            .maybeSingle();
+          await notifyStudent({
+            studentId: declarationData.student_id,
+            studentEmail: studentRow?.email,
+            studentName: studentRow?.name,
+            declarationId: created?.id || null,
+            declarationTitle: declarationData.title,
+            status: 'pending',
+            absenceDate: declarationData.delivery_date,
+            observations: declarationData.description,
+          });
+        } catch (e) {
+          console.error('Falha ao notificar aluno:', e);
         }
       }
       

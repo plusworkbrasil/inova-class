@@ -35,6 +35,7 @@ import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 import SystemDocumentation from "./pages/SystemDocumentation";
 import ResetPassword from "./pages/ResetPassword";
 import StudentDeclarationsHistory from "./pages/StudentDeclarationsHistory";
+import MyAttendance from "./pages/MyAttendance";
 import { RoleGuard } from "./components/auth/RoleGuard";
 
 const queryClient = new QueryClient();

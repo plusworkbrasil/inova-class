@@ -150,11 +150,12 @@ const Attendance = () => {
       
       setIsAttendanceFormOpen(false);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Erro ao registrar frequência:', error);
       toast({
         variant: "destructive",
         title: "Erro ao registrar frequência",
-        description: "Ocorreu um erro ao salvar a frequência.",
+        description: error?.message || "Ocorreu um erro ao salvar a frequência.",
       });
     }
   };

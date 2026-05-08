@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck, FileDown } from 'lucide-react';
+import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, LogOut, Menu, X, UserX, Monitor, Mail, User, Megaphone, Shield, History, AlertTriangle, ChevronDown, UserCheck, FileDown, FileCheck } from 'lucide-react';
 import { NotificationsPopover } from '@/components/ui/notifications-popover';
 import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
@@ -31,6 +31,7 @@ const adminMenuGroups: MenuEntry[] = [
       { icon: Users, label: 'Usuários', path: '/users' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: FileCheck, label: 'Validar Justificativas', path: '/validar-justificativas' },
       { icon: UserX, label: 'Evasões', path: '/evasions' },
       { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
       { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
@@ -107,6 +108,7 @@ const coordinatorMenuGroups: MenuEntry[] = [
     items: [
       { icon: GraduationCap, label: 'Turmas', path: '/classes' },
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: FileCheck, label: 'Validar Justificativas', path: '/validar-justificativas' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
       { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
@@ -158,6 +160,10 @@ const menuItems = {
     icon: FileText,
     label: 'Declarações',
     path: '/declarations'
+  }, {
+    icon: FileCheck,
+    label: 'Validar Justificativas',
+    path: '/validar-justificativas'
   }, {
     icon: UserX,
     label: 'Evasões',

@@ -6,11 +6,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const NotificationsPopover: React.FC = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { profile } = useAuth();
   const navigate = useNavigate();
 
   const handleNotificationClick = (notification: any) => {
@@ -18,7 +20,7 @@ export const NotificationsPopover: React.FC = () => {
       markAsRead(notification.id);
     }
     if (notification.reference_type === 'declaration') {
-      navigate('/declarations');
+      navigate(profile?.role === 'student' ? '/minhas-declaracoes' : '/declarations');
     }
   };
 

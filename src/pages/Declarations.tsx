@@ -261,6 +261,7 @@ const Declarations = () => {
     }
   };
 
+  const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-500"><CheckCircle size={12} className="mr-1" />Aprovada</Badge>;

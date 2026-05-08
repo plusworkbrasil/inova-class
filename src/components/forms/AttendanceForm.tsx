@@ -41,7 +41,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
   onSubmit
 }) => {
   const [studentAttendance, setStudentAttendance] = useState<Record<string, boolean>>({});
-  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string}>>([]);
+  const [students, setStudents] = useState<Array<{id: string, name: string, student_id: string, enrollment_number?: string, auto_student_id?: number}>>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
   const { profile, user } = useAuth();

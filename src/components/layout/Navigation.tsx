@@ -309,6 +309,16 @@ const Navigation = ({
               <p className="text-sm font-medium text-foreground truncate">{userName}</p>
               <p className="text-xs text-muted-foreground">{getRoleTranslation(userRole)}</p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={() => setIsSettingsOpen(true)}
+              title="Minhas configurações"
+              aria-label="Minhas configurações"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 

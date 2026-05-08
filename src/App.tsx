@@ -63,6 +63,7 @@ const App = () => (
           <Route path="/subject-grades" element={<RoleGuard allowedRoles={[...ADMIN, 'instructor']}><SubjectGrades /></RoleGuard>} />
           <Route path="/teacher-grades" element={<RoleGuard allowedRoles={['instructor']}><TeacherGrades /></RoleGuard>} />
           <Route path="/declarations" element={<Declarations />} />
+          <Route path="/validar-justificativas" element={<RoleGuard allowedRoles={[...ADMIN, 'coordinator']}><AbsenceJustifications /></RoleGuard>} />
           <Route path="/minhas-declaracoes" element={<RoleGuard allowedRoles={['student']}><StudentDeclarationsHistory /></RoleGuard>} />
           <Route path="/minhas-frequencias" element={<RoleGuard allowedRoles={['student']}><MyAttendance /></RoleGuard>} />
           <Route path="/evasions" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><Evasions /></RoleGuard>} />

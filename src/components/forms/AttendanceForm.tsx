@@ -112,7 +112,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
           })
         : await supabase
             .from('profiles')
-            .select('id, name, student_id, enrollment_number')
+            .select('id, name, student_id, enrollment_number, auto_student_id')
             .eq('class_id', classId)
             .eq('status', 'active')
             .order('name', { ascending: true });

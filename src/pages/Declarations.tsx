@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp, Mail } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp, Mail, Eye, Paperclip } from 'lucide-react';
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { StudentDeclarationForm } from '@/components/forms/StudentDeclarationForm';
 import { useToast } from '@/hooks/use-toast';

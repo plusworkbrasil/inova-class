@@ -251,38 +251,32 @@ const Declarations = () => {
         }
       }
 
-      // Notifica o aluno por e-mail (não bloqueia se falhar)
+      // Notifica o aluno (in-app + e-mail quando aplicável)
       try {
         const decl = declarations.find((d) => d.id === declarationId);
-        if (decl && (newStatus === 'approved' || newStatus === 'rejected')) {
+        if (decl && ['approved', 'rejected', 'processing'].includes(newStatus)) {
           const { data: studentRow } = await supabase
             .from('profiles')
             .select('email, name')
             .eq('id', decl.student_id)
             .maybeSingle();
-          if (studentRow?.email) {
-            const absenceDate =
-              decl.delivery_date ||
-              decl.purpose?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ||
-              null;
-            const { subject, html } = justificationStatusEmail({
-              studentName: studentRow.name || 'Aluno(a)',
-              status: newStatus as 'approved' | 'rejected',
-              declarationTitle: decl.title || decl.type || 'Justificativa',
-              absenceDate,
-              observations: decl.description || null,
-            });
-            await sendEmailViaResend({
-              to: studentRow.email,
-              subject,
-              html,
-              template_type: 'justification',
-              reference_id: decl.id,
-            });
-          }
+          const absenceDate =
+            decl.delivery_date ||
+            decl.purpose?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ||
+            null;
+          await notifyStudent({
+            studentId: decl.student_id,
+            studentEmail: studentRow?.email,
+            studentName: studentRow?.name,
+            declarationId: decl.id,
+            declarationTitle: decl.title || decl.type || 'Justificativa',
+            status: newStatus as 'approved' | 'rejected' | 'processing',
+            absenceDate,
+            observations: decl.description || null,
+          });
         }
-      } catch (mailErr) {
-        console.error('Falha ao enviar e-mail de justificativa:', mailErr);
+      } catch (notifyErr) {
+        console.error('Falha ao notificar aluno:', notifyErr);
       }
 
       toast({

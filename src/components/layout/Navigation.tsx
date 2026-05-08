@@ -31,6 +31,7 @@ const adminMenuGroups: MenuEntry[] = [
       { icon: Users, label: 'Usuários', path: '/users' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
+      { icon: FileCheck, label: 'Validar Justificativas', path: '/validar-justificativas' },
       { icon: UserX, label: 'Evasões', path: '/evasions' },
       { icon: BookOpen, label: 'Notas por Disciplina', path: '/subject-grades' },
       { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },

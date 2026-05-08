@@ -355,6 +355,42 @@ export type Database = {
           },
         ]
       }
+      email_send_log: {
+        Row: {
+          error_message: string | null
+          id: string
+          recipient_email: string
+          reference_id: string | null
+          sent_at: string
+          sent_by: string | null
+          status: string
+          subject: string
+          template_type: string
+        }
+        Insert: {
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          reference_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status: string
+          subject: string
+          template_type: string
+        }
+        Update: {
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          reference_id?: string | null
+          sent_at?: string
+          sent_by?: string | null
+          status?: string
+          subject?: string
+          template_type?: string
+        }
+        Relationships: []
+      }
       equipment: {
         Row: {
           brand: string | null

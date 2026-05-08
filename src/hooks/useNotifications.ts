@@ -24,6 +24,7 @@ export const useNotifications = () => {
     profile?.role === 'admin' ||
     profile?.role === 'coordinator' ||
     profile?.role === 'tutor' ||
+    profile?.role === 'secretary' ||
     profile?.role === 'student';
 
   const fetchNotifications = useCallback(async () => {

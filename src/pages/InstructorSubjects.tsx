@@ -24,7 +24,7 @@ const InstructorSubjects = () => {
     class_name: string;
   } | null>(null);
   const { toast } = useToast();
-  const { createAttendance, refetch } = useSupabaseAttendance();
+  const { createAttendance, createBatchAttendance, refetch } = useSupabaseAttendance();
 
   // Logs de debug
   useEffect(() => {

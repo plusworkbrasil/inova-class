@@ -66,9 +66,11 @@ export const useSupabaseDeclarations = () => {
         requested_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from('declarations')
-        .insert([dataToInsert]);
+        .insert([dataToInsert])
+        .select()
+        .single();
 
       if (error) throw error;
 
@@ -77,6 +79,7 @@ export const useSupabaseDeclarations = () => {
         title: "Sucesso!",
         description: "Declaração solicitada com sucesso."
       });
+      return inserted;
     } catch (err: any) {
       toast({
         variant: "destructive",

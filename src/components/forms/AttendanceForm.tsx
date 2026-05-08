@@ -435,7 +435,7 @@ export const AttendanceForm: React.FC<AttendanceFormProps> = ({
                           <div>
                             <div className="font-medium">{student.name}</div>
                             <div className="text-sm text-muted-foreground">
-                              Matrícula: {student.enrollment_number || student.student_id || 'N/A'}
+                              Nº Aluno: {student.auto_student_id ?? student.enrollment_number ?? student.student_id ?? 'N/A'}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

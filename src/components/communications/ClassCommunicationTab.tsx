@@ -154,6 +154,14 @@ const ClassCommunicationTab = () => {
           : `Enviado: ${data.sent}/${data.total}. ${data.failed > 0 ? `Falhou: ${data.failed}.` : ''} ${data.without_phone?.length > 0 ? `Sem telefone: ${data.without_phone.length}.` : ''}`;
 
         toast({ title: 'Comunicado enviado!', description: desc });
+
+        // Envio adicional por e-mail (apenas envio imediato; ignora agendados)
+        if (alsoSendEmail && !scheduledAt) {
+          sendBulkEmails(selectedClassId, selectedSubjectId, title.trim(), message.trim()).catch((e) =>
+            console.error('Erro ao enviar e-mails em massa:', e),
+          );
+        }
+
         setTitle('');
         setMessage('');
         setScheduleDate(undefined);

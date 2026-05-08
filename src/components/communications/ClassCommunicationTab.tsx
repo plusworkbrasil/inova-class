@@ -114,6 +114,66 @@ const ClassCommunicationTab = () => {
     setLoadingHistory(false);
   };
 
+  const sendBulkEmails = async (
+    classId: string,
+    subjectId: string,
+    titleText: string,
+    messageText: string,
+  ) => {
+    setIsSendingEmails(true);
+    try {
+      const className = classes.find((c) => c.id === classId)?.name || 'Turma';
+      const subjectName = subjectId && subjectId !== 'all'
+        ? subjects.find((s) => s.id === subjectId)?.name || null
+        : null;
+
+      const { data: studentsRaw } = await supabase
+        .from('profiles')
+        .select('id, name, email, status, class_id')
+        .eq('class_id', classId)
+        .eq('status', 'active');
+
+      const recipients = (studentsRaw || []).filter((s: any) => !!s.email);
+      if (recipients.length === 0) {
+        toast({ title: 'E-mail', description: 'Nenhum aluno com e-mail cadastrado.' });
+        return;
+      }
+
+      let sent = 0, failed = 0;
+      for (const r of recipients as any[]) {
+        const personalized = messageText.replace(/\{nome\}/gi, r.name || 'Aluno(a)');
+        const { subject, html } = classCommunicationEmail({
+          studentName: r.name || 'Aluno(a)',
+          className,
+          title: titleText,
+          message: personalized,
+          subjectName,
+        });
+        try {
+          const { error } = await sendEmailViaResend({
+            to: r.email,
+            subject,
+            html,
+            template_type: 'communication',
+          });
+          if (error) failed++;
+          else sent++;
+        } catch {
+          failed++;
+        }
+        // Delay anti-spam (5-8s)
+        const delay = 5000 + Math.floor(Math.random() * 3000);
+        await new Promise((res) => setTimeout(res, delay));
+      }
+      toast({
+        title: 'E-mails enviados',
+        description: `Sucesso: ${sent} · Falhas: ${failed}`,
+      });
+    } finally {
+      setIsSendingEmails(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!selectedClassId || !title.trim() || !message.trim()) {
       toast({ title: 'Erro', description: 'Selecione uma turma e preencha título e mensagem.', variant: 'destructive' });

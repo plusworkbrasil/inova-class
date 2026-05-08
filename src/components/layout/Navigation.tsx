@@ -8,6 +8,7 @@ import { UserRole } from '@/types/user';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { getRoleTranslation } from '@/lib/roleTranslations';
+import { MyProfileSettingsDialog } from '@/components/forms/MyProfileSettingsDialog';
 interface NavigationProps {
   userRole: UserRole;
   userName: string;

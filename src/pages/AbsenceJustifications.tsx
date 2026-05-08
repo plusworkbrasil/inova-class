@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +46,20 @@ const AbsenceJustifications = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [activeDecl, setActiveDecl] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // Marca notificações de justificativa pendente como lidas ao abrir a tela
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', profile.id)
+      .eq('type', 'justification_pending')
+      .eq('is_read', false)
+      .then(({ error }) => {
+        if (error) console.error('Falha ao marcar notificações como lidas:', error);
+      });
+  }, [profile?.id]);
 
   const filtered = useMemo(() => {
     return (declarations || []).filter((d: any) => {
@@ -108,7 +122,7 @@ const AbsenceJustifications = () => {
         user_id: decl.student_id,
         title: titleMap[status],
         message: messageMap[status],
-        type: status === 'approved' ? 'success' : 'warning',
+        type: status === 'approved' ? 'justification_approved' : 'justification_rejected',
         reference_id: decl.id,
         reference_type: 'declaration',
       });

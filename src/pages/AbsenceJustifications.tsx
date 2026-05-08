@@ -108,7 +108,7 @@ const AbsenceJustifications = () => {
         user_id: decl.student_id,
         title: titleMap[status],
         message: messageMap[status],
-        type: status === 'approved' ? 'success' : 'warning',
+        type: status === 'approved' ? 'justification_approved' : 'justification_rejected',
         reference_id: decl.id,
         reference_type: 'declaration',
       });

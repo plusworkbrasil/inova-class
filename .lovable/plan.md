@@ -1,24 +1,15 @@
 ## Objetivo
 
-Unificar a tela de "Histórico de Declarações" (`/minhas-declaracoes`) dentro da página "Declarações" (`/declaracoes`), eliminando a entrada duplicada no menu do aluno e centralizando tudo em um único lugar.
+Adicionar a opção "Bloqueado por tentativa" no filtro de status da página "Gerenciamento de Usuários", permitindo isolar contas que foram automaticamente bloqueadas pelo sistema após tentativas não autorizadas (status `blocked`, gerado pela função `record_unauthorized_access_attempt`).
 
 ## Mudanças
 
-### 1. `src/pages/Declarations.tsx` (visão do aluno)
-- Para `userRole === 'student'`, substituir o layout atual pelo conteúdo do `StudentDeclarationsHistory` (cards de estatísticas Total/Pendentes/Aprovadas/Rejeitadas, filtros por busca/status/tipo, tabela com paginação de 10 itens, dialog de detalhes com download de anexo).
-- Manter o botão "Nova Solicitação" no cabeçalho, abrindo o `StudentDeclarationForm` já existente (fluxo de criação preservado, incluindo notificações ao admin/secretaria via `notify-justification`).
-- Para admin/coordenador/tutor/instrutor, manter exatamente a tela atual de gerenciamento (sem alteração).
+### `src/pages/Users.tsx`
 
-### 2. `src/components/layout/Navigation.tsx`
-- Remover o item "Histórico de Declarações" (linha 244) do menu do aluno. O acesso passa a ser apenas via "Declarações".
-
-### 3. `src/App.tsx`
-- Manter a rota `/minhas-declaracoes` como redirecionamento para `/declaracoes` (compatibilidade com links antigos/notificações), ou removê-la. Proposta: redirecionar via `<Navigate to="/declaracoes" replace />`.
-- Remover o import de `StudentDeclarationsHistory` se a rota for substituída por `Navigate`.
-
-### 4. `src/pages/StudentDeclarationsHistory.tsx`
-- Excluir o arquivo após a migração (toda a lógica vive agora no `Declarations.tsx`).
+1. **Filtro de status** — adicionar `<SelectItem value="blocked">Bloqueado por tentativa</SelectItem>` no `<Select>` de status (após "Evadido").
+2. **Badge** — em `getStatusBadge`, tratar `case 'blocked'` retornando `<Badge variant="destructive">Bloqueado</Badge>` para destacar visualmente na lista.
+3. **Resumo de filtros ativos** — atualizar o mapeamento de label do `selectedStatus` para incluir `blocked → "Bloqueado por tentativa"`.
 
 ## Fora do escopo
-- Sem mudanças em RLS, hooks, edge functions, schema ou no fluxo de notificações do sininho.
-- Sem alterações na tela de gerenciamento usada por admin/coordenador/tutor/instrutor.
+- Sem alterações no schema, RLS, hook `useUsers`, ou na lógica de bloqueio automático (já gravada no DB via `record_unauthorized_access_attempt`).
+- Nenhuma mudança no fluxo de desbloqueio existente.

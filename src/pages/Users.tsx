@@ -237,6 +237,8 @@ const Users = () => {
         return <Badge variant="secondary">Inativo</Badge>;
       case 'evaded':
         return <Badge variant="destructive">Evadido</Badge>;
+      case 'blocked':
+        return <Badge variant="destructive">Bloqueado</Badge>;
       default:
         return <Badge variant="default">Ativo</Badge>;
     }
@@ -303,6 +305,7 @@ const Users = () => {
                   <SelectItem value="active">Ativo</SelectItem>
                   <SelectItem value="inactive">Inativo</SelectItem>
                   <SelectItem value="evaded">Evadido</SelectItem>
+                  <SelectItem value="blocked">Bloqueado por tentativa</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -323,7 +326,7 @@ const Users = () => {
                 Filtros ativos: {[
                   searchTerm && `Busca: "${searchTerm}"`,
                   selectedRole && `Perfil: ${getRoleTranslation(selectedRole as UserRole)}`,
-                  selectedStatus && `Status: ${selectedStatus === 'active' ? 'Ativo' : selectedStatus === 'inactive' ? 'Inativo' : 'Evadido'}`
+                  selectedStatus && `Status: ${selectedStatus === 'active' ? 'Ativo' : selectedStatus === 'inactive' ? 'Inativo' : selectedStatus === 'evaded' ? 'Evadido' : selectedStatus === 'blocked' ? 'Bloqueado por tentativa' : selectedStatus}`
                 ].filter(Boolean).join(' • ')}
               </div>
             )}

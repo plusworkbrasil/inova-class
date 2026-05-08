@@ -161,6 +161,10 @@ const menuItems = {
     label: 'Declarações',
     path: '/declarations'
   }, {
+    icon: FileCheck,
+    label: 'Validar Justificativas',
+    path: '/validar-justificativas'
+  }, {
     icon: UserX,
     label: 'Evasões',
     path: '/evasions'

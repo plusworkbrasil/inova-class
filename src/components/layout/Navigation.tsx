@@ -245,6 +245,7 @@ const Navigation = ({
   userAvatar
 }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const {

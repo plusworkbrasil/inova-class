@@ -173,7 +173,7 @@ const Auth = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Informe seu email cadastrado. Se houver um número de WhatsApp associado, enviaremos um link para redefinir sua senha.
+              Informe seu email cadastrado. Enviaremos um link para redefinir sua senha por WhatsApp (se houver telefone) e, como alternativa, por e-mail.
             </p>
             <div className="space-y-2">
               <Label htmlFor="forgot-email">Email</Label>

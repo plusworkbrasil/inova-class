@@ -232,6 +232,10 @@ const menuItems = {
     icon: FileText,
     label: 'Declarações',
     path: '/declarations'
+  }, {
+    icon: FileText,
+    label: 'Histórico de Declarações',
+    path: '/minhas-declaracoes'
   }]
 };
 const Navigation = ({

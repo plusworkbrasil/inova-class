@@ -108,7 +108,7 @@ const coordinatorMenuGroups: MenuEntry[] = [
     items: [
       { icon: GraduationCap, label: 'Turmas', path: '/classes' },
       { icon: ClipboardCheck, label: 'Frequência', path: '/attendance' },
-      { icon: FileCheck, label: 'Validar Justificativas', path: '/validar-justificativas' },
+      { icon: FileCheck, label: 'Justificativas', path: '/validar-justificativas' },
       { icon: BookOpen, label: 'Disciplinas', path: '/subjects' },
       { icon: UserX, label: 'Acompanhamento', path: '/evasions' },
       { icon: Mail, label: 'Comunicado por Turma', path: '/communications' },
@@ -162,7 +162,7 @@ const menuItems = {
     path: '/declarations'
   }, {
     icon: FileCheck,
-    label: 'Validar Justificativas',
+    label: 'Justificativas',
     path: '/validar-justificativas'
   }, {
     icon: UserX,

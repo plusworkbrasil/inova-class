@@ -58,7 +58,7 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   // NEVER use 'student' as default fallback - prefer userRole from props
   const displayRole = (profile?.role || userRole) as UserRole | undefined;
   const displayName = profile?.name || userName || user?.email || 'Usuário';
-  const displayAvatar = userAvatar || '';
+  const displayAvatar = userAvatar || (profile as any)?.avatar || (profile as any)?.photo || '';
 
   // If no role is defined, show loading
   if (!displayRole) {

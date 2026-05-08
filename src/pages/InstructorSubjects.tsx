@@ -51,23 +51,23 @@ const InstructorSubjects = () => {
   const handleAttendanceSubmit = async (data: any) => {
     try {
       console.log('📝 Registrando frequência para:', data);
-      
-      for (const student of data.attendance) {
-        await createAttendance({
-          student_id: student.studentId,
-          class_id: data.classId,
-          subject_id: data.subjectId,
-          date: data.date,
-          is_present: student.isPresent,
-          justification: student.isPresent ? null : 'Falta não justificada'
-        });
-      }
-      
+
+      const records = data.attendance.map((student: any) => ({
+        student_id: student.studentId,
+        class_id: data.classId,
+        subject_id: data.subjectId,
+        date: data.date,
+        is_present: student.isPresent,
+        justification: student.isPresent ? null : 'Falta não justificada',
+      }));
+
+      await createBatchAttendance(records, data.dailyActivity);
+
       toast({
         title: "Frequência registrada com sucesso!",
         description: `Frequência registrada para ${data.attendance.length} alunos.`,
       });
-      
+
       refetch();
       setIsAttendanceFormOpen(false);
       setSelectedSubject(null);
@@ -76,7 +76,7 @@ const InstructorSubjects = () => {
       toast({
         variant: "destructive",
         title: "Erro ao registrar frequência",
-        description: error.message || "Ocorreu um erro ao salvar a frequência. Verifique suas permissões.",
+        description: error?.message || "Ocorreu um erro ao salvar a frequência. Verifique suas permissões.",
       });
     }
   };

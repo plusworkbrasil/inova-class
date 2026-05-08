@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp } from 'lucide-react';
+import { Search, Plus, Edit, Download, FileText, Clock, CheckCircle, XCircle, Upload, FileUp, Mail } from 'lucide-react';
 import { DeclarationForm } from '@/components/forms/DeclarationForm';
 import { StudentDeclarationForm } from '@/components/forms/StudentDeclarationForm';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useSupabaseDeclarations } from '@/hooks/useSupabaseDeclarations';
 import { supabase } from '@/integrations/supabase/client';
+import { justificationStatusEmail, declarationDeliveryEmail, sendEmailViaResend } from '@/lib/email-templates';
 
 const Declarations = () => {
   const { profile } = useAuth();
@@ -151,7 +152,41 @@ const Declarations = () => {
           }
         }
       }
-      
+
+      // Notifica o aluno por e-mail (não bloqueia se falhar)
+      try {
+        const decl = declarations.find((d) => d.id === declarationId);
+        if (decl && (newStatus === 'approved' || newStatus === 'rejected')) {
+          const { data: studentRow } = await supabase
+            .from('profiles')
+            .select('email, name')
+            .eq('id', decl.student_id)
+            .maybeSingle();
+          if (studentRow?.email) {
+            const absenceDate =
+              decl.delivery_date ||
+              decl.purpose?.match(/\d{4}-\d{2}-\d{2}/)?.[0] ||
+              null;
+            const { subject, html } = justificationStatusEmail({
+              studentName: studentRow.name || 'Aluno(a)',
+              status: newStatus as 'approved' | 'rejected',
+              declarationTitle: decl.title || decl.type || 'Justificativa',
+              absenceDate,
+              observations: decl.description || null,
+            });
+            await sendEmailViaResend({
+              to: studentRow.email,
+              subject,
+              html,
+              template_type: 'justification',
+              reference_id: decl.id,
+            });
+          }
+        }
+      } catch (mailErr) {
+        console.error('Falha ao enviar e-mail de justificativa:', mailErr);
+      }
+
       toast({
         title: "Status atualizado!",
         description: `Declaração ${newStatus === 'approved' ? 'aprovada' : newStatus === 'rejected' ? 'rejeitada' : 'em processamento'}.`,
@@ -170,6 +205,60 @@ const Declarations = () => {
     setDeclarationType(type);
     setEditingDeclaration(null);
     setIsDeclarationFormOpen(true);
+  };
+
+  const handleEmailDeclaration = async (declaration: any) => {
+    if (!declaration?.file_path) {
+      toast({ title: 'Sem anexo', description: 'Esta declaração não possui arquivo para enviar.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const { data: studentRow } = await supabase
+        .from('profiles')
+        .select('email, name')
+        .eq('id', declaration.student_id)
+        .maybeSingle();
+      if (!studentRow?.email) {
+        toast({ title: 'Aluno sem e-mail cadastrado', variant: 'destructive' });
+        return;
+      }
+
+      // Baixa arquivo do storage e converte para base64
+      const { data: fileBlob, error: dlErr } = await supabase
+        .storage
+        .from('declarations')
+        .download(declaration.file_path);
+      if (dlErr || !fileBlob) throw dlErr || new Error('Falha ao baixar arquivo');
+
+      const buf = await fileBlob.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const base64 = btoa(binary);
+
+      const filename = declaration.file_path.split('/').pop() || 'declaracao.pdf';
+
+      const { subject, html } = declarationDeliveryEmail({
+        studentName: studentRow.name || 'Aluno(a)',
+        declarationTitle: declaration.title || declaration.type || 'Declaração',
+      });
+
+      const { error: sendErr } = await sendEmailViaResend({
+        to: studentRow.email,
+        subject,
+        html,
+        template_type: 'declaration',
+        reference_id: declaration.id,
+        attachments: [{ filename, content: base64 }],
+      });
+      if (sendErr) throw sendErr;
+      toast({ title: 'Declaração enviada por e-mail', description: studentRow.email });
+    } catch (e: any) {
+      toast({ title: 'Falha ao enviar', description: e?.message || 'Erro desconhecido', variant: 'destructive' });
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -405,6 +494,16 @@ const Declarations = () => {
                                 Rejeitar
                               </Button>
                             </>
+                          )}
+                          {declaration.file_path && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEmailDeclaration(declaration)}
+                              title="Enviar por e-mail"
+                            >
+                              <Mail size={14} />
+                            </Button>
                           )}
                           <Button 
                             variant="outline" 

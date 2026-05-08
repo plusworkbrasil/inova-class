@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { classCommunicationEmail, sendEmailViaResend } from '@/lib/email-templates';
 
 interface ClassComm {
   id: string;
@@ -58,6 +59,8 @@ const ClassCommunicationTab = () => {
   const [history, setHistory] = useState<ClassComm[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [activeStudentCount, setActiveStudentCount] = useState<number | null>(null);
+  const [alsoSendEmail, setAlsoSendEmail] = useState(false);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
 
   // Load classes
   useEffect(() => {
@@ -111,6 +114,66 @@ const ClassCommunicationTab = () => {
     setLoadingHistory(false);
   };
 
+  const sendBulkEmails = async (
+    classId: string,
+    subjectId: string,
+    titleText: string,
+    messageText: string,
+  ) => {
+    setIsSendingEmails(true);
+    try {
+      const className = classes.find((c) => c.id === classId)?.name || 'Turma';
+      const subjectName = subjectId && subjectId !== 'all'
+        ? subjects.find((s) => s.id === subjectId)?.name || null
+        : null;
+
+      const { data: studentsRaw } = await supabase
+        .from('profiles')
+        .select('id, name, email, status, class_id')
+        .eq('class_id', classId)
+        .eq('status', 'active');
+
+      const recipients = (studentsRaw || []).filter((s: any) => !!s.email);
+      if (recipients.length === 0) {
+        toast({ title: 'E-mail', description: 'Nenhum aluno com e-mail cadastrado.' });
+        return;
+      }
+
+      let sent = 0, failed = 0;
+      for (const r of recipients as any[]) {
+        const personalized = messageText.replace(/\{nome\}/gi, r.name || 'Aluno(a)');
+        const { subject, html } = classCommunicationEmail({
+          studentName: r.name || 'Aluno(a)',
+          className,
+          title: titleText,
+          message: personalized,
+          subjectName,
+        });
+        try {
+          const { error } = await sendEmailViaResend({
+            to: r.email,
+            subject,
+            html,
+            template_type: 'communication',
+          });
+          if (error) failed++;
+          else sent++;
+        } catch {
+          failed++;
+        }
+        // Delay anti-spam (5-8s)
+        const delay = 5000 + Math.floor(Math.random() * 3000);
+        await new Promise((res) => setTimeout(res, delay));
+      }
+      toast({
+        title: 'E-mails enviados',
+        description: `Sucesso: ${sent} · Falhas: ${failed}`,
+      });
+    } finally {
+      setIsSendingEmails(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!selectedClassId || !title.trim() || !message.trim()) {
       toast({ title: 'Erro', description: 'Selecione uma turma e preencha título e mensagem.', variant: 'destructive' });
@@ -151,6 +214,14 @@ const ClassCommunicationTab = () => {
           : `Enviado: ${data.sent}/${data.total}. ${data.failed > 0 ? `Falhou: ${data.failed}.` : ''} ${data.without_phone?.length > 0 ? `Sem telefone: ${data.without_phone.length}.` : ''}`;
 
         toast({ title: 'Comunicado enviado!', description: desc });
+
+        // Envio adicional por e-mail (apenas envio imediato; ignora agendados)
+        if (alsoSendEmail && !scheduledAt) {
+          sendBulkEmails(selectedClassId, selectedSubjectId, title.trim(), message.trim()).catch((e) =>
+            console.error('Erro ao enviar e-mails em massa:', e),
+          );
+        }
+
         setTitle('');
         setMessage('');
         setScheduleDate(undefined);
@@ -264,6 +335,20 @@ const ClassCommunicationTab = () => {
                 className="h-4 w-4 rounded border-input"
               />
               <label htmlFor="schedule-toggle" className="text-sm font-medium">Agendar envio</label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="email-toggle"
+                checked={alsoSendEmail}
+                onChange={(e) => setAlsoSendEmail(e.target.checked)}
+                disabled={isScheduled}
+                className="h-4 w-4 rounded border-input"
+              />
+              <label htmlFor="email-toggle" className="text-sm font-medium">
+                Enviar também por e-mail {isScheduled && <span className="text-xs text-muted-foreground">(indisponível em agendamentos)</span>}
+              </label>
             </div>
 
             {isScheduled && (

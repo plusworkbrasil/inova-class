@@ -1,46 +1,44 @@
 ## Objetivo
 
-Permitir que o aluno acesse, pelo menu lateral, **apenas suas próprias frequências**, em uma página exclusiva e somente leitura — sem botões de edição, lançamento, exportação em massa ou navegação para dados de terceiros.
+Permitir que admin/secretaria valide (aprovar/rejeitar) os documentos de justificativa de falta enviados pelos alunos (atestado médico, declaração de trabalho etc.) diretamente pelo sistema, sem precisar de e-mail. Acesso via menu **Gestão de Aulas → Validar Justificativas**.
 
-## Situação atual
+## O que já existe (reaproveitar)
 
-- No menu do aluno (`Navigation.tsx`) há o item **"Frequência"** apontando para `/attendance`.
-- A rota `/attendance` é protegida por `RoleGuard` para `INSTRUCTOR_STAFF` (admin, secretary, instructor, tutor, coordinator) — ou seja, **o aluno hoje é redirecionado e não consegue ver nada**.
-- A função RPC `get_attendance_with_details` já filtra automaticamente pelo `student_id = auth.uid()` quando o papel é `student`, então o backend já está pronto.
+- Tabela `declarations` com `file_path`, `status`, `student_id`, `type`, `delivery_date`.
+- Bucket `declarations` no Storage com upload feito pelo aluno.
+- Aluno já envia justificativa com anexo via `StudentDeclarationForm`.
+- Página `/declarations` já tem lógica de aprovar/rejeitar e atualizar automaticamente a frequência (`attendance.justification`) quando aprovada.
+- Notificação in-app + e-mail para o aluno após mudança de status.
 
-## Mudanças
+O que falta é uma **página focada** (sem o ruído de outras solicitações) e com acesso claro no menu.
 
-### 1. Nova página `src/pages/MyAttendance.tsx`
-Página somente leitura para o aluno autenticado:
-- Cabeçalho: "Minhas Frequências" + descrição curta.
-- **Cards-resumo** no topo: Total de aulas, Presenças, Faltas, % Frequência geral (com destaque vermelho se < 75% — seguindo o padrão do projeto).
-- **Filtros simples**: disciplina (select) e período (data início / data fim). Sem filtros por turma/aluno.
-- **Tabela** com colunas: Data, Disciplina, Status (badge "Presente"/"Falta"), Justificativa (se houver), Atividade do dia.
-- Ordenação por data desc; paginação de 10 itens (padrão do projeto).
-- **Sem nenhum botão** de editar, excluir, lançar, exportar massa ou abrir dialogs administrativos. Apenas visualização.
+## Plano
 
-Fonte de dados: `useSupabaseAttendance` (que já chama `get_attendance_with_details` e respeita RLS por aluno) + `useSupabaseSubjects` para nome/lista de disciplinas.
+### 1. Nova página `src/pages/AbsenceJustifications.tsx`
+Página somente para admin/secretaria/coordenador focada em justificativas de falta com anexo:
+
+- **Filtros pré-aplicados**: apenas `declarations` cujo `type` indica justificativa de falta (atestado médico/trabalho) e que tenham `file_path` preenchido.
+- **Filtros do usuário**: status (Pendente/Aprovada/Rejeitada), busca por nome do aluno, intervalo de datas da falta.
+- **Cards de resumo**: Total, Pendentes, Aprovadas, Rejeitadas.
+- **Tabela**: Aluno, Tipo, Data da falta (`delivery_date`), Enviado em, Status, Ações.
+- **Ações por linha**:
+  - **Visualizar documento** — abre o arquivo do bucket `declarations` em nova aba (URL assinada).
+  - **Aprovar** — muda status para `approved`, registra `processed_by`/`processed_at`, e dispara a atualização automática do `attendance.justification` para a data da falta (lógica já existente em `Declarations.tsx`).
+  - **Rejeitar** — abre dialog para informar motivo (gravado em `observations`), muda status para `rejected`.
+  - Em ambos os casos: dispara notificação in-app + e-mail ao aluno (helpers já existentes).
+- **Paginação** de 10 itens, estados de loading/vazio.
 
 ### 2. Rota em `src/App.tsx`
-Adicionar:
-```
-<Route path="/minhas-frequencias" element={
-  <RoleGuard allowedRoles={['student']}><MyAttendance /></RoleGuard>
-} />
-```
+- Adicionar `/validar-justificativas` com `RoleGuard allowedRoles={['admin','secretary','coordinator']}`.
 
-### 3. Menu do aluno (`src/components/layout/Navigation.tsx`)
-No array `menuItems.student`, trocar o destino do item **"Frequência"**:
-- de `path: '/attendance'`
-- para `path: '/minhas-frequencias'`
+### 3. Menu em `src/components/layout/Navigation.tsx`
+- Adicionar item **"Validar Justificativas"** (ícone `FileCheck`) dentro do grupo **Gestão de Aulas** para `admin`, `coordinator` e no menu plano de `secretary`.
 
-Nenhuma outra alteração no menu — o aluno continua vendo apenas: Dashboard, Meu Perfil, Minhas Notas, **Frequência**, Declarações, Histórico de Declarações.
-
-### 4. Garantir bloqueio de acesso lateral
-A rota `/attendance` permanece restrita a `INSTRUCTOR_STAFF` (já está). Caso o aluno tente digitar manualmente `/attendance`, o `RoleGuard` continua redirecionando — comportamento desejado.
+### 4. Backend
+Nenhuma migration necessária. RLS de `declarations` e do bucket `declarations` já permite admin/secretary visualizar e atualizar.
 
 ## Fora de escopo
 
-- Backend / RLS: nenhuma migração necessária (a RPC já filtra por `auth.uid()` para `student`).
-- Outras rotas/menus de outros papéis.
-- Exportação PDF individual (não foi solicitada).
+- Mudanças no fluxo do aluno (já funciona).
+- Não remover a página `/declarations` existente — ela continua para as demais solicitações (declaração de matrícula etc.).
+- Sem alterações no esquema do banco.

@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const { data: targetUsers, error: rolesError } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
-      .in("role", ["admin", "coordinator", "tutor"]);
+      .in("role", ["admin", "coordinator", "tutor", "secretary"]);
 
     if (rolesError) {
       console.error("Error fetching target users:", rolesError);

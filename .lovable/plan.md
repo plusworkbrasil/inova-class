@@ -1,44 +1,36 @@
 ## Objetivo
 
-Permitir que admin/secretaria valide (aprovar/rejeitar) os documentos de justificativa de falta enviados pelos alunos (atestado médico, declaração de trabalho etc.) diretamente pelo sistema, sem precisar de e-mail. Acesso via menu **Gestão de Aulas → Validar Justificativas**.
+1. Quando o aluno **enviar** uma justificativa de falta, exibir notificação no sininho dos responsáveis pela validação (admin, coordinator, tutor, secretary).
+2. Quando o admin/coordinator/secretary **aprovar ou rejeitar**, exibir notificação no sininho do **aluno** correspondente, em tempo real.
 
-## O que já existe (reaproveitar)
+## Situação atual
 
-- Tabela `declarations` com `file_path`, `status`, `student_id`, `type`, `delivery_date`.
-- Bucket `declarations` no Storage com upload feito pelo aluno.
-- Aluno já envia justificativa com anexo via `StudentDeclarationForm`.
-- Página `/declarations` já tem lógica de aprovar/rejeitar e atualizar automaticamente a frequência (`attendance.justification`) quando aprovada.
-- Notificação in-app + e-mail para o aluno após mudança de status.
+- Aluno envia justificativa em `Declarations.tsx` → chama edge function `notify-justification`, que hoje só notifica `admin`, `coordinator`, `tutor` (faltam **secretary**).
+- O sininho (`useNotifications.ts`) carrega notificações para `admin`, `coordinator`, `tutor` e `student` (falta **secretary**).
+- Ao aprovar/rejeitar em `AbsenceJustifications.tsx`, já é feito `notifications.insert` para `student_id` (in-app) + e-mail. Como o hook do aluno já escuta realtime no `user_id`, a notificação **deve** chegar ao sininho dele — vamos validar e ajustar pequenos detalhes.
 
-O que falta é uma **página focada** (sem o ruído de outras solicitações) e com acesso claro no menu.
+## Mudanças propostas
 
-## Plano
+### 1. Edge function `supabase/functions/notify-justification/index.ts`
+- Incluir `secretary` na lista de papéis notificados (`["admin","coordinator","tutor","secretary"]`).
 
-### 1. Nova página `src/pages/AbsenceJustifications.tsx`
-Página somente para admin/secretaria/coordenador focada em justificativas de falta com anexo:
+### 2. Hook `src/hooks/useNotifications.ts`
+- Adicionar `secretary` aos papéis-alvo do sininho (lista + realtime).
 
-- **Filtros pré-aplicados**: apenas `declarations` cujo `type` indica justificativa de falta (atestado médico/trabalho) e que tenham `file_path` preenchido.
-- **Filtros do usuário**: status (Pendente/Aprovada/Rejeitada), busca por nome do aluno, intervalo de datas da falta.
-- **Cards de resumo**: Total, Pendentes, Aprovadas, Rejeitadas.
-- **Tabela**: Aluno, Tipo, Data da falta (`delivery_date`), Enviado em, Status, Ações.
-- **Ações por linha**:
-  - **Visualizar documento** — abre o arquivo do bucket `declarations` em nova aba (URL assinada).
-  - **Aprovar** — muda status para `approved`, registra `processed_by`/`processed_at`, e dispara a atualização automática do `attendance.justification` para a data da falta (lógica já existente em `Declarations.tsx`).
-  - **Rejeitar** — abre dialog para informar motivo (gravado em `observations`), muda status para `rejected`.
-  - Em ambos os casos: dispara notificação in-app + e-mail ao aluno (helpers já existentes).
-- **Paginação** de 10 itens, estados de loading/vazio.
+### 3. Página `src/pages/AbsenceJustifications.tsx` (notificação ao aluno)
+- Manter a inserção em `notifications` para o `student_id` (já existe).
+- Garantir `type` consistente: usar `justification_approved` / `justification_rejected` (em vez de `success`/`warning`) para facilitar futuros filtros e manter o título "Justificativa aprovada" / "Justificativa rejeitada".
+- Garantir `reference_id = declaration.id` e `reference_type = 'declaration'` (já presente).
+- Não depende de RLS extra: a policy `Service role can insert notifications` permite `INSERT` para todos, e o aluno consegue ler suas próprias via `Users can view their own notifications`.
 
-### 2. Rota em `src/App.tsx`
-- Adicionar `/validar-justificativas` com `RoleGuard allowedRoles={['admin','secretary','coordinator']}`.
+### 4. Página `src/pages/AbsenceJustifications.tsx` (limpar badge)
+- Ao abrir a página, marcar como lidas as notificações `type = 'justification_pending'` do usuário atual (zera o badge de quem entrou para validar).
 
-### 3. Menu em `src/components/layout/Navigation.tsx`
-- Adicionar item **"Validar Justificativas"** (ícone `FileCheck`) dentro do grupo **Gestão de Aulas** para `admin`, `coordinator` e no menu plano de `secretary`.
+### 5. Sem mudanças
+- Sem alterações em RLS, schema, fluxo do aluno ou e-mails existentes.
 
-### 4. Backend
-Nenhuma migration necessária. RLS de `declarations` e do bucket `declarations` já permite admin/secretary visualizar e atualizar.
+## Resultado esperado
 
-## Fora de escopo
-
-- Mudanças no fluxo do aluno (já funciona).
-- Não remover a página `/declarations` existente — ela continua para as demais solicitações (declaração de matrícula etc.).
-- Sem alterações no esquema do banco.
+- **Sininho dos validadores** (admin/coordinator/tutor/secretary): toca em tempo real assim que o aluno envia a justificativa, com "Nova Justificativa de Falta".
+- **Sininho do aluno**: toca em tempo real ao ser aprovada/rejeitada, com "Justificativa aprovada" ou "Justificativa rejeitada" (incluindo motivo, se houver).
+- Badge dos validadores zera ao entrar na tela `/validar-justificativas`.

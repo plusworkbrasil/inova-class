@@ -1,46 +1,35 @@
 ## Objetivo
 
-Fazer com que o aluno receba a notificação no sino (NotificationsPopover) **em tempo real** assim que a secretaria/admin alterar o status da sua declaração — sem precisar recarregar a página.
+Permitir que **qualquer usuário** (admin, coordinator, secretary, instructor, tutor, student) edite seus próprios dados de **telefone, data de nascimento e e-mail**, além de **adicionar/atualizar/remover a foto de perfil**, através de um ícone de engrenagem (⚙) sempre visível e fácil de achar.
 
-## Diagnóstico
+## Onde colocar o ícone de engrenagem
 
-1. O hook `src/hooks/useNotifications.ts` hoje só ativa o fetch e a subscription Realtime para `admin`, `coordinator` e `tutor`:
-   ```ts
-   const isTargetRole = profile?.role === 'admin' || ... || 'tutor';
-   ```
-   Para o aluno, ele retorna lista vazia e nunca abre canal Realtime — por isso novas notificações não aparecem.
-2. A tabela `notifications` **não está incluída na publication `supabase_realtime`** (verificado via query). Sem isso, mesmo abrindo o canal, eventos de INSERT/UPDATE não chegariam ao cliente.
-3. O componente `NotificationsPopover` já é renderizado no `Navigation` para todos os papéis e está pronto — basta o hook entregar dados.
-4. As notificações para alunos já são gravadas em `public.notifications` pelo helper `notifyStudent` em `src/pages/Declarations.tsx` quando o status muda (pending/approved/rejected). Ou seja, a escrita já existe; falta apenas o tempo real do lado do aluno.
+Adicionar um botão de engrenagem (`Settings`) no bloco "User Info" da `Navigation.tsx` (sidebar), ao lado do nome/avatar do usuário. Visível para **todas as roles**, em desktop e mobile. Ao clicar, abre o diálogo de configurações pessoais.
 
-## Mudanças
+## Componente: `MyProfileSettingsDialog` (novo, genérico)
 
-### 1. Migração de banco (Realtime)
-- Definir `REPLICA IDENTITY FULL` na tabela `public.notifications` para que o payload do Realtime contenha o registro completo.
-- Adicionar `public.notifications` à publication `supabase_realtime` para emitir eventos de INSERT e UPDATE.
+Criar `src/components/forms/MyProfileSettingsDialog.tsx` baseado no `StudentProfileSettingsForm` existente, porém:
 
-### 2. `src/hooks/useNotifications.ts`
-- Incluir `student` em `isTargetRole` (renomear conceitualmente: passa a valer para qualquer papel autenticado que possa receber notificação).
-- Manter o `subscribe` em `INSERT` (notificação nova) e adicionar também `UPDATE` (caso o status seja atualizado depois) — para `UPDATE`, substituir o item no estado pelo novo payload.
-- Mostrar um toast discreto (`sonner`) quando chegar uma notificação nova enquanto o usuário está logado, com o título da notificação. Clique no toast leva para `/minhas-declaracoes` quando `reference_type === 'declaration'`.
+- Disponível para qualquer role (não só estudante).
+- Seções: **Foto de Perfil**, **Telefone**, **Data de Nascimento**, **E-mail**, **Segurança (alterar senha)**.
+- **Foto**: usar o componente existente `AvatarUpload` (já suporta upload, troca e remoção via bucket `avatars`). Após salvar, chamar `update profiles.avatar` e atualizar o contexto `useAuth`.
+- **Telefone / Data de Nascimento**: update direto em `profiles` via Supabase (RLS já permite o próprio usuário).
+- **E-mail**: usar `supabase.auth.updateUser({ email })`. O Supabase enviará e-mail de confirmação ao novo endereço; até a confirmação, o e-mail antigo permanece. Mostrar mensagem clara ao usuário ("Confirme em sua nova caixa de entrada"). O campo `profiles.email` será sincronizado automaticamente após confirmação por uma função/trigger leve (ver Detalhes técnicos).
+- Validação com `zod`: telefone (formato BR), data (não futura), e-mail válido.
 
-### 3. `src/components/ui/notifications-popover.tsx`
-- Para alunos, ao clicar numa notificação cujo `reference_type === 'declaration'`, navegar para `/minhas-declaracoes` (página do histórico do aluno) em vez de `/declarations` (que é a tela administrativa). Detectar pelo papel via `useAuth`.
+## Substituir o uso atual
 
-## Fora do escopo
-- Não altera o fluxo de e-mail (já implementado).
-- Não altera o esquema da tabela `notifications`, apenas configurações de Realtime.
-- Não mexe em RLS (a policy "Users can view their own notifications" já cobre o aluno).
+`StudentDashboard.tsx` e `Profile.tsx` hoje abrem `StudentProfileSettingsForm`. Trocar para o novo `MyProfileSettingsDialog` (mantém compatibilidade) e remover/depreciar o antigo.
 
-## Detalhes técnicos (resumo para devs)
+## Detalhes técnicos
 
-```sql
-ALTER TABLE public.notifications REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
-```
+1. **Sincronização de e-mail**: a tabela `profiles` tem trigger `protect_profile_admin_fields` que bloqueia mudança de `email` por não-admin. Para manter `profiles.email` igual ao `auth.users.email` após o usuário confirmar o novo e-mail, criar trigger em `auth.users` AFTER UPDATE OF email que sincroniza `profiles.email` (SECURITY DEFINER, contornando o trigger de proteção via flag de sessão ou via `UPDATE` direto que ignora o gatilho — alternativa: ajustar `protect_profile_admin_fields` para permitir quando `NEW.email = (SELECT email FROM auth.users WHERE id = NEW.id)`).
 
-```ts
-// useNotifications.ts
-const isTargetRole = ['admin','coordinator','tutor','student'].includes(profile?.role ?? '');
-// adicionar handler UPDATE no canal supabase
-```
+2. **Avatar**: a coluna usada hoje é `profiles.avatar` (e `photo` em alguns lugares). Padronizar gravando em `avatar`. O bucket `avatars` já existe e é público; políticas de storage já permitem upload pelo próprio usuário.
+
+3. **Refresh do contexto**: após salvar, chamar `refetch` do `useAuth` para que o avatar/nome novos apareçam imediatamente na sidebar.
+
+## Fora de escopo
+
+- Edição de outros campos sensíveis (CPF, RG, endereço completo, etc.).
+- Edição de e-mail de outros usuários (continua restrita a admin/secretary via edge function existente).

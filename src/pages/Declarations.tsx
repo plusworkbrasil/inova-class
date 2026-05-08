@@ -495,6 +495,16 @@ const Declarations = () => {
                               </Button>
                             </>
                           )}
+                          {declaration.file_path && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEmailDeclaration(declaration)}
+                              title="Enviar por e-mail"
+                            >
+                              <Mail size={14} />
+                            </Button>
+                          )}
                           <Button 
                             variant="outline" 
                             size="sm"

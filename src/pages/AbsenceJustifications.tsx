@@ -47,6 +47,20 @@ const AbsenceJustifications = () => {
   const [activeDecl, setActiveDecl] = useState<any>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
+  // Marca notificações de justificativa pendente como lidas ao abrir a tela
+  useEffect(() => {
+    if (!profile?.id) return;
+    supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', profile.id)
+      .eq('type', 'justification_pending')
+      .eq('is_read', false)
+      .then(({ error }) => {
+        if (error) console.error('Falha ao marcar notificações como lidas:', error);
+      });
+  }, [profile?.id]);
+
   const filtered = useMemo(() => {
     return (declarations || []).filter((d: any) => {
       // Only justifications: have file or matching type

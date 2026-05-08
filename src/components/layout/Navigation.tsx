@@ -228,7 +228,7 @@ const menuItems = {
   }, {
     icon: ClipboardCheck,
     label: 'Frequência',
-    path: '/attendance'
+    path: '/minhas-frequencias'
   }, {
     icon: FileText,
     label: 'Declarações',

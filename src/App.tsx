@@ -35,6 +35,7 @@ import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 import SystemDocumentation from "./pages/SystemDocumentation";
 import ResetPassword from "./pages/ResetPassword";
 import StudentDeclarationsHistory from "./pages/StudentDeclarationsHistory";
+import MyAttendance from "./pages/MyAttendance";
 import { RoleGuard } from "./components/auth/RoleGuard";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/teacher-grades" element={<RoleGuard allowedRoles={['instructor']}><TeacherGrades /></RoleGuard>} />
           <Route path="/declarations" element={<Declarations />} />
           <Route path="/minhas-declaracoes" element={<RoleGuard allowedRoles={['student']}><StudentDeclarationsHistory /></RoleGuard>} />
+          <Route path="/minhas-frequencias" element={<RoleGuard allowedRoles={['student']}><MyAttendance /></RoleGuard>} />
           <Route path="/evasions" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><Evasions /></RoleGuard>} />
           <Route path="/communications" element={<Communications />} />
           <Route path="/equipment" element={<RoleGuard allowedRoles={[...ADMIN, 'instructor']}><Equipment /></RoleGuard>} />

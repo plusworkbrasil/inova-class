@@ -59,6 +59,8 @@ const ClassCommunicationTab = () => {
   const [history, setHistory] = useState<ClassComm[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [activeStudentCount, setActiveStudentCount] = useState<number | null>(null);
+  const [alsoSendEmail, setAlsoSendEmail] = useState(false);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
 
   // Load classes
   useEffect(() => {

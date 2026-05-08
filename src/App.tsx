@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -34,7 +34,7 @@ import SelectedStudents from "./pages/SelectedStudents";
 import ConfirmEnrollment from "./pages/ConfirmEnrollment";
 import SystemDocumentation from "./pages/SystemDocumentation";
 import ResetPassword from "./pages/ResetPassword";
-import StudentDeclarationsHistory from "./pages/StudentDeclarationsHistory";
+
 import MyAttendance from "./pages/MyAttendance";
 import AbsenceJustifications from "./pages/AbsenceJustifications";
 import { RoleGuard } from "./components/auth/RoleGuard";
@@ -64,7 +64,7 @@ const App = () => (
           <Route path="/teacher-grades" element={<RoleGuard allowedRoles={['instructor']}><TeacherGrades /></RoleGuard>} />
           <Route path="/declarations" element={<Declarations />} />
           <Route path="/validar-justificativas" element={<RoleGuard allowedRoles={[...ADMIN, 'coordinator']}><AbsenceJustifications /></RoleGuard>} />
-          <Route path="/minhas-declaracoes" element={<RoleGuard allowedRoles={['student']}><StudentDeclarationsHistory /></RoleGuard>} />
+          <Route path="/minhas-declaracoes" element={<Navigate to="/declarations" replace />} />
           <Route path="/minhas-frequencias" element={<RoleGuard allowedRoles={['student']}><MyAttendance /></RoleGuard>} />
           <Route path="/evasions" element={<RoleGuard allowedRoles={[...ADMIN, 'tutor', 'instructor']}><Evasions /></RoleGuard>} />
           <Route path="/communications" element={<Communications />} />

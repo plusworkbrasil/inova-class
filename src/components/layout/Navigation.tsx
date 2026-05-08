@@ -376,6 +376,8 @@ const Navigation = ({
 
       {/* Overlay for mobile */}
       {isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-30 md:hidden" onClick={() => setIsOpen(false)} />}
+
+      <MyProfileSettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>;
 };
 export default Navigation;

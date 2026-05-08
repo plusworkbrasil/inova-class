@@ -1,46 +1,30 @@
-## Causa raiz
+## Problema
 
-O instrutor está vendo apenas 7 dos 38 alunos ativos da turma "Jovem Tech T04AB Manhã" porque a função `get_instructor_class_students` (usada pelo formulário de Frequência) filtra alunos por `get_user_role(p.id) = 'student'` — e **31 dos 38 perfis ativos não possuem registro correspondente em `user_roles`**.
+Na lista de Frequência, todos os alunos exibem "Matrícula: N/A".
 
-Com a recente migração de papéis (que removeu `profiles.role` em favor da tabela `user_roles`), perfis criados antes/durante essa transição (incluindo importações em lote, alunos pré-selecionados convertidos, e cadastros via Admin que não passaram pelo trigger) ficaram sem a linha em `user_roles`. Resultado:
+**Causa**: Os campos `student_id` e `enrollment_number` em `profiles` estão `NULL` para esses alunos. Quem está populado é a coluna `auto_student_id` (inteiro sequencial — ex: 1188, 1288, 1289...). Além disso, a função RPC `get_instructor_class_students` (usada por instrutores ao abrir a frequência) nem retorna esse campo.
 
-- Total ativos na turma: 38
-- Com `user_roles.role = 'student'`: 7
-- **Sem qualquer linha em `user_roles`: 31**
+Memória do projeto também define que o rótulo correto é **"Nº Aluno"**, não "Matrícula".
 
-Em todo o sistema, **140 perfis ativos estão sem `user_roles`**, então o problema é generalizado e afeta qualquer instrutor cuja turma contenha esses alunos órfãos. Também impacta listas de notas, exportações e qualquer RPC que use `has_role`/`get_user_role`.
+## Correção
 
-## Correção proposta
+1. **Migração no banco** — atualizar a função `get_instructor_class_students` para incluir `auto_student_id` no `RETURNS TABLE` e no `SELECT`.
 
-### 1. Backfill imediato (migration)
-Inserir em `user_roles` o papel `student` para todos os perfis ativos que estão na coluna `class_id` de uma turma e não têm linha na tabela:
+2. **`src/components/forms/AttendanceForm.tsx`**
+   - Adicionar `auto_student_id` ao tipo do estado `students`.
+   - Incluir `auto_student_id` no `.select(...)` da consulta direta a `profiles` (ramo não-instrutor).
+   - Trocar o rótulo `Matrícula:` por `Nº Aluno:` no card de cada aluno.
+   - Trocar a expressão exibida para `student.auto_student_id ?? student.enrollment_number ?? student.student_id ?? 'N/A'`.
 
-```sql
-INSERT INTO public.user_roles (user_id, role)
-SELECT p.id, 'student'::app_role
-FROM public.profiles p
-LEFT JOIN public.user_roles ur ON ur.user_id = p.id
-WHERE ur.id IS NULL
-  AND p.class_id IS NOT NULL
-ON CONFLICT (user_id, role) DO NOTHING;
+Nenhuma outra tela é tocada — somente a renderização da lista de frequência e a função RPC que a alimenta.
+
+## Detalhes técnicos
+
+```text
+RPC get_instructor_class_students
+  RETURNS TABLE(id uuid, name text, student_id text,
+                enrollment_number text, auto_student_id int)
+  SELECT DISTINCT p.id, p.name, p.student_id,
+                  p.enrollment_number, p.auto_student_id
+  ... (restante das condições inalterado)
 ```
-
-Isso restaura imediatamente a visibilidade dos 140 alunos órfãos para os instrutores.
-
-### 2. Trigger preventivo
-Criar/atualizar trigger `AFTER INSERT ON profiles` que, quando o novo perfil tiver `class_id` definido (indicando aluno) e ainda não houver entrada em `user_roles`, insira automaticamente `('student')`. Isso evita reincidência em cadastros futuros (Admin → Cadastrar Aluno, importações, conversão de Selecionados, etc.).
-
-### 3. Verificação pós-fix
-Após a migration:
-- Reconfirmar contagem da turma T04AB (esperado: 38 alunos retornados pela RPC)
-- Confirmar que demais turmas afetadas voltaram ao normal
-- Login do instrutor → abrir "Registrar Frequência" → ver lista completa
-
-## Arquivos afetados
-- Nova migration SQL (backfill + trigger)
-- Sem alterações em código frontend
-- Sem alteração em RLS ou em `get_instructor_class_students` (a função está correta; o dado é que estava inconsistente)
-
-## Fora de escopo
-- Não mexer em `profiles`, autenticação, ou demais funções RPC
-- Não alterar fluxos de Admin/Secretaria

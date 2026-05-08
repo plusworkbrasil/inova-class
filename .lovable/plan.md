@@ -1,88 +1,52 @@
-# Integração com Resend
+# Reset de senha: WhatsApp + E-mail como fallback
 
-Você escolheu usar o **Resend** (em vez do sistema de e-mails nativo do Lovable). Vamos conectar via o conector oficial — sem precisar colar API key manualmente.
+## Situação atual
+- A função `request-password-reset` envia o link **apenas via WhatsApp** (WaSenderAPI).
+- Se o usuário não tem telefone cadastrado, hoje ele simplesmente **não recebe nada** (a tela mostra mensagem genérica por segurança).
+- O Resend já está conectado e a função `send-email-resend` já está em produção.
 
-## Pré-requisitos (você faz no Resend)
+## Objetivo
+Garantir que todo usuário com e-mail cadastrado consiga recuperar a senha, mantendo o WhatsApp como canal preferencial.
 
-1. **Verificar o domínio `inovaclass.online`** no painel do Resend → Domains → Add Domain.
-2. O Resend vai te dar 3 registros DNS (SPF, DKIM, MX/Return-Path) para adicionar no seu provedor de domínio.
-3. Após verificado, o remetente `no-reply@inovaclass.online` fica liberado.
+## Comportamento novo
 
-> Enquanto o domínio não estiver verificado, todo envio será feito de `onboarding@resend.dev` (modo teste, só envia para o e-mail dono da conta Resend) — bom para validar o fluxo antes do DNS propagar.
+Ao solicitar "Esqueci minha senha":
 
-## Conexão do Resend ao projeto
+1. Busca o perfil pelo e-mail informado.
+2. Gera o token de reset (1h de validade, mesmo limite atual de 3 solicitações/hora).
+3. **Tenta enviar pelo WhatsApp primeiro** (se o usuário tiver telefone).
+   - Sucesso → retorna mensagem informando envio por WhatsApp.
+4. **Se não houver telefone OU o WhatsApp falhar** → envia o link por e-mail via Resend.
+   - Sucesso → retorna mensagem informando envio por e-mail.
+5. Se ambos falharem → erro genérico.
+6. Toda tentativa (sucesso/falha, canal usado) é registrada em `email_send_log` quando for por e-mail, e nos logs da edge function quando for WhatsApp.
 
-Vou abrir o seletor do conector Resend — você só clica para autorizar a sua conta. As credenciais ficam guardadas em segurança e disponíveis como variáveis de ambiente nas Edge Functions automaticamente.
+A resposta ao usuário continua **genérica** (não revela se a conta existe, nem qual canal foi usado em detalhe), apenas indica "verifique seu WhatsApp e/ou e-mail".
 
-## Edge Function única: `send-email-resend`
+## Mudanças técnicas
 
-Crio uma Edge Function genérica que recebe:
-- `to` (email do destinatário)
-- `subject`
-- `html` (corpo já montado)
-- `attachments` (opcional, para PDFs em base64)
+### 1. Edge Function `request-password-reset`
+- Adicionar bloco de fallback após a tentativa de WhatsApp.
+- Reutilizar template HTML padrão InovaClass (já existente em `src/lib/email-templates.ts` — replicar inline na função, pois edge functions não importam de `src/`).
+- Chamar internamente o Resend (mesmo padrão da função `send-email-resend`: gateway Lovable + `RESEND_API_KEY`).
+- Remetente: `InovaClass <no-reply@inovaclass.online>`.
+- Assunto: "Redefinição de senha - InovaClass".
+- Corpo: saudação + botão/link `https://inovaclass.online/reset-password/{token}` + aviso de validade de 1h.
 
-Ela faz a chamada via gateway do Lovable (`connector-gateway.lovable.dev/resend/emails`) com validação Zod, autenticação JWT do usuário chamador e tratamento de erros padronizado.
+### 2. Tela `/auth` (Esqueci minha senha)
+- Atualizar a mensagem de retorno para refletir os dois canais:
+  *"Se o e-mail estiver cadastrado, você receberá o link via WhatsApp e/ou e-mail."*
+- Sem mudanças no fluxo do formulário.
 
-## Templates de e-mail (HTML inline, com identidade InovaClass)
+### 3. Logging
+- Cada envio por e-mail registra em `email_send_log` com `template_type = 'other'` e `reference_id = user_id`.
+- Mantém os `console.log` atuais para WhatsApp.
 
-Crio um helper `src/lib/email-templates.ts` com 3 templates branded (cores e logo do sistema):
+## Não faz parte deste plano
+- Mudar o template visual padrão dos e-mails.
+- Permitir que o usuário escolha o canal manualmente.
+- Alterar o tempo de expiração (segue 1h) ou o rate limit (segue 3/hora).
+- Mexer no fluxo de `reset-password-with-token` (a página de definir nova senha continua igual).
 
-1. **`justificationStatusEmail`** — Resultado da justificativa de falta (aprovada/rejeitada), com motivo, data da falta e disciplina.
-2. **`classCommunicationEmail`** — Mesmo conteúdo do comunicado WhatsApp, formatado em HTML com nome da turma e remetente.
-3. **`declarationDeliveryEmail`** — Texto curto + PDF da declaração anexado (base64).
-
-## Pontos de integração no app
-
-### 1. Justificativas de falta
-- **Onde**: componente que aprova/rejeita justificativa (`src/components/.../JustificationReview*` ou similar — vou localizar exatamente na implementação).
-- **Quando**: ao mudar status para `approved` ou `rejected`.
-- **Para quem**: e-mail do aluno (`profiles.email`).
-- **Comportamento**: dispara em paralelo à notificação atual; falha de e-mail NÃO bloqueia a aprovação (log silencioso + toast informativo).
-
-### 2. Comunicados de turma
-- **Onde**: `ClassCommunication` / fluxo de envio em massa.
-- **Quando**: junto com o disparo do WhatsApp, como **canal complementar opcional** — adiciono um checkbox "Enviar também por e-mail" no formulário de envio.
-- **Para quem**: todos os alunos ativos da turma com `email` preenchido.
-- **Anti-spam**: respeitar o mesmo padrão de delay 5–8s entre envios (mantém a regra global do projeto).
-- **Tracking**: registrar status de envio na tabela já existente de tracking de comunicados (estender colunas se necessário, ex.: `email_sent_at`, `email_status`).
-
-### 3. Declarações em PDF
-- **Onde**: tela de emissão de declaração do aluno (admin/secretaria).
-- **Quando**: depois de gerar o PDF, oferecer botão **"Enviar por e-mail"** ao lado de "Baixar".
-- **Para quem**: e-mail do aluno destinatário da declaração.
-- **Como**: PDF é convertido para base64 no frontend e mandado como anexo via Edge Function.
-
-## Tabela de log (nova)
-
-`email_send_log`:
-- `id`, `recipient_email`, `subject`, `template_type` (`justification` | `communication` | `declaration`), `reference_id` (id da justificativa/comunicado/declaração), `status` (`sent` | `failed`), `error_message`, `sent_by` (uuid), `sent_at`.
-- RLS: admin/secretaria leem tudo; instrutor lê só os próprios; alunos não acessam.
-
-Serve para auditoria, retentativa manual e dashboard futuro.
-
-## Detalhes técnicos
-
-- **Gateway URL**: `https://connector-gateway.lovable.dev/resend/emails`
-- **Headers**: `Authorization: Bearer ${LOVABLE_API_KEY}`, `X-Connection-Api-Key: ${RESEND_API_KEY}`
-- **Validação**: Zod no body da Edge Function
-- **Auth**: validar JWT do chamador na Edge Function (papéis admin/secretary/instructor)
-- **From**: `"InovaClass <no-reply@inovaclass.online>"` (com fallback `onboarding@resend.dev` se domínio ainda não verificado — controlado por flag de ambiente)
-- **Reply-To**: e-mail institucional configurável (default: o próprio `no-reply`)
-
-## O que NÃO entra agora
-
-- Newsletters / e-mail marketing (Resend bloqueia mistura com transacional, prejudica reputação)
-- Webhooks de bounce/complaint (pode ser feito numa segunda fase se houver demanda)
-- Editor de templates pelo admin (templates ficam no código)
-
-## Ordem de execução
-
-1. Conectar o Resend (você autoriza no popup)
-2. Criar tabela `email_send_log` + RLS (migration)
-3. Criar Edge Function `send-email-resend`
-4. Criar helper de templates HTML
-5. Integrar em justificativas, comunicados e declarações (com checkbox no comunicado)
-6. Testar no preview com `onboarding@resend.dev` primeiro
-
-Posso seguir?
+## Memória a atualizar
+A regra atual em `mem://auth/password-reset-whatsapp` diz que o reset é exclusivo de WhatsApp. Após implementar, atualizar para refletir o novo fallback por e-mail via Resend.

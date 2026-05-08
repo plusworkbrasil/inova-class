@@ -66,7 +66,7 @@ const Auth = () => {
         return;
       }
 
-      toast.success('Se o email estiver cadastrado e tiver telefone associado, você receberá um link via WhatsApp!');
+      toast.success('Se o email estiver cadastrado, você receberá um link para redefinir sua senha via WhatsApp e/ou e-mail.');
       setShowForgotDialog(false);
     } catch {
       toast.error('Erro ao solicitar redefinição de senha.');
@@ -173,7 +173,7 @@ const Auth = () => {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Informe seu email cadastrado. Se houver um número de WhatsApp associado, enviaremos um link para redefinir sua senha.
+              Informe seu email cadastrado. Enviaremos um link para redefinir sua senha por WhatsApp (se houver telefone) e, como alternativa, por e-mail.
             </p>
             <div className="space-y-2">
               <Label htmlFor="forgot-email">Email</Label>

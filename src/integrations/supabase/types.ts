@@ -1420,6 +1420,7 @@ export type Database = {
           target_class_id: string
         }
         Returns: {
+          auto_student_id: number
           enrollment_number: string
           id: string
           name: string

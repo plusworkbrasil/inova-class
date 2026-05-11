@@ -50,10 +50,9 @@ serve(async (req) => {
 
     const { userData, password } = await req.json()
 
-    const allowedRoles = ['student', 'instructor', 'teacher', 'secretary']
-    if (callerRole !== 'admin') {
-      allowedRoles.splice(allowedRoles.indexOf('secretary'), 1)
-    }
+    const allowedRoles = callerRole === 'admin'
+      ? ['admin', 'coordinator', 'secretary', 'tutor', 'instructor', 'student']
+      : ['instructor', 'student']
 
     if (!allowedRoles.includes(userData.role)) {
       throw new Error(`Access denied: Cannot create user with role '${userData.role}'`)

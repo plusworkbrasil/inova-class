@@ -173,6 +173,13 @@ export const useSupabaseAuth = () => {
           await supabase.auth.signOut();
           throw new Error('Conta bloqueada por tentativas de acesso não autorizado. Procure um administrador.');
         }
+
+        // Bloqueia se o sistema estiver em modo manutenção
+        const { data: maintenance } = await supabase.rpc('is_maintenance_mode');
+        if (maintenance === true) {
+          await supabase.auth.signOut();
+          throw new Error('Sistema temporariamente indisponível. Procure o administrador do sistema.');
+        }
       }
 
       // Registra LOGIN no audit_logs

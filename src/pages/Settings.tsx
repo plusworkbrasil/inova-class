@@ -42,6 +42,34 @@ const Settings = () => {
   const { settings, loading, saving, updateSettings, saveSettings } = useSettings();
   const { profile } = useAuth();
   const { logs: auditLogs, loading: logsLoading, totalCount, isLive, fetchLogs, refreshLogs } = useAuditLogs();
+  const { enabled: maintenanceEnabled, toggling: maintenanceToggling, toggle: toggleMaintenance } = useMaintenanceMode();
+  const { toast } = useToast();
+  const [confirmEnableMaintenance, setConfirmEnableMaintenance] = useState(false);
+  const isAdmin = profile?.role === 'admin';
+
+  const handleMaintenanceToggle = async (nextValue: boolean) => {
+    if (nextValue) {
+      setConfirmEnableMaintenance(true);
+      return;
+    }
+    try {
+      await toggleMaintenance(false);
+      toast({ title: 'Modo manutenção desativado', description: 'Os usuários voltaram a ter acesso ao sistema.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: err.message || 'Não foi possível alterar.' });
+    }
+  };
+
+  const confirmEnableMaintenanceAction = async () => {
+    try {
+      await toggleMaintenance(true);
+      toast({ title: 'Modo manutenção ativado', description: 'Todos os usuários estão bloqueados.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: err.message || 'Não foi possível alterar.' });
+    } finally {
+      setConfirmEnableMaintenance(false);
+    }
+  };
 
   const [userFilter, setUserFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('__all__');

@@ -10,10 +10,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2, Lock } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import { useToast } from '@/hooks/use-toast';
 import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
 import { BatchResetStudentPasswordsForm } from '@/components/forms/BatchResetStudentPasswordsForm';
 import { ResetSpecificPasswordsForm } from '@/components/forms/ResetSpecificPasswordsForm';

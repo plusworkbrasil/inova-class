@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import MaintenanceLock from '@/pages/MaintenanceLock';
 import { toast } from 'sonner';
 
 interface LayoutProps {

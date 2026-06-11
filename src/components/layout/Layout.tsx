@@ -75,6 +75,13 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
     );
   }
 
+  // Modo manutenção: bloqueia todos, exceto admin acessando /configuracoes
+  const isAdmin = displayRole === 'admin';
+  const onSettingsRoute = location.pathname.startsWith('/configuracoes');
+  if (!maintenanceLoading && maintenanceEnabled && !(isAdmin && onSettingsRoute)) {
+    return <MaintenanceLock />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation 

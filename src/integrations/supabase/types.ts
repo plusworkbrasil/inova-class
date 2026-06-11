@@ -85,7 +85,7 @@ export type Database = {
           record_id: string | null
           table_name: string
           user_agent: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           accessed_fields?: string[] | null
@@ -96,7 +96,7 @@ export type Database = {
           record_id?: string | null
           table_name: string
           user_agent?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           accessed_fields?: string[] | null
@@ -107,7 +107,7 @@ export type Database = {
           record_id?: string | null
           table_name?: string
           user_agent?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1575,6 +1575,7 @@ export type Database = {
       is_instructor_of_subject:
         | { Args: { _subject_id: string; _user_id: string }; Returns: boolean }
         | { Args: { subject: string; user_id: string }; Returns: boolean }
+      is_maintenance_mode: { Args: never; Returns: boolean }
       log_profile_update_attempt: {
         Args: {
           details?: string
@@ -1608,6 +1609,7 @@ export type Database = {
         Args: { p_route: string }
         Returns: Json
       }
+      set_maintenance_mode: { Args: { p_enabled: boolean }; Returns: boolean }
       setup_test_admin: { Args: never; Returns: undefined }
       student_in_class: {
         Args: { _class_id: string; _user_id: string }

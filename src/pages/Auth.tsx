@@ -21,6 +21,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, login, loading: authLoading } = useAuth();
+  const { enabled: maintenanceEnabled } = useMaintenanceMode();
   
   // Detectar motivo do redirecionamento
   const redirectReason = (location.state as any)?.reason;

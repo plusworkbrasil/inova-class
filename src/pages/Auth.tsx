@@ -89,6 +89,14 @@ const Auth = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {maintenanceEnabled && (
+            <Alert variant="destructive">
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                Sistema temporariamente indisponível. Procure o administrador do sistema.
+              </AlertDescription>
+            </Alert>
+          )}
           {redirectReason === 'session_expired' && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

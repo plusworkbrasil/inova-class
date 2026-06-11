@@ -790,7 +790,72 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="maintenance" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lock size={18} />
+                    Modo Manutenção
+                  </CardTitle>
+                  <CardDescription>
+                    Bloqueia o acesso de todos os usuários ao sistema. Mesmo administradores
+                    são bloqueados — apenas esta página de Configurações continua acessível
+                    para que você possa desativar o modo a qualquer momento.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="maintenance-switch" className="text-base">
+                        Bloquear acesso ao sistema
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Quando ligado, todos veem a mensagem: "Sistema temporariamente
+                        indisponível — Procure o administrador do sistema".
+                      </p>
+                    </div>
+                    <Switch
+                      id="maintenance-switch"
+                      checked={maintenanceEnabled}
+                      disabled={maintenanceToggling}
+                      onCheckedChange={handleMaintenanceToggle}
+                    />
+                  </div>
+                  {maintenanceEnabled && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                      O modo manutenção está <strong>ATIVO</strong>. Todos os usuários estão
+                      bloqueados neste momento.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
+
+        <AlertDialog open={confirmEnableMaintenance} onOpenChange={setConfirmEnableMaintenance}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ativar modo manutenção?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Todos os usuários — incluindo administradores — serão imediatamente
+                bloqueados e verão apenas a mensagem "Procure o administrador do sistema".
+                Você manterá acesso somente a esta página de Configurações para reverter.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={maintenanceToggling}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmEnableMaintenanceAction}
+                disabled={maintenanceToggling}
+              >
+                {maintenanceToggling ? 'Ativando...' : 'Ativar bloqueio'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

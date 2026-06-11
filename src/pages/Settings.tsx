@@ -10,10 +10,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, School, Bell, Shield, Save, FileText, Loader2, Lock } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSettings } from '@/hooks/useSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import { useToast } from '@/hooks/use-toast';
 import { EmailConfirmationForm } from '@/components/forms/EmailConfirmationForm';
 import { BatchResetStudentPasswordsForm } from '@/components/forms/BatchResetStudentPasswordsForm';
 import { ResetSpecificPasswordsForm } from '@/components/forms/ResetSpecificPasswordsForm';
@@ -30,6 +42,34 @@ const Settings = () => {
   const { settings, loading, saving, updateSettings, saveSettings } = useSettings();
   const { profile } = useAuth();
   const { logs: auditLogs, loading: logsLoading, totalCount, isLive, fetchLogs, refreshLogs } = useAuditLogs();
+  const { enabled: maintenanceEnabled, toggling: maintenanceToggling, toggle: toggleMaintenance } = useMaintenanceMode();
+  const { toast } = useToast();
+  const [confirmEnableMaintenance, setConfirmEnableMaintenance] = useState(false);
+  const isAdmin = profile?.role === 'admin';
+
+  const handleMaintenanceToggle = async (nextValue: boolean) => {
+    if (nextValue) {
+      setConfirmEnableMaintenance(true);
+      return;
+    }
+    try {
+      await toggleMaintenance(false);
+      toast({ title: 'Modo manutenção desativado', description: 'Os usuários voltaram a ter acesso ao sistema.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: err.message || 'Não foi possível alterar.' });
+    }
+  };
+
+  const confirmEnableMaintenanceAction = async () => {
+    try {
+      await toggleMaintenance(true);
+      toast({ title: 'Modo manutenção ativado', description: 'Todos os usuários estão bloqueados.' });
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: err.message || 'Não foi possível alterar.' });
+    } finally {
+      setConfirmEnableMaintenance(false);
+    }
+  };
 
   const [userFilter, setUserFilter] = useState('');
   const [actionFilter, setActionFilter] = useState('__all__');
@@ -128,7 +168,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="general" className="flex items-center gap-2">
               <SettingsIcon size={16} />
               Geral
@@ -153,6 +193,12 @@ const Settings = () => {
               <FileText size={16} />
               Logs
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="maintenance" className="flex items-center gap-2">
+                <Lock size={16} />
+                Manutenção
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">
@@ -744,7 +790,72 @@ const Settings = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="maintenance" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lock size={18} />
+                    Modo Manutenção
+                  </CardTitle>
+                  <CardDescription>
+                    Bloqueia o acesso de todos os usuários ao sistema. Mesmo administradores
+                    são bloqueados — apenas esta página de Configurações continua acessível
+                    para que você possa desativar o modo a qualquer momento.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between rounded-lg border border-border p-4">
+                    <div className="space-y-1">
+                      <Label htmlFor="maintenance-switch" className="text-base">
+                        Bloquear acesso ao sistema
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Quando ligado, todos veem a mensagem: "Sistema temporariamente
+                        indisponível — Procure o administrador do sistema".
+                      </p>
+                    </div>
+                    <Switch
+                      id="maintenance-switch"
+                      checked={maintenanceEnabled}
+                      disabled={maintenanceToggling}
+                      onCheckedChange={handleMaintenanceToggle}
+                    />
+                  </div>
+                  {maintenanceEnabled && (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                      O modo manutenção está <strong>ATIVO</strong>. Todos os usuários estão
+                      bloqueados neste momento.
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
+
+        <AlertDialog open={confirmEnableMaintenance} onOpenChange={setConfirmEnableMaintenance}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Ativar modo manutenção?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Todos os usuários — incluindo administradores — serão imediatamente
+                bloqueados e verão apenas a mensagem "Procure o administrador do sistema".
+                Você manterá acesso somente a esta página de Configurações para reverter.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={maintenanceToggling}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmEnableMaintenanceAction}
+                disabled={maintenanceToggling}
+              >
+                {maintenanceToggling ? 'Ativando...' : 'Ativar bloqueio'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   );

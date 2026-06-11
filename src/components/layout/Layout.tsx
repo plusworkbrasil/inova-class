@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './Navigation';
 import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
+import MaintenanceLock from '@/pages/MaintenanceLock';
 import { toast } from 'sonner';
 
 interface LayoutProps {
@@ -14,6 +16,7 @@ interface LayoutProps {
 
 const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
+  const { enabled: maintenanceEnabled, loading: maintenanceLoading } = useMaintenanceMode();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -70,6 +73,13 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
         </div>
       </div>
     );
+  }
+
+  // Modo manutenção: bloqueia todos, exceto admin acessando /configuracoes
+  const isAdmin = displayRole === 'admin';
+  const onSettingsRoute = location.pathname.startsWith('/configuracoes');
+  if (!maintenanceLoading && maintenanceEnabled && !(isAdmin && onSettingsRoute)) {
+    return <MaintenanceLock />;
   }
 
   return (

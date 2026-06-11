@@ -8,8 +8,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -20,6 +21,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, login, loading: authLoading } = useAuth();
+  const { enabled: maintenanceEnabled } = useMaintenanceMode();
   
   // Detectar motivo do redirecionamento
   const redirectReason = (location.state as any)?.reason;
@@ -87,6 +89,14 @@ const Auth = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {maintenanceEnabled && (
+            <Alert variant="destructive">
+              <Lock className="h-4 w-4" />
+              <AlertDescription>
+                Sistema temporariamente indisponível. Procure o administrador do sistema.
+              </AlertDescription>
+            </Alert>
+          )}
           {redirectReason === 'session_expired' && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />

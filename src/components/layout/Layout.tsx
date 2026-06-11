@@ -16,6 +16,7 @@ interface LayoutProps {
 
 const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   const { user, profile, loading, isAuthenticated } = useAuth();
+  const { enabled: maintenanceEnabled, loading: maintenanceLoading } = useMaintenanceMode();
   const navigate = useNavigate();
   const location = useLocation();
 

@@ -168,7 +168,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-7' : 'grid-cols-6'}`}>
             <TabsTrigger value="general" className="flex items-center gap-2">
               <SettingsIcon size={16} />
               Geral
@@ -193,6 +193,12 @@ const Settings = () => {
               <FileText size={16} />
               Logs
             </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="maintenance" className="flex items-center gap-2">
+                <Lock size={16} />
+                Manutenção
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="general" className="space-y-6">

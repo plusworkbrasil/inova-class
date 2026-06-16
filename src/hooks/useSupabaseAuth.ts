@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { canBypassMaintenance } from '@/lib/maintenanceBypass';
 
 interface User {
   id: string;
@@ -174,9 +175,9 @@ export const useSupabaseAuth = () => {
           throw new Error('Conta bloqueada por tentativas de acesso não autorizado. Procure um administrador.');
         }
 
-        // Bloqueia se o sistema estiver em modo manutenção
+        // Bloqueia se o sistema estiver em modo manutenção (exceto e-mails autorizados)
         const { data: maintenance } = await supabase.rpc('is_maintenance_mode');
-        if (maintenance === true) {
+        if (maintenance === true && !canBypassMaintenance(data.user.email)) {
           await supabase.auth.signOut();
           throw new Error('Sistema temporariamente indisponível. Procure o administrador do sistema.');
         }

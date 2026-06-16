@@ -5,6 +5,7 @@ import { UserRole } from '@/types/user';
 import { useAuth } from '@/hooks/useAuth';
 import { useMaintenanceMode } from '@/hooks/useMaintenanceMode';
 import MaintenanceLock from '@/pages/MaintenanceLock';
+import { canBypassMaintenance } from '@/lib/maintenanceBypass';
 import { toast } from 'sonner';
 
 interface LayoutProps {
@@ -76,9 +77,11 @@ const Layout = ({ children, userRole, userName, userAvatar }: LayoutProps) => {
   }
 
   // Modo manutenção: bloqueia todos, exceto admin acessando /configuracoes
+  // ou e-mails explicitamente autorizados a contornar a manutenção
   const isAdmin = displayRole === 'admin';
   const onSettingsRoute = location.pathname.startsWith('/configuracoes');
-  if (!maintenanceLoading && maintenanceEnabled && !(isAdmin && onSettingsRoute)) {
+  const bypass = canBypassMaintenance(user?.email);
+  if (!maintenanceLoading && maintenanceEnabled && !bypass && !(isAdmin && onSettingsRoute)) {
     return <MaintenanceLock />;
   }
 

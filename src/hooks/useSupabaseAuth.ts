@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { canBypassMaintenance } from '@/lib/maintenanceBypass';
 
 interface User {
   id: string;

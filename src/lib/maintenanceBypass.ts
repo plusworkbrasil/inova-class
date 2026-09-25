@@ -1,6 +1,7 @@
 export const MAINTENANCE_BYPASS_EMAILS = [
   'jasprintbrasil@gmail.com',
   'pluswork.com.br@gmail.com',
+  'jwsfilho@gmail.com',
 ];
 
 export const canBypassMaintenance = (email?: string | null): boolean =>
